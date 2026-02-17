@@ -464,10 +464,10 @@ h2 {
 
 .confetti-piece {
   position: absolute;
-  width: 10px;
-  height: 18px;
+  width: 14px;
+  height: 26px;
   border-radius: 2px;
-  opacity: 0.8;
+  opacity: 0.95;
   animation: confetti-fall var(--dur, 1100ms) linear forwards;
   will-change: transform;
 }
@@ -475,30 +475,30 @@ h2 {
 .particle {
   position: absolute;
   pointer-events: none;
-  opacity: 0.4;
+  opacity: 0.62;
   will-change: transform, opacity;
 }
 
 .particle-spark {
-  width: 6px;
-  height: 6px;
+  width: 9px;
+  height: 9px;
   border-radius: 999px;
-  box-shadow: 0 0 10px currentColor;
+  box-shadow: 0 0 18px currentColor;
   animation: drift-down var(--dur, 7s) linear infinite, pulse-glow 1.8s ease-in-out infinite;
 }
 
 .particle-shard {
-  width: 7px;
-  height: 20px;
+  width: 11px;
+  height: 34px;
   border-radius: 2px;
   animation: drift-diagonal var(--dur, 8s) linear infinite;
 }
 
 .particle-ring {
-  width: 13px;
-  height: 13px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
-  border: 2px solid currentColor;
+  border: 3px solid currentColor;
   background: transparent;
   animation: float-spin var(--dur, 9s) ease-in-out infinite;
 }
@@ -587,7 +587,7 @@ h2 {
     transform: translate3d(var(--x0), var(--y0), 0) scale(0.9);
     opacity: 0;
   }
-  15% { opacity: var(--opa, 0.45); }
+  15% { opacity: var(--opa, 0.7); }
   100% {
     transform: translate3d(var(--x1), var(--y1), 0) scale(1.2);
     opacity: 0;
@@ -599,7 +599,7 @@ h2 {
     transform: translate3d(var(--x0), var(--y0), 0) rotate(0deg);
     opacity: 0;
   }
-  20% { opacity: var(--opa, 0.5); }
+  20% { opacity: var(--opa, 0.72); }
   100% {
     transform: translate3d(var(--x1), var(--y1), 0) rotate(var(--rot, 360deg));
     opacity: 0;
@@ -611,7 +611,7 @@ h2 {
     transform: translate3d(var(--x0), var(--y0), 0) rotate(0deg) scale(0.6);
     opacity: 0;
   }
-  20% { opacity: var(--opa, 0.35); }
+  20% { opacity: var(--opa, 0.62); }
   50% {
     transform: translate3d(var(--xm), var(--ym), 0) rotate(180deg) scale(1);
   }

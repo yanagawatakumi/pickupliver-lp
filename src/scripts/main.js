@@ -119,7 +119,7 @@ function initRevealAnimation() {
           launchConfetti({
             originX: rect.left + rect.width * 0.35,
             originY: rect.top + 24,
-            count: window.innerWidth <= 640 ? 18 : 28
+            count: window.innerWidth <= 640 ? 80 : 180
           });
         }
 
@@ -166,26 +166,26 @@ function recycleParticle(node) {
   const kind = node.dataset.kind;
   const x0 = randomIn(-vw * 0.1, vw * 1.1);
   const y0 = randomIn(-vh * 0.3, vh * 0.2);
-  const x1 = x0 + randomIn(-120, 120);
-  const y1 = vh + randomIn(80, 260);
-  const xm = x0 + randomIn(-180, 180);
+  const x1 = x0 + randomIn(-260, 260);
+  const y1 = vh + randomIn(160, 420);
+  const xm = x0 + randomIn(-320, 320);
   const ym = randomIn(vh * 0.2, vh * 0.8);
 
   const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f', '#ffffff'];
   const color = palette[Math.floor(Math.random() * palette.length)];
 
-  let dur = randomIn(5.6, 10.8);
-  let opa = randomIn(0.25, 0.55);
+  let dur = randomIn(3.2, 6.8);
+  let opa = randomIn(0.38, 0.75);
   let rot = `${randomIn(140, 760)}deg`;
 
   if (kind === 'particle-ring') {
-    dur = randomIn(7.4, 12.5);
-    opa = randomIn(0.22, 0.42);
+    dur = randomIn(4.2, 8.2);
+    opa = randomIn(0.34, 0.62);
   }
 
   if (kind === 'particle-shard') {
-    dur = randomIn(4.8, 9.2);
-    opa = randomIn(0.28, 0.52);
+    dur = randomIn(2.8, 5.8);
+    opa = randomIn(0.42, 0.78);
   }
 
   if (isMobile) {
@@ -233,8 +233,8 @@ function initParticleEngine() {
 
   const isMobile = window.innerWidth <= 640;
   const config = isMobile
-    ? { spark: 44, shard: 26, ring: 12 }
-    : { spark: 96, shard: 50, ring: 24 };
+    ? { spark: 160, shard: 90, ring: 45 }
+    : { spark: 360, shard: 220, ring: 120 };
 
   particleState.running = true;
   spawnPersistentParticles(config);
@@ -258,7 +258,7 @@ function launchConfetti(options = {}) {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const isMobile = viewportWidth <= 640;
-  const count = options.count || (isMobile ? 60 : 110);
+  const count = options.count || (isMobile ? 240 : 520);
   const originX = options.originX ?? viewportWidth * 0.5;
   const originY = options.originY ?? Math.min(240, viewportHeight * 0.34);
   const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f', '#ffffff'];
@@ -267,11 +267,11 @@ function launchConfetti(options = {}) {
     const piece = document.createElement('span');
     piece.className = 'confetti-piece';
     const color = palette[Math.floor(Math.random() * palette.length)];
-    const spread = isMobile ? 240 : 420;
+    const spread = isMobile ? 520 : 980;
     const x1 = originX + (Math.random() - 0.5) * spread;
     const y1 = originY + 300 + Math.random() * 320;
     const rot = 420 + Math.random() * 820;
-    const dur = 760 + Math.random() * 900;
+    const dur = 620 + Math.random() * 700;
 
     piece.style.background = color;
     piece.style.setProperty('--x0', `${originX}px`);
@@ -307,14 +307,14 @@ function initConfetti() {
     launchConfetti({
       originX: rect.left + rect.width / 2,
       originY: rect.top + rect.height / 2,
-      count: window.innerWidth <= 640 ? 68 : 130
+      count: window.innerWidth <= 640 ? 320 : 700
     });
   });
 
   if (!prefersReducedMotion() && !welcomeBurstPlayed) {
     welcomeBurstPlayed = true;
     window.setTimeout(() => {
-      launchConfetti({ count: window.innerWidth <= 640 ? 70 : 140, originY: 140 });
+      launchConfetti({ count: window.innerWidth <= 640 ? 420 : 900, originY: 120 });
     }, 280);
   }
 
