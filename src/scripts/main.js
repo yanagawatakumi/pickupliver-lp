@@ -160,7 +160,7 @@ function initRevealAnimation() {
           launchConfetti('burst_soft', {
             originX: rect.left + rect.width * 0.35,
             originY: rect.top + 24,
-            count: window.innerWidth <= 640 ? 28 : 56
+            count: window.innerWidth <= 640 ? 18 : 36
           });
         }
 
@@ -203,9 +203,9 @@ function recycleParticle(node) {
   const kind = node.dataset.kind;
   const x0 = randomIn(-vw * 0.08, vw * 1.08);
   const y0 = randomIn(-vh * 0.12, vh * 0.06);
-  const x1 = x0 + randomIn(-180, 180);
+  const x1 = x0 + randomIn(-90, 90);
   const y1 = vh + randomIn(80, 200);
-  const xm = x0 + randomIn(-220, 220);
+  const xm = x0 + randomIn(-140, 140);
   const ym = randomIn(vh * 0.25, vh * 0.7);
 
   const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f', '#ffffff'];
@@ -279,8 +279,8 @@ function initParticleEngine() {
 
   const isMobile = window.innerWidth <= 640;
   const config = isMobile
-    ? { spark: 54, shard: 30, ring: 15 }
-    : { spark: 120, shard: 74, ring: 40 };
+    ? { spark: 62, shard: 0, ring: 18 }
+    : { spark: 136, shard: 0, ring: 48 };
 
   particleState.running = true;
   spawnPersistentParticles(config);
@@ -340,15 +340,15 @@ function launchConfetti(type = 'burst_soft', options = {}) {
   const burstOptions = {
     originX,
     originY,
-    spread: isMobile ? 320 : 560,
+    spread: isMobile ? 180 : 320,
     dropBase: 160,
     dropRandom: 180
   };
 
   if (type === 'burst_hard') {
-    burstOptions.spread = isMobile ? 420 : 760;
-    burstOptions.dropBase = 220;
-    burstOptions.dropRandom = 260;
+    burstOptions.spread = isMobile ? 240 : 420;
+    burstOptions.dropBase = 170;
+    burstOptions.dropRandom = 190;
   }
 
   for (let i = 0; i < count; i += 1) {
@@ -422,7 +422,7 @@ function initConfetti() {
     launchConfetti('burst_hard', {
       originX: rect.left + rect.width / 2,
       originY: rect.top + rect.height / 2,
-      count: window.innerWidth <= 640 ? 180 : 380
+      count: window.innerWidth <= 640 ? 120 : 240
     });
   });
 
