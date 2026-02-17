@@ -5,51 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="PICK UP LIVER VOL.1 特設ページ" />
     <title>PICK UP LIVER VOL.1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800;900&family=Yusei+Magic&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/styles/main.css" />
   </head>
   <body>
-    <div class="bg-shape bg-shape-a" aria-hidden="true"></div>
-    <div class="bg-shape bg-shape-b" aria-hidden="true"></div>
+    <div class="noise"></div>
+    <div class="orb orb-a" aria-hidden="true"></div>
+    <div class="orb orb-b" aria-hidden="true"></div>
+    <div class="orb orb-c" aria-hidden="true"></div>
 
-    <header class="site-header">
-      <p class="eyebrow">Special Event Page</p>
+    <header class="hero reveal">
+      <p class="kicker">COLOR SING EVENT</p>
       <h1 id="event-title">PICK UP LIVER VOL.1</h1>
       <p id="event-summary" class="summary">歌やトークなど盛り沢山。視聴者参加型企画あり。</p>
+
       <div class="meta">
-        <span id="event-date">2026-02-21</span>
-        <span id="event-time">16:00 START</span>
-        <span id="event-venue">ColorSing 大魔神とーま枠</span>
+        <div class="meta-item">
+          <span class="meta-label">DATE</span>
+          <span id="event-date">2026-02-21</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">START</span>
+          <span id="event-time">16:00 START</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">PLACE</span>
+          <span id="event-venue">ColorSing 大魔神とーま枠</span>
+        </div>
       </div>
+
       <div class="cta-row">
-        <a id="cta-primary" class="btn btn-primary" href="#" target="_blank" rel="noopener noreferrer">配信を視聴する</a>
-        <a id="cta-secondary" class="btn btn-outline" href="#guests">出演者情報を見る</a>
+        <a id="cta-primary" class="btn btn-main pulse" href="#" target="_blank" rel="noopener noreferrer">配信を視聴する</a>
+        <a id="cta-secondary" class="btn btn-sub" href="#guests">出演者情報を見る</a>
       </div>
+
+      <div class="sticker sticker-a">VOL.1</div>
+      <div class="sticker sticker-b">LET'S GO!</div>
     </header>
 
-    <main class="container">
-      <section class="panel">
-        <h2>メインフライヤー</h2>
+    <main class="layout">
+      <section class="card flyer-card reveal">
+        <h2>MAIN FLYER</h2>
         <img id="main-flyer" class="flyer" src="/public/assets/events/2026-02-21-pick-up-liver/flyer-main.jpg" alt="PICK UP LIVER VOL.1 フライヤー" />
       </section>
 
-      <section id="hosts" class="panel">
+      <section id="hosts" class="card reveal">
         <h2>MC</h2>
-        <ul id="host-list" class="chip-list"></ul>
+        <ul id="host-list" class="chips"></ul>
       </section>
 
-      <section id="guests" class="panel">
+      <section id="guests" class="card reveal">
         <h2>GUEST LIVER</h2>
-        <ul id="guest-list" class="chip-list"></ul>
+        <ul id="guest-list" class="chips"></ul>
       </section>
 
-      <section id="sns" class="panel">
-        <h2>ColorSing プロフィール</h2>
+      <section id="sns" class="card reveal">
+        <h2>ColorSing PROFILE</h2>
         <ul id="sns-list" class="link-list"></ul>
       </section>
     </main>
 
-    <footer class="site-footer">
-      <small>© PICK UP LIVER</small>
+    <footer class="site-footer reveal">
+      <p>© PICK UP LIVER</p>
     </footer>
 
     <script src="/src/scripts/main.js"></script>

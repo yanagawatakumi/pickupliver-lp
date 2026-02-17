@@ -9,6 +9,13 @@ async function loadEvent() {
   }
 }
 
+function formatDateJP(isoDate) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+  return `${year}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}(${weekdays[date.getDay()]})`;
+}
+
 function applyEvent(event) {
   const title = document.getElementById('event-title');
   const summary = document.getElementById('event-summary');
@@ -24,7 +31,7 @@ function applyEvent(event) {
 
   if (title) title.textContent = event.title;
   if (summary) summary.textContent = event.description;
-  if (date) date.textContent = event.date;
+  if (date) date.textContent = formatDateJP(event.date);
   if (time) time.textContent = `${event.startTime} START`;
   if (venue) venue.textContent = event.venue;
 
@@ -81,4 +88,25 @@ function applyEvent(event) {
   }
 }
 
+function initRevealAnimation() {
+  const targets = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          observer.unobserve(entry.target);
+        }
+      }
+    },
+    { threshold: 0.15 }
+  );
+
+  targets.forEach((target, index) => {
+    target.style.transitionDelay = `${Math.min(index * 70, 280)}ms`;
+    observer.observe(target);
+  });
+}
+
 loadEvent();
+initRevealAnimation();
