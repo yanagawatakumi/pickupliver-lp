@@ -165,33 +165,36 @@ function recycleParticle(node) {
   const isMobile = vw <= 640;
 
   const kind = node.dataset.kind;
-  const x0 = randomIn(-vw * 0.1, vw * 1.1);
-  const y0 = randomIn(-vh * 0.3, vh * 0.2);
-  const x1 = x0 + randomIn(-260, 260);
-  const y1 = vh + randomIn(160, 420);
-  const xm = x0 + randomIn(-320, 320);
-  const ym = randomIn(vh * 0.2, vh * 0.8);
+  const x0 = randomIn(-vw * 0.08, vw * 1.08);
+  const y0 = randomIn(-vh * 0.12, vh * 0.06);
+  const x1 = x0 + randomIn(-180, 180);
+  const y1 = vh + randomIn(80, 200);
+  const xm = x0 + randomIn(-220, 220);
+  const ym = randomIn(vh * 0.25, vh * 0.7);
 
   const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f', '#ffffff'];
   const color = palette[Math.floor(Math.random() * palette.length)];
 
-  let dur = randomIn(3.2, 6.8);
-  let opa = randomIn(0.38, 0.75);
-  let rot = `${randomIn(140, 760)}deg`;
+  const travelY = Math.max(180, y1 - y0);
+  let speed = randomIn(95, 135);
+  let opa = randomIn(0.36, 0.62);
+  let rot = `${randomIn(120, 520)}deg`;
 
   if (kind === 'particle-ring') {
-    dur = randomIn(4.2, 8.2);
-    opa = randomIn(0.34, 0.62);
+    speed = randomIn(80, 115);
+    opa = randomIn(0.30, 0.50);
   }
 
   if (kind === 'particle-shard') {
-    dur = randomIn(2.8, 5.8);
-    opa = randomIn(0.42, 0.78);
+    speed = randomIn(100, 145);
+    opa = randomIn(0.40, 0.66);
   }
 
   if (isMobile) {
-    dur *= 0.86;
+    speed *= 1.05;
   }
+
+  const dur = travelY / speed;
 
   node.style.left = '0px';
   node.style.top = '0px';
