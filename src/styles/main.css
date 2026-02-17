@@ -468,7 +468,7 @@ h2 {
   height: 26px;
   border-radius: 2px;
   opacity: 0.95;
-  animation: confetti-fall var(--dur, 1100ms) linear forwards;
+  animation: confetti-fall var(--dur, 1100ms) cubic-bezier(0.18, 0.75, 0.25, 1) forwards;
   will-change: transform;
 }
 
@@ -484,14 +484,14 @@ h2 {
   height: 9px;
   border-radius: 999px;
   box-shadow: 0 0 18px currentColor;
-  animation: drift-down var(--dur, 7s) linear infinite, pulse-glow 1.8s ease-in-out infinite;
+  animation: drift-down var(--dur, 7s) cubic-bezier(0.2, 0.65, 0.3, 1) infinite, pulse-glow 1.8s ease-in-out infinite;
 }
 
 .particle-shard {
   width: 11px;
   height: 34px;
   border-radius: 2px;
-  animation: drift-diagonal var(--dur, 8s) linear infinite;
+  animation: drift-diagonal var(--dur, 8s) cubic-bezier(0.2, 0.62, 0.32, 1) infinite;
 }
 
 .particle-ring {
@@ -500,7 +500,7 @@ h2 {
   border-radius: 999px;
   border: 3px solid currentColor;
   background: transparent;
-  animation: float-spin var(--dur, 9s) ease-in-out infinite;
+  animation: float-spin var(--dur, 9s) cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
 }
 
 @keyframes marquee {

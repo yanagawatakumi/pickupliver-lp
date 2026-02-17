@@ -2,10 +2,54 @@ let lastConfettiAt = 0;
 let welcomeBurstPlayed = false;
 let burstTimer = null;
 
+const effectConfig = {
+  mode: 'normal',
+  speedLimit: {
+    ambient: { min: 80, max: 130 },
+    burst_soft: { min: 90, max: 140 },
+    burst_hard: { min: 100, max: 155 }
+  }
+};
+
 const particleState = {
   running: false,
   nodes: []
 };
+
+function setEffectsMode(mode = 'normal') {
+  effectConfig.mode = mode;
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function randomIn(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function clamp(min, value, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function computeTravelAndDuration(startY, endY, minSpeed, maxSpeed) {
+  const travel = Math.max(160, Math.abs(endY - startY));
+  const selectedSpeed = randomIn(minSpeed, maxSpeed);
+  const durationSec = travel / selectedSpeed;
+  return { travel, speed: selectedSpeed, durationSec };
+}
+
+function clampEffectSpeed(travel, durationSec, minSpeed, maxSpeed) {
+  const rawSpeed = travel / durationSec;
+  const clampedSpeed = clamp(minSpeed, rawSpeed, maxSpeed);
+  const fixedDurationSec = travel / clampedSpeed;
+  return { speed: clampedSpeed, durationSec: fixedDurationSec, exceeded: rawSpeed > maxSpeed };
+}
+
+function debugSpeed(tag, value) {
+  if (effectConfig.mode !== 'debug') return;
+  console.debug(`[effects:${tag}] speed=${value.toFixed(1)} px/s`);
+}
 
 async function loadEvent() {
   try {
@@ -97,10 +141,6 @@ function applyEvent(event) {
   }
 }
 
-function prefersReducedMotion() {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
 function initRevealAnimation() {
   const targets = document.querySelectorAll('.reveal');
 
@@ -117,10 +157,10 @@ function initRevealAnimation() {
 
         if (entry.target.classList.contains('card')) {
           const rect = entry.target.getBoundingClientRect();
-          launchConfetti({
+          launchConfetti('burst_soft', {
             originX: rect.left + rect.width * 0.35,
             originY: rect.top + 24,
-            count: window.innerWidth <= 640 ? 80 : 180
+            count: window.innerWidth <= 640 ? 28 : 56
           });
         }
 
@@ -155,10 +195,6 @@ function initParallaxOrbs() {
   );
 }
 
-function randomIn(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
 function recycleParticle(node) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -175,26 +211,31 @@ function recycleParticle(node) {
   const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f', '#ffffff'];
   const color = palette[Math.floor(Math.random() * palette.length)];
 
-  const travelY = Math.max(180, y1 - y0);
-  let speed = randomIn(95, 135);
+  let minSpeed = effectConfig.speedLimit.ambient.min;
+  let maxSpeed = effectConfig.speedLimit.ambient.max;
   let opa = randomIn(0.36, 0.62);
   let rot = `${randomIn(120, 520)}deg`;
 
   if (kind === 'particle-ring') {
-    speed = randomIn(80, 115);
+    minSpeed = 80;
+    maxSpeed = 115;
     opa = randomIn(0.30, 0.50);
   }
 
   if (kind === 'particle-shard') {
-    speed = randomIn(100, 145);
-    opa = randomIn(0.40, 0.66);
+    minSpeed = 92;
+    maxSpeed = 125;
+    opa = randomIn(0.40, 0.62);
   }
 
   if (isMobile) {
-    speed *= 1.05;
+    minSpeed *= 0.98;
+    maxSpeed *= 1.02;
   }
 
-  const dur = travelY / speed;
+  const computed = computeTravelAndDuration(y0, y1, minSpeed, maxSpeed);
+  const fixed = clampEffectSpeed(computed.travel, computed.durationSec, minSpeed, maxSpeed);
+  debugSpeed(kind, fixed.speed);
 
   node.style.left = '0px';
   node.style.top = '0px';
@@ -206,10 +247,10 @@ function recycleParticle(node) {
   node.style.setProperty('--ym', `${ym}px`);
   node.style.setProperty('--x1', `${x1}px`);
   node.style.setProperty('--y1', `${y1}px`);
-  node.style.setProperty('--dur', `${dur}s`);
+  node.style.setProperty('--dur', `${fixed.durationSec}s`);
   node.style.setProperty('--opa', String(opa));
   node.style.setProperty('--rot', rot);
-  node.style.animationDelay = `${-Math.random() * dur}s`;
+  node.style.animationDelay = `${-Math.random() * fixed.durationSec}s`;
 }
 
 function spawnPersistentParticles(config) {
@@ -254,43 +295,66 @@ function destroyParticleEngine() {
   particleState.running = false;
 }
 
-function launchConfetti(options = {}) {
-  if (prefersReducedMotion()) return;
-
+function createConfettiPiece(type, options) {
   const fxLayer = document.getElementById('fx-layer');
-  if (!fxLayer) return;
+  if (!fxLayer) return null;
+
+  const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f', '#ffffff'];
+  const color = palette[Math.floor(Math.random() * palette.length)];
+
+  const spread = options.spread;
+  const x1 = options.originX + (Math.random() - 0.5) * spread;
+  const y1 = options.originY + options.dropBase + Math.random() * options.dropRandom;
+  const rot = `${420 + Math.random() * 820}deg`;
+
+  const limits = effectConfig.speedLimit[type];
+  const computed = computeTravelAndDuration(options.originY, y1, limits.min, limits.max);
+  const fixed = clampEffectSpeed(computed.travel, computed.durationSec, limits.min, limits.max);
+  debugSpeed(type, fixed.speed);
+
+  const piece = document.createElement('span');
+  piece.className = 'confetti-piece';
+  piece.style.background = color;
+  piece.style.setProperty('--x0', `${options.originX}px`);
+  piece.style.setProperty('--y0', `${options.originY}px`);
+  piece.style.setProperty('--x1', `${x1}px`);
+  piece.style.setProperty('--y1', `${y1}px`);
+  piece.style.setProperty('--rot', rot);
+  piece.style.setProperty('--dur', `${fixed.durationSec * 1000}ms`);
+
+  fxLayer.appendChild(piece);
+  window.setTimeout(() => piece.remove(), fixed.durationSec * 1000 + 80);
+  return piece;
+}
+
+function launchConfetti(type = 'burst_soft', options = {}) {
+  if (prefersReducedMotion()) return;
 
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const isMobile = viewportWidth <= 640;
-  const count = options.count || (isMobile ? 240 : 520);
+  const count = options.count || (isMobile ? 120 : 240);
   const originX = options.originX ?? viewportWidth * 0.5;
   const originY = options.originY ?? Math.min(240, viewportHeight * 0.34);
-  const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f', '#ffffff'];
+
+  const burstOptions = {
+    originX,
+    originY,
+    spread: isMobile ? 320 : 560,
+    dropBase: 160,
+    dropRandom: 180
+  };
+
+  if (type === 'burst_hard') {
+    burstOptions.spread = isMobile ? 420 : 760;
+    burstOptions.dropBase = 220;
+    burstOptions.dropRandom = 260;
+  }
 
   for (let i = 0; i < count; i += 1) {
-    const piece = document.createElement('span');
-    piece.className = 'confetti-piece';
-    const color = palette[Math.floor(Math.random() * palette.length)];
-    const spread = isMobile ? 520 : 980;
-    const x1 = originX + (Math.random() - 0.5) * spread;
-    const y1 = originY + 220 + Math.random() * 260;
-    const rot = 420 + Math.random() * 820;
-    const dur = 1650 + Math.random() * 1400;
-
-    piece.style.background = color;
-    piece.style.setProperty('--x0', `${originX}px`);
-    piece.style.setProperty('--y0', `${originY}px`);
-    piece.style.setProperty('--x1', `${x1}px`);
-    piece.style.setProperty('--y1', `${y1}px`);
-    piece.style.setProperty('--rot', `${rot}deg`);
-    piece.style.setProperty('--dur', `${dur}ms`);
-
-    fxLayer.appendChild(piece);
-    window.setTimeout(() => piece.remove(), dur + 80);
+    createConfettiPiece(type, burstOptions);
   }
 }
-
 
 function launchAngledConfetti(pattern = 'top-center') {
   const vw = window.innerWidth;
@@ -308,7 +372,7 @@ function launchAngledConfetti(pattern = 'top-center') {
   };
 
   const sel = patterns[pattern] || patterns['top-center'];
-  launchConfetti({ originX: sel.x, originY: sel.y, count: sel.count });
+  launchConfetti('burst_soft', { originX: sel.x, originY: sel.y, count: sel.count });
 }
 
 function initPeriodicConfetti() {
@@ -325,7 +389,6 @@ function initPeriodicConfetti() {
   ];
   let index = 0;
 
-  // start after initial visual settle
   burstTimer = window.setInterval(() => {
     launchAngledConfetti(sequence[index % sequence.length]);
     index += 1;
@@ -342,6 +405,7 @@ function cleanupEffects() {
   if (fxLayer) {
     fxLayer.querySelectorAll('.confetti-piece').forEach((piece) => piece.remove());
   }
+
   destroyParticleEngine();
 }
 
@@ -355,10 +419,10 @@ function initConfetti() {
     lastConfettiAt = now;
 
     const rect = ctaPrimary.getBoundingClientRect();
-    launchConfetti({
+    launchConfetti('burst_hard', {
       originX: rect.left + rect.width / 2,
       originY: rect.top + rect.height / 2,
-      count: window.innerWidth <= 640 ? 320 : 700
+      count: window.innerWidth <= 640 ? 180 : 380
     });
   });
 
@@ -372,6 +436,10 @@ function initConfetti() {
   }
 
   window.addEventListener('pagehide', cleanupEffects);
+}
+
+if (window.location.search.includes('fx=debug')) {
+  setEffectsMode('debug');
 }
 
 loadEvent();
