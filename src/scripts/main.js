@@ -13,7 +13,8 @@ const effectConfig = {
 
 const particleState = {
   running: false,
-  nodes: []
+  nodes: [],
+  timers: new Map()
 };
 
 function setEffectsMode(mode = 'normal') {
@@ -253,19 +254,38 @@ function recycleParticle(node) {
   node.style.setProperty('--opa', String(opa));
   node.style.setProperty('--rot', rot);
   node.style.animationDelay = `${-Math.random() * fixed.durationSec}s`;
+  return fixed.durationSec;
 }
 
 function spawnPersistentParticles(config) {
   const layer = document.getElementById('spark-layer');
   if (!layer || prefersReducedMotion()) return;
 
+  const scheduleRecycle = (node, durationSec) => {
+    const prevTimer = particleState.timers.get(node);
+    if (prevTimer) clearTimeout(prevTimer);
+
+    const delayMs = Math.max(16, Math.round(durationSec * 1000));
+    const timer = window.setTimeout(() => {
+      if (!particleState.running || !node.isConnected) {
+        particleState.timers.delete(node);
+        return;
+      }
+
+      const nextDurationSec = recycleParticle(node);
+      scheduleRecycle(node, nextDurationSec);
+    }, delayMs);
+
+    particleState.timers.set(node, timer);
+  };
+
   const make = (kind, count) => {
     for (let i = 0; i < count; i += 1) {
       const node = document.createElement('span');
       node.className = `particle ${kind}`;
       node.dataset.kind = kind;
-      recycleParticle(node);
-      node.addEventListener('animationiteration', () => recycleParticle(node));
+      const durationSec = recycleParticle(node);
+      scheduleRecycle(node, durationSec);
       layer.appendChild(node);
       particleState.nodes.push(node);
     }
@@ -290,6 +310,8 @@ function initParticleEngine() {
 
 function destroyParticleEngine() {
   const layer = document.getElementById('spark-layer');
+  particleState.timers.forEach((timer) => clearTimeout(timer));
+  particleState.timers.clear();
   if (layer) {
     particleState.nodes.forEach((n) => n.remove());
   }
