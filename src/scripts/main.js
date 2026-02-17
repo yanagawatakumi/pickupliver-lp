@@ -1,5 +1,6 @@
 let lastConfettiAt = 0;
 let welcomeBurstPlayed = false;
+let burstTimer = null;
 
 const particleState = {
   running: false,
@@ -286,7 +287,53 @@ function launchConfetti(options = {}) {
   }
 }
 
+
+function launchAngledConfetti(pattern = 'top-center') {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const isMobile = vw <= 640;
+
+  const patterns = {
+    'top-center': { x: vw * 0.5, y: 90, count: isMobile ? 260 : 520 },
+    'top-left': { x: vw * 0.12, y: 100, count: isMobile ? 220 : 460 },
+    'top-right': { x: vw * 0.88, y: 100, count: isMobile ? 220 : 460 },
+    'bottom-left-diagonal': { x: vw * 0.08, y: vh - 40, count: isMobile ? 280 : 560 },
+    'bottom-right-diagonal': { x: vw * 0.92, y: vh - 40, count: isMobile ? 280 : 560 },
+    'mid-left': { x: vw * 0.08, y: vh * 0.45, count: isMobile ? 220 : 440 },
+    'mid-right': { x: vw * 0.92, y: vh * 0.45, count: isMobile ? 220 : 440 }
+  };
+
+  const sel = patterns[pattern] || patterns['top-center'];
+  launchConfetti({ originX: sel.x, originY: sel.y, count: sel.count });
+}
+
+function initPeriodicConfetti() {
+  if (prefersReducedMotion()) return;
+
+  const sequence = [
+    'top-center',
+    'bottom-left-diagonal',
+    'top-right',
+    'mid-left',
+    'bottom-right-diagonal',
+    'top-left',
+    'mid-right'
+  ];
+  let index = 0;
+
+  // start after initial visual settle
+  burstTimer = window.setInterval(() => {
+    launchAngledConfetti(sequence[index % sequence.length]);
+    index += 1;
+  }, 2600);
+}
+
 function cleanupEffects() {
+  if (burstTimer) {
+    window.clearInterval(burstTimer);
+    burstTimer = null;
+  }
+
   const fxLayer = document.getElementById('fx-layer');
   if (fxLayer) {
     fxLayer.querySelectorAll('.confetti-piece').forEach((piece) => piece.remove());
@@ -314,7 +361,9 @@ function initConfetti() {
   if (!prefersReducedMotion() && !welcomeBurstPlayed) {
     welcomeBurstPlayed = true;
     window.setTimeout(() => {
-      launchConfetti({ count: window.innerWidth <= 640 ? 420 : 900, originY: 120 });
+      launchAngledConfetti('top-center');
+      window.setTimeout(() => launchAngledConfetti('bottom-left-diagonal'), 240);
+      window.setTimeout(() => launchAngledConfetti('bottom-right-diagonal'), 480);
     }, 280);
   }
 
@@ -326,3 +375,4 @@ initRevealAnimation();
 initParallaxOrbs();
 initParticleEngine();
 initConfetti();
+initPeriodicConfetti();
