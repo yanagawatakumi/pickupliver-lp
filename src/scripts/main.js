@@ -206,6 +206,7 @@ function recycleParticle(node) {
   node.style.setProperty('--dur', `${dur}s`);
   node.style.setProperty('--opa', String(opa));
   node.style.setProperty('--rot', rot);
+  node.style.animationDelay = `${-Math.random() * dur}s`;
 }
 
 function spawnPersistentParticles(config) {
@@ -234,8 +235,8 @@ function initParticleEngine() {
 
   const isMobile = window.innerWidth <= 640;
   const config = isMobile
-    ? { spark: 160, shard: 90, ring: 45 }
-    : { spark: 360, shard: 220, ring: 120 };
+    ? { spark: 54, shard: 30, ring: 15 }
+    : { spark: 120, shard: 74, ring: 40 };
 
   particleState.running = true;
   spawnPersistentParticles(config);
@@ -294,13 +295,13 @@ function launchAngledConfetti(pattern = 'top-center') {
   const isMobile = vw <= 640;
 
   const patterns = {
-    'top-center': { x: vw * 0.5, y: 90, count: isMobile ? 260 : 520 },
-    'top-left': { x: vw * 0.12, y: 100, count: isMobile ? 220 : 460 },
-    'top-right': { x: vw * 0.88, y: 100, count: isMobile ? 220 : 460 },
-    'bottom-left-diagonal': { x: vw * 0.08, y: vh - 40, count: isMobile ? 280 : 560 },
-    'bottom-right-diagonal': { x: vw * 0.92, y: vh - 40, count: isMobile ? 280 : 560 },
-    'mid-left': { x: vw * 0.08, y: vh * 0.45, count: isMobile ? 220 : 440 },
-    'mid-right': { x: vw * 0.92, y: vh * 0.45, count: isMobile ? 220 : 440 }
+    'top-center': { x: vw * 0.5, y: 90, count: isMobile ? 110 : 220 },
+    'top-left': { x: vw * 0.12, y: 100, count: isMobile ? 90 : 180 },
+    'top-right': { x: vw * 0.88, y: 100, count: isMobile ? 90 : 180 },
+    'bottom-left-diagonal': { x: vw * 0.08, y: vh - 40, count: isMobile ? 120 : 240 },
+    'bottom-right-diagonal': { x: vw * 0.92, y: vh - 40, count: isMobile ? 120 : 240 },
+    'mid-left': { x: vw * 0.08, y: vh * 0.45, count: isMobile ? 90 : 180 },
+    'mid-right': { x: vw * 0.92, y: vh * 0.45, count: isMobile ? 90 : 180 }
   };
 
   const sel = patterns[pattern] || patterns['top-center'];
@@ -325,7 +326,7 @@ function initPeriodicConfetti() {
   burstTimer = window.setInterval(() => {
     launchAngledConfetti(sequence[index % sequence.length]);
     index += 1;
-  }, 2600);
+  }, 3400);
 }
 
 function cleanupEffects() {
