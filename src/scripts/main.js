@@ -1,6 +1,11 @@
 let lastConfettiAt = 0;
 let welcomeBurstPlayed = false;
 
+const particleState = {
+  running: false,
+  nodes: []
+};
+
 async function loadEvent() {
   try {
     const response = await fetch('/src/data/event.json', { cache: 'no-store' });
@@ -112,9 +117,9 @@ function initRevealAnimation() {
         if (entry.target.classList.contains('card')) {
           const rect = entry.target.getBoundingClientRect();
           launchConfetti({
-            originX: rect.left + rect.width * 0.2,
+            originX: rect.left + rect.width * 0.35,
             originY: rect.top + 24,
-            count: window.innerWidth <= 640 ? 14 : 20
+            count: window.innerWidth <= 640 ? 18 : 28
           });
         }
 
@@ -142,12 +147,106 @@ function initParallaxOrbs() {
       const y = window.scrollY;
       orbs.forEach((orb) => {
         const depth = Number(orb.dataset.depth || 0.02);
-        const shift = y * depth;
-        orb.style.transform = `translate3d(0, ${shift}px, 0)`;
+        orb.style.transform = `translate3d(0, ${y * depth}px, 0)`;
       });
     },
     { passive: true }
   );
+}
+
+function randomIn(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function recycleParticle(node) {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const isMobile = vw <= 640;
+
+  const kind = node.dataset.kind;
+  const x0 = randomIn(-vw * 0.1, vw * 1.1);
+  const y0 = randomIn(-vh * 0.3, vh * 0.2);
+  const x1 = x0 + randomIn(-120, 120);
+  const y1 = vh + randomIn(80, 260);
+  const xm = x0 + randomIn(-180, 180);
+  const ym = randomIn(vh * 0.2, vh * 0.8);
+
+  const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f', '#ffffff'];
+  const color = palette[Math.floor(Math.random() * palette.length)];
+
+  let dur = randomIn(5.6, 10.8);
+  let opa = randomIn(0.25, 0.55);
+  let rot = `${randomIn(140, 760)}deg`;
+
+  if (kind === 'particle-ring') {
+    dur = randomIn(7.4, 12.5);
+    opa = randomIn(0.22, 0.42);
+  }
+
+  if (kind === 'particle-shard') {
+    dur = randomIn(4.8, 9.2);
+    opa = randomIn(0.28, 0.52);
+  }
+
+  if (isMobile) {
+    dur *= 0.86;
+  }
+
+  node.style.left = '0px';
+  node.style.top = '0px';
+  node.style.color = color;
+  node.style.background = kind === 'particle-ring' ? 'transparent' : color;
+  node.style.setProperty('--x0', `${x0}px`);
+  node.style.setProperty('--y0', `${y0}px`);
+  node.style.setProperty('--xm', `${xm}px`);
+  node.style.setProperty('--ym', `${ym}px`);
+  node.style.setProperty('--x1', `${x1}px`);
+  node.style.setProperty('--y1', `${y1}px`);
+  node.style.setProperty('--dur', `${dur}s`);
+  node.style.setProperty('--opa', String(opa));
+  node.style.setProperty('--rot', rot);
+}
+
+function spawnPersistentParticles(config) {
+  const layer = document.getElementById('spark-layer');
+  if (!layer || prefersReducedMotion()) return;
+
+  const make = (kind, count) => {
+    for (let i = 0; i < count; i += 1) {
+      const node = document.createElement('span');
+      node.className = `particle ${kind}`;
+      node.dataset.kind = kind;
+      recycleParticle(node);
+      node.addEventListener('animationiteration', () => recycleParticle(node));
+      layer.appendChild(node);
+      particleState.nodes.push(node);
+    }
+  };
+
+  make('particle-spark', config.spark);
+  make('particle-shard', config.shard);
+  make('particle-ring', config.ring);
+}
+
+function initParticleEngine() {
+  if (prefersReducedMotion()) return;
+
+  const isMobile = window.innerWidth <= 640;
+  const config = isMobile
+    ? { spark: 44, shard: 26, ring: 12 }
+    : { spark: 96, shard: 50, ring: 24 };
+
+  particleState.running = true;
+  spawnPersistentParticles(config);
+}
+
+function destroyParticleEngine() {
+  const layer = document.getElementById('spark-layer');
+  if (layer) {
+    particleState.nodes.forEach((n) => n.remove());
+  }
+  particleState.nodes = [];
+  particleState.running = false;
 }
 
 function launchConfetti(options = {}) {
@@ -159,20 +258,20 @@ function launchConfetti(options = {}) {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const isMobile = viewportWidth <= 640;
-  const count = options.count || (isMobile ? 52 : 88);
+  const count = options.count || (isMobile ? 60 : 110);
   const originX = options.originX ?? viewportWidth * 0.5;
   const originY = options.originY ?? Math.min(240, viewportHeight * 0.34);
-  const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f'];
+  const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f', '#ffffff'];
 
   for (let i = 0; i < count; i += 1) {
     const piece = document.createElement('span');
     piece.className = 'confetti-piece';
     const color = palette[Math.floor(Math.random() * palette.length)];
-    const spread = isMobile ? 220 : 360;
+    const spread = isMobile ? 240 : 420;
     const x1 = originX + (Math.random() - 0.5) * spread;
-    const y1 = originY + 260 + Math.random() * 260;
+    const y1 = originY + 300 + Math.random() * 320;
     const rot = 420 + Math.random() * 820;
-    const dur = 820 + Math.random() * 900;
+    const dur = 760 + Math.random() * 900;
 
     piece.style.background = color;
     piece.style.setProperty('--x0', `${originX}px`);
@@ -181,7 +280,6 @@ function launchConfetti(options = {}) {
     piece.style.setProperty('--y1', `${y1}px`);
     piece.style.setProperty('--rot', `${rot}deg`);
     piece.style.setProperty('--dur', `${dur}ms`);
-    piece.style.transform = `translate3d(${originX}px, ${originY}px, 0)`;
 
     fxLayer.appendChild(piece);
     window.setTimeout(() => piece.remove(), dur + 80);
@@ -190,30 +288,10 @@ function launchConfetti(options = {}) {
 
 function cleanupEffects() {
   const fxLayer = document.getElementById('fx-layer');
-  if (!fxLayer) return;
-  fxLayer.querySelectorAll('.confetti-piece').forEach((piece) => piece.remove());
-}
-
-
-function initSparkles() {
-  if (prefersReducedMotion()) return;
-  const layer = document.getElementById('spark-layer');
-  if (!layer) return;
-
-  const isMobile = window.innerWidth <= 640;
-  const count = isMobile ? 14 : 24;
-  const colors = ['#ff63bf', '#59d7ff', '#ffd84f', '#8cffc1', '#ffffff'];
-
-  for (let i = 0; i < count; i += 1) {
-    const spark = document.createElement('span');
-    spark.className = 'spark';
-    spark.style.left = `${Math.random() * 100}%`;
-    spark.style.bottom = `${-10 - Math.random() * 90}px`;
-    spark.style.color = colors[Math.floor(Math.random() * colors.length)];
-    spark.style.setProperty('--sdur', `${4 + Math.random() * 5}s`);
-    spark.style.animationDelay = `${Math.random() * 4}s`;
-    layer.appendChild(spark);
+  if (fxLayer) {
+    fxLayer.querySelectorAll('.confetti-piece').forEach((piece) => piece.remove());
   }
+  destroyParticleEngine();
 }
 
 function initConfetti() {
@@ -228,15 +306,16 @@ function initConfetti() {
     const rect = ctaPrimary.getBoundingClientRect();
     launchConfetti({
       originX: rect.left + rect.width / 2,
-      originY: rect.top + rect.height / 2
+      originY: rect.top + rect.height / 2,
+      count: window.innerWidth <= 640 ? 68 : 130
     });
   });
 
   if (!prefersReducedMotion() && !welcomeBurstPlayed) {
     welcomeBurstPlayed = true;
     window.setTimeout(() => {
-      launchConfetti({ count: window.innerWidth <= 640 ? 40 : 74, originY: 120 });
-    }, 320);
+      launchConfetti({ count: window.innerWidth <= 640 ? 70 : 140, originY: 140 });
+    }, 280);
   }
 
   window.addEventListener('pagehide', cleanupEffects);
@@ -245,5 +324,5 @@ function initConfetti() {
 loadEvent();
 initRevealAnimation();
 initParallaxOrbs();
-initSparkles();
+initParticleEngine();
 initConfetti();
