@@ -453,10 +453,29 @@ function initConfetti() {
   if (!prefersReducedMotion() && !welcomeBurstPlayed) {
     welcomeBurstPlayed = true;
     window.setTimeout(() => {
-      launchAngledConfetti('top-center');
-      window.setTimeout(() => launchAngledConfetti('bottom-left-diagonal'), 240);
-      window.setTimeout(() => launchAngledConfetti('bottom-right-diagonal'), 480);
-    }, 280);
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const isMobile = vw <= 640;
+      launchConfetti('burst_hard', {
+        originX: vw * 0.5,
+        originY: 110,
+        count: isMobile ? 220 : 520
+      });
+      window.setTimeout(() => {
+        launchConfetti('burst_hard', {
+          originX: vw * 0.08,
+          originY: vh - 40,
+          count: isMobile ? 180 : 420
+        });
+      }, 220);
+      window.setTimeout(() => {
+        launchConfetti('burst_hard', {
+          originX: vw * 0.92,
+          originY: vh - 40,
+          count: isMobile ? 180 : 420
+        });
+      }, 440);
+    }, 220);
   }
 
   window.addEventListener('pagehide', cleanupEffects);
