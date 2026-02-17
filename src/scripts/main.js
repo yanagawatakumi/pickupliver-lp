@@ -271,9 +271,9 @@ function launchConfetti(options = {}) {
     const color = palette[Math.floor(Math.random() * palette.length)];
     const spread = isMobile ? 520 : 980;
     const x1 = originX + (Math.random() - 0.5) * spread;
-    const y1 = originY + 300 + Math.random() * 320;
+    const y1 = originY + 220 + Math.random() * 260;
     const rot = 420 + Math.random() * 820;
-    const dur = 620 + Math.random() * 700;
+    const dur = 1650 + Math.random() * 1400;
 
     piece.style.background = color;
     piece.style.setProperty('--x0', `${originX}px`);
@@ -326,7 +326,7 @@ function initPeriodicConfetti() {
   burstTimer = window.setInterval(() => {
     launchAngledConfetti(sequence[index % sequence.length]);
     index += 1;
-  }, 3400);
+  }, 4200);
 }
 
 function cleanupEffects() {
