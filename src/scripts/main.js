@@ -5,9 +5,9 @@ let burstTimer = null;
 const effectConfig = {
   mode: 'normal',
   speedLimit: {
-    ambient: { min: 80, max: 130 },
-    burst_soft: { min: 90, max: 140 },
-    burst_hard: { min: 100, max: 155 }
+    ambient: { min: 72, max: 105 },
+    burst_soft: { min: 78, max: 120 },
+    burst_hard: { min: 86, max: 132 }
   }
 };
 
@@ -32,8 +32,10 @@ function clamp(min, value, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-function computeTravelAndDuration(startY, endY, minSpeed, maxSpeed) {
-  const travel = Math.max(160, Math.abs(endY - startY));
+function computeTravelAndDuration(startX, startY, endX, endY, minSpeed, maxSpeed) {
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const travel = Math.max(160, Math.hypot(dx, dy));
   const selectedSpeed = randomIn(minSpeed, maxSpeed);
   const durationSec = travel / selectedSpeed;
   return { travel, speed: selectedSpeed, durationSec };
@@ -217,14 +219,14 @@ function recycleParticle(node) {
   let rot = `${randomIn(120, 520)}deg`;
 
   if (kind === 'particle-ring') {
-    minSpeed = 80;
-    maxSpeed = 115;
+    minSpeed = 68;
+    maxSpeed = 96;
     opa = randomIn(0.30, 0.50);
   }
 
   if (kind === 'particle-shard') {
-    minSpeed = 92;
-    maxSpeed = 125;
+    minSpeed = 74;
+    maxSpeed = 104;
     opa = randomIn(0.40, 0.62);
   }
 
@@ -233,7 +235,7 @@ function recycleParticle(node) {
     maxSpeed *= 1.02;
   }
 
-  const computed = computeTravelAndDuration(y0, y1, minSpeed, maxSpeed);
+  const computed = computeTravelAndDuration(x0, y0, x1, y1, minSpeed, maxSpeed);
   const fixed = clampEffectSpeed(computed.travel, computed.durationSec, minSpeed, maxSpeed);
   debugSpeed(kind, fixed.speed);
 
@@ -308,7 +310,7 @@ function createConfettiPiece(type, options) {
   const rot = `${420 + Math.random() * 820}deg`;
 
   const limits = effectConfig.speedLimit[type];
-  const computed = computeTravelAndDuration(options.originY, y1, limits.min, limits.max);
+  const computed = computeTravelAndDuration(options.originX, options.originY, x1, y1, limits.min, limits.max);
   const fixed = clampEffectSpeed(computed.travel, computed.durationSec, limits.min, limits.max);
   debugSpeed(type, fixed.speed);
 
