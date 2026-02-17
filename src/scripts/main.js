@@ -376,4 +376,4 @@ initRevealAnimation();
 initParallaxOrbs();
 initParticleEngine();
 initConfetti();
-initPeriodicConfetti();
+// initPeriodicConfetti();
