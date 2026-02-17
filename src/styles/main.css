@@ -482,3 +482,133 @@ h2 {
 
   .reveal { opacity: 1; transform: none; }
 }
+
+#spark-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  opacity: 0.75;
+  background: #fff;
+  box-shadow: 0 0 10px currentColor;
+  animation: spark-drift var(--sdur, 6s) linear infinite;
+}
+
+.orbit-badges {
+  position: relative;
+  height: 38px;
+  margin: 8px 0 10px;
+}
+
+.orbit-badges span {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  animation: badge-orbit 6s ease-in-out infinite;
+}
+
+.orbit-badges span:nth-child(2) { animation-delay: .8s; background: #eaffff; }
+.orbit-badges span:nth-child(3) { animation-delay: 1.6s; background: #fff7d8; }
+.orbit-badges span:nth-child(4) { animation-delay: 2.4s; background: #ffe8f8; }
+
+.hero-title {
+  animation: title-pop 900ms cubic-bezier(0.34, 1.56, 0.64, 1) both, neon-flicker 2.8s ease-in-out infinite;
+}
+
+.kicker {
+  animation: kicker-hop 1.6s ease-in-out infinite;
+}
+
+.meta-item {
+  animation: soft-wave 4s ease-in-out infinite;
+}
+
+.meta-item:nth-child(2) { animation-delay: .4s; }
+.meta-item:nth-child(3) { animation-delay: .8s; }
+
+.link-list a {
+  position: relative;
+  overflow: hidden;
+}
+
+.link-list a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 20%, #ffffffaa 50%, transparent 80%);
+  transform: translateX(-120%);
+  transition: transform 420ms ease;
+}
+
+.link-list a:hover::after {
+  transform: translateX(120%);
+}
+
+.card:nth-child(odd) {
+  animation: card-tilt-a 5s ease-in-out infinite;
+}
+
+.card:nth-child(even) {
+  animation: card-tilt-b 5.5s ease-in-out infinite;
+}
+
+@keyframes neon-flicker {
+  0%,100% { text-shadow: 0 2px 0 #fff, 0 0 16px #ff7dcf66; }
+  50% { text-shadow: 0 2px 0 #fff, 0 0 26px #ff56cbcc; }
+}
+
+@keyframes kicker-hop {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes soft-wave {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes badge-orbit {
+  0% { transform: translate(0,0) rotate(-5deg); }
+  25% { transform: translate(80px,-4px) rotate(4deg); }
+  50% { transform: translate(160px,0) rotate(-3deg); }
+  75% { transform: translate(240px,-4px) rotate(5deg); }
+  100% { transform: translate(320px,0) rotate(-5deg); }
+}
+
+@keyframes card-tilt-a {
+  0%,100% { transform: rotate(0deg); }
+  50% { transform: rotate(-0.35deg); }
+}
+
+@keyframes card-tilt-b {
+  0%,100% { transform: rotate(0deg); }
+  50% { transform: rotate(0.35deg); }
+}
+
+@keyframes spark-drift {
+  0% { transform: translateY(0) scale(.9); opacity: 0; }
+  15% { opacity: .9; }
+  100% { transform: translateY(-110vh) scale(1.2); opacity: 0; }
+}
+
+@media (max-width: 920px) {
+  .orbit-badges { display: none; }
+  .card:nth-child(odd), .card:nth-child(even) { animation: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spark { display: none; }
+}

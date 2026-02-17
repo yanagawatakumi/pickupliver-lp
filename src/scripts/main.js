@@ -194,6 +194,28 @@ function cleanupEffects() {
   fxLayer.querySelectorAll('.confetti-piece').forEach((piece) => piece.remove());
 }
 
+
+function initSparkles() {
+  if (prefersReducedMotion()) return;
+  const layer = document.getElementById('spark-layer');
+  if (!layer) return;
+
+  const isMobile = window.innerWidth <= 640;
+  const count = isMobile ? 14 : 24;
+  const colors = ['#ff63bf', '#59d7ff', '#ffd84f', '#8cffc1', '#ffffff'];
+
+  for (let i = 0; i < count; i += 1) {
+    const spark = document.createElement('span');
+    spark.className = 'spark';
+    spark.style.left = `${Math.random() * 100}%`;
+    spark.style.bottom = `${-10 - Math.random() * 90}px`;
+    spark.style.color = colors[Math.floor(Math.random() * colors.length)];
+    spark.style.setProperty('--sdur', `${4 + Math.random() * 5}s`);
+    spark.style.animationDelay = `${Math.random() * 4}s`;
+    layer.appendChild(spark);
+  }
+}
+
 function initConfetti() {
   const ctaPrimary = document.getElementById('cta-primary');
   if (!ctaPrimary) return;
@@ -223,4 +245,5 @@ function initConfetti() {
 loadEvent();
 initRevealAnimation();
 initParallaxOrbs();
+initSparkles();
 initConfetti();
