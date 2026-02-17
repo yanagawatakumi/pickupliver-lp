@@ -1,0 +1,38 @@
+{
+  "eventId": "2026-02-21-pick-up-liver-vol1",
+  "title": "PICK UP LIVER VOL.1",
+  "date": "2026-02-21",
+  "startTime": "16:00",
+  "timezone": "Asia/Tokyo",
+  "venue": "ColorSing 大魔神とーま枠",
+  "hosts": [
+    {
+      "name": "大魔神とーま",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/live?live_id=1911fb37-2653-4a0b-a797-86d47697b83b"
+    },
+    {
+      "name": "がーくん88",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=91910bec-747b-4b6d-9882-8cf363242c7e"
+    }
+  ],
+  "guestLivers": [
+    {"name": "Aya湖", "profileUrl": "https://web.colorsing.com/share/user?user_id=a1c73f0e-3dc7-49f0-ae01-ab9488e0a6d2"},
+    {"name": "Re:N（リン）", "profileUrl": "https://web.colorsing.com/share/user?user_id=974dbf72-121e-4498-b6b9-9fae0c8a90fd"},
+    {"name": "七海ふら", "profileUrl": "https://web.colorsing.com/share/user?user_id=5cb768fc-0561-479c-ba8d-5f95fc978518"},
+    {"name": "ダダッチ", "profileUrl": "https://web.colorsing.com/share/user?user_id=03cc4589-e71b-4b85-ab5c-6c9b883e2644"},
+    {"name": "中山祐真", "profileUrl": "https://web.colorsing.com/share/user?user_id=f7111998-12b8-4446-9dd7-5d1f3d3fa03c"}
+  ],
+  "description": "歌やトークなど盛り沢山。視聴者参加型企画あり。",
+  "cta": {
+    "primaryLabel": "配信を視聴する（とーま）",
+    "primaryUrl": "https://web.colorsing.com/share/live?live_id=1911fb37-2653-4a0b-a797-86d47697b83b",
+    "secondaryLabel": "出演者情報を見る",
+    "secondaryUrl": "#guests"
+  },
+  "assets": {
+    "mainFlyer": "/public/assets/events/2026-02-21-pick-up-liver/flyer-main.jpg",
+    "socialPost": "/public/assets/events/2026-02-21-pick-up-liver/social-post.png"
+  }
+}
