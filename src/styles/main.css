@@ -176,6 +176,16 @@ h1 {
   font-weight: 700;
 }
 
+
+.hero-flyer {
+  width: min(100%, 520px);
+  display: block;
+  margin: 14px auto 8px;
+  border-radius: 14px;
+  border: 3px solid var(--line);
+  box-shadow: 8px 8px 0 #0000001f, 0 0 18px #ff72c17a;
+}
+
 .meta {
   margin-top: 20px;
   display: grid;
@@ -284,7 +294,7 @@ h1 {
 .layout {
   margin-top: 18px;
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
 
@@ -302,21 +312,9 @@ h1 {
   box-shadow: 12px 12px 0 #00000022, 0 0 16px #74deff44;
 }
 
-.flyer-card {
-  grid-row: span 3;
-}
-
 h2 {
   margin: 0 0 14px;
   font-size: clamp(1.3rem, 2.2vw, 2rem);
-}
-
-.flyer {
-  width: min(100%, 620px);
-  display: block;
-  margin-inline: auto;
-  border-radius: 12px;
-  border: 2px solid var(--line);
 }
 
 .chips,
@@ -463,7 +461,6 @@ h2 {
 
 @media (max-width: 920px) {
   .layout { grid-template-columns: 1fr; }
-  .flyer-card { grid-row: auto; }
   .meta { grid-template-columns: 1fr; }
   .slide-pop { transform: translateY(18px) scale(0.98); }
 }
