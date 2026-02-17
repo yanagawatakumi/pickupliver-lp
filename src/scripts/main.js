@@ -1,4 +1,5 @@
 let lastConfettiAt = 0;
+let welcomeBurstPlayed = false;
 
 async function loadEvent() {
   try {
@@ -90,11 +91,14 @@ function applyEvent(event) {
   }
 }
 
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 function initRevealAnimation() {
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const targets = document.querySelectorAll('.reveal');
 
-  if (reduceMotion) {
+  if (prefersReducedMotion()) {
     targets.forEach((target) => target.classList.add('in'));
     return;
   }
@@ -102,13 +106,22 @@ function initRevealAnimation() {
   const observer = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('in');
-          observer.unobserve(entry.target);
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add('in');
+
+        if (entry.target.classList.contains('card')) {
+          const rect = entry.target.getBoundingClientRect();
+          launchConfetti({
+            originX: rect.left + rect.width * 0.2,
+            originY: rect.top + 24,
+            count: window.innerWidth <= 640 ? 14 : 20
+          });
         }
+
+        observer.unobserve(entry.target);
       }
     },
-    { threshold: 0.15 }
+    { threshold: 0.16 }
   );
 
   targets.forEach((target, index) => {
@@ -118,8 +131,7 @@ function initRevealAnimation() {
 }
 
 function initParallaxOrbs() {
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduceMotion) return;
+  if (prefersReducedMotion()) return;
 
   const orbs = document.querySelectorAll('.orb');
   if (!orbs.length) return;
@@ -139,8 +151,7 @@ function initParallaxOrbs() {
 }
 
 function launchConfetti(options = {}) {
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduceMotion) return;
+  if (prefersReducedMotion()) return;
 
   const fxLayer = document.getElementById('fx-layer');
   if (!fxLayer) return;
@@ -148,20 +159,20 @@ function launchConfetti(options = {}) {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const isMobile = viewportWidth <= 640;
-  const count = options.count || (isMobile ? 44 : 72);
+  const count = options.count || (isMobile ? 52 : 88);
   const originX = options.originX ?? viewportWidth * 0.5;
-  const originY = options.originY ?? Math.min(240, viewportHeight * 0.35);
-  const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff'];
+  const originY = options.originY ?? Math.min(240, viewportHeight * 0.34);
+  const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f'];
 
   for (let i = 0; i < count; i += 1) {
     const piece = document.createElement('span');
     piece.className = 'confetti-piece';
     const color = palette[Math.floor(Math.random() * palette.length)];
-    const spread = isMobile ? 180 : 280;
+    const spread = isMobile ? 220 : 360;
     const x1 = originX + (Math.random() - 0.5) * spread;
-    const y1 = originY + 260 + Math.random() * 240;
-    const rot = 360 + Math.random() * 720;
-    const dur = 900 + Math.random() * 700;
+    const y1 = originY + 260 + Math.random() * 260;
+    const rot = 420 + Math.random() * 820;
+    const dur = 820 + Math.random() * 900;
 
     piece.style.background = color;
     piece.style.setProperty('--x0', `${originX}px`);
@@ -198,6 +209,13 @@ function initConfetti() {
       originY: rect.top + rect.height / 2
     });
   });
+
+  if (!prefersReducedMotion() && !welcomeBurstPlayed) {
+    welcomeBurstPlayed = true;
+    window.setTimeout(() => {
+      launchConfetti({ count: window.innerWidth <= 640 ? 40 : 74, originY: 120 });
+    }, 320);
+  }
 
   window.addEventListener('pagehide', cleanupEffects);
 }
