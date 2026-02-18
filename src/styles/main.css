@@ -113,9 +113,13 @@ body {
   border-bottom: 3px solid var(--line);
   background: linear-gradient(90deg, #ffec64 0%, #ffc1f3 50%, #8ceaff 100%);
   overflow: hidden;
+  position: -webkit-sticky;
   position: sticky;
   top: 0;
   z-index: 45;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .marquee-track {
@@ -123,6 +127,7 @@ body {
   gap: 12px;
   padding: 7px 0;
   width: max-content;
+  min-width: 200%;
 }
 
 .track-a {

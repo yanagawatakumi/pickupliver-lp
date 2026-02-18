@@ -151,7 +151,8 @@ function applyEvent(event) {
     ];
 
     if (labels.length) {
-      const loopLabels = [...labels, ...labels];
+      const minLoops = window.innerWidth <= 640 ? 6 : 4;
+      const loopLabels = Array.from({ length: minLoops }, () => labels).flat();
       marqueeTrackB.textContent = '';
 
       for (const label of loopLabels) {
