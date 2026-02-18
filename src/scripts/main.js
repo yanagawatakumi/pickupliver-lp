@@ -305,17 +305,20 @@ function initShareActions(ctx) {
   const shareLine = document.getElementById('share-line');
   const shareCopy = document.getElementById('share-copy');
 
-  const shareUrl = ctx.detailsUrl || window.location.href;
+  const pageUrl = `${window.location.origin}${window.location.pathname}`;
+  const shareUrl = pageUrl || window.location.href;
+  const shareText = ctx.shareText || '';
+  const sharePayload = shareText ? `${shareText}\n${shareUrl}` : shareUrl;
   const xParams = new URLSearchParams({ text: ctx.shareText, url: shareUrl });
-  const lineParams = new URLSearchParams({ url: shareUrl });
+  const linePayload = encodeURIComponent(sharePayload);
 
   if (shareX) shareX.href = `https://twitter.com/intent/tweet?${xParams.toString()}`;
-  if (shareLine) shareLine.href = `https://social-plugins.line.me/lineit/share?${lineParams.toString()}`;
+  if (shareLine) shareLine.href = `https://line.me/R/msg/text/?${linePayload}`;
 
   if (shareCopy) {
     shareCopy.onclick = async () => {
-      const copied = await copyToClipboard(shareUrl);
-      showCopyToast(copied ? 'URLをコピーしました' : 'コピーに失敗しました');
+      const copied = await copyToClipboard(sharePayload);
+      showCopyToast(copied ? '共有文をコピーしました' : 'コピーに失敗しました');
     };
   }
 }
