@@ -593,9 +593,9 @@ h2 {
 
 .talent-avatar-wrap {
   position: relative;
-  width: 52px;
-  height: 52px;
-  flex: 0 0 52px;
+  width: 104px;
+  height: 104px;
+  flex: 0 0 104px;
 }
 
 .talent-avatar {
