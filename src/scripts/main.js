@@ -11,7 +11,8 @@ const effectConfig = {
   speedLimit: {
     ambient: { min: 72, max: 105 },
     burst_soft: { min: 78, max: 120 },
-    burst_hard: { min: 86, max: 132 }
+    burst_hard: { min: 86, max: 132 },
+    burst_launch: { min: 92, max: 148 }
   }
 };
 
@@ -612,7 +613,10 @@ function createConfettiPiece(type, options) {
 
   const spread = options.spread;
   const x1 = options.originX + (Math.random() - 0.5) * spread;
-  const y1 = options.originY + options.dropBase + Math.random() * options.dropRandom;
+  const yTravel = options.rise
+    ? -(options.riseBase + Math.random() * options.riseRandom)
+    : options.dropBase + Math.random() * options.dropRandom;
+  const y1 = options.originY + yTravel;
   const rot = `${420 + Math.random() * 820}deg`;
 
   const limits = effectConfig.speedLimit[type];
@@ -657,6 +661,15 @@ function launchConfetti(type = 'burst_soft', options = {}) {
     burstOptions.spread = isMobile ? 460 : 980;
     burstOptions.dropBase = 220;
     burstOptions.dropRandom = 320;
+  }
+
+  if (type === 'burst_launch') {
+    burstOptions.spread = isMobile ? 220 : 420;
+    burstOptions.rise = true;
+    burstOptions.riseBase = isMobile ? 220 : 360;
+    burstOptions.riseRandom = isMobile ? 220 : 360;
+    burstOptions.dropBase = 0;
+    burstOptions.dropRandom = 0;
   }
 
   for (let i = 0; i < count; i += 1) {
@@ -745,25 +758,21 @@ function initConfetti() {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const isMobile = vw <= 640;
-      launchConfetti('burst_hard', {
-        originX: vw * 0.5,
-        originY: 110,
-        count: isMobile ? 220 : 520
-      });
-      window.setTimeout(() => {
-        launchConfetti('burst_hard', {
-          originX: vw * 0.08,
-          originY: vh - 40,
-          count: isMobile ? 180 : 420
-        });
-      }, 220);
-      window.setTimeout(() => {
-        launchConfetti('burst_hard', {
-          originX: vw * 0.92,
-          originY: vh - 40,
-          count: isMobile ? 180 : 420
-        });
-      }, 440);
+      const launchFromBottom = (xRatio, delay, count) => {
+        window.setTimeout(() => {
+          launchConfetti('burst_launch', {
+            originX: vw * xRatio,
+            originY: vh - 24,
+            count
+          });
+        }, delay);
+      };
+
+      launchFromBottom(0.08, 0, isMobile ? 260 : 560);
+      launchFromBottom(0.5, 90, isMobile ? 320 : 680);
+      launchFromBottom(0.92, 180, isMobile ? 260 : 560);
+      launchFromBottom(0.24, 300, isMobile ? 220 : 480);
+      launchFromBottom(0.76, 390, isMobile ? 220 : 480);
     }, 220);
   }
 
