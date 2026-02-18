@@ -370,9 +370,9 @@ function launchConfetti(type = 'burst_soft', options = {}) {
   };
 
   if (type === 'burst_hard') {
-    burstOptions.spread = isMobile ? 240 : 420;
-    burstOptions.dropBase = 170;
-    burstOptions.dropRandom = 190;
+    burstOptions.spread = isMobile ? 460 : 980;
+    burstOptions.dropBase = 220;
+    burstOptions.dropRandom = 320;
   }
 
   for (let i = 0; i < count; i += 1) {
