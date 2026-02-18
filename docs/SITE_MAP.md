@@ -1,8 +1,12 @@
-# Site Map (single event LP)
+# Site Map（現行）
 
-- `/` トップ（イベント概要、フライヤー、出演者、視聴導線）
-- `/#guests` ゲスト紹介
-- `/#faq` よくある質問（任意）
-- `/#sns` SNS導線
+- `/`
+- ヒーロー（タイトル、フライヤー、CTA、メタイベント情報）
+- `#hosts` MC
+- `#guests` GUEST LIVER
+- `#sns` ColorSingプロフィール
 
-次回イベント時は `src/data/event.json` と `public/assets/events/<new-event-id>/` を差し替える。
+## 実装メモ
+- ページは1枚構成（ルーティングなし）
+- イベントデータは `src/data/event.json` を参照
+- 演出は `src/styles/main.css` と `src/scripts/main.js` で制御
