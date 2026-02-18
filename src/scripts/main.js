@@ -398,14 +398,11 @@ function applyEvent(event) {
   const time = document.getElementById('event-time');
   const venue = document.getElementById('event-venue');
   const ctaPrimary = document.getElementById('cta-primary');
-  const ctaSecondary = document.getElementById('cta-secondary');
   const mainFlyer = document.getElementById('main-flyer');
   const hostList = document.getElementById('host-list');
   const guestList = document.getElementById('guest-list');
-  const snsList = document.getElementById('sns-list');
   const marqueeTrackB = document.querySelector('.marquee-track.track-b');
   const eventHighlights = document.getElementById('event-highlights');
-  const preCtaMessage = document.getElementById('pre-cta-message');
   const noArchiveNote = document.getElementById('no-archive-note');
   const nextPickupTeaser = document.getElementById('next-pickup-teaser');
   const ctx = getEventContext(event);
@@ -419,11 +416,6 @@ function applyEvent(event) {
   if (ctaPrimary) {
     ctaPrimary.textContent = event.cta.primaryLabel;
     ctaPrimary.href = event.cta.primaryUrl || '#';
-  }
-
-  if (ctaSecondary) {
-    ctaSecondary.textContent = event.cta.secondaryLabel;
-    ctaSecondary.href = event.cta.secondaryUrl || '#guests';
   }
 
   if (mainFlyer && event.assets?.mainFlyer) {
@@ -457,36 +449,12 @@ function applyEvent(event) {
     }
   }
 
-  if (preCtaMessage) {
-    preCtaMessage.textContent = event.cta?.preCtaMessage || '今すぐ予定追加して、見逃しを防ごう。';
-  }
-
   if (noArchiveNote) {
     noArchiveNote.textContent = event.eventNotice?.noArchiveText || 'アーカイブ無し。お見逃しなく！';
   }
 
   if (nextPickupTeaser) {
     nextPickupTeaser.textContent = event.eventNotice?.nextPickupTeaser || '次のPICK UP LIVERに呼ばれるのはあなたかも…？';
-  }
-
-  if (snsList) {
-    snsList.innerHTML = '';
-    const entries = [
-      ...(event.hosts || []).map((v) => ({ label: `${v.name}（${v.role}）`, url: v.profileUrl })),
-      ...(event.guestLivers || []).map((v) => ({ label: `${v.name}（ゲスト）`, url: v.profileUrl }))
-    ];
-
-    for (const item of entries) {
-      if (!item.url) continue;
-      const li = document.createElement('li');
-      const a = document.createElement('a');
-      a.href = item.url;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.textContent = item.label;
-      li.appendChild(a);
-      snsList.appendChild(li);
-    }
   }
 
   if (marqueeTrackB) {
