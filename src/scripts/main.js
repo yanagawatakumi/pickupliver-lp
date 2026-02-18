@@ -1,6 +1,8 @@
 let lastConfettiAt = 0;
 let welcomeBurstPlayed = false;
 let burstTimer = null;
+let marqueeResizeRaf = null;
+const MARQUEE_SPEED_PX_PER_SEC = 72;
 
 const effectConfig = {
   mode: 'normal',
@@ -52,6 +54,48 @@ function clampEffectSpeed(travel, durationSec, minSpeed, maxSpeed) {
 function debugSpeed(tag, value) {
   if (effectConfig.mode !== 'debug') return;
   console.debug(`[effects:${tag}] speed=${value.toFixed(1)} px/s`);
+}
+
+function refreshMarqueeMotion() {
+  const tracks = document.querySelectorAll('.marquee-track');
+  const minHalfWidth = window.innerWidth * 1.2;
+
+  tracks.forEach((track) => {
+    const base = track.dataset.marqueeBase || track.innerHTML;
+    if (!base.trim()) return;
+
+    track.dataset.marqueeBase = base;
+    track.innerHTML = base;
+
+    let repeats = 0;
+    while (track.scrollWidth < minHalfWidth && repeats < 12) {
+      track.insertAdjacentHTML('beforeend', base);
+      repeats += 1;
+    }
+
+    const half = track.innerHTML;
+    track.innerHTML = `${half}${half}`;
+
+    const travel = track.scrollWidth / 2;
+    const durationSec = Math.max(8, travel / MARQUEE_SPEED_PX_PER_SEC);
+    track.style.animationDuration = `${durationSec}s`;
+  });
+}
+
+function initMarqueeMotion() {
+  refreshMarqueeMotion();
+
+  window.addEventListener(
+    'resize',
+    () => {
+      if (marqueeResizeRaf) window.cancelAnimationFrame(marqueeResizeRaf);
+      marqueeResizeRaf = window.requestAnimationFrame(() => {
+        refreshMarqueeMotion();
+        marqueeResizeRaf = null;
+      });
+    },
+    { passive: true }
+  );
 }
 
 async function loadEvent() {
@@ -151,17 +195,19 @@ function applyEvent(event) {
     ];
 
     if (labels.length) {
-      const minLoops = window.innerWidth <= 640 ? 6 : 4;
-      const loopLabels = Array.from({ length: minLoops }, () => labels).flat();
       marqueeTrackB.textContent = '';
 
-      for (const label of loopLabels) {
+      for (const label of labels) {
         const span = document.createElement('span');
         span.textContent = label;
         marqueeTrackB.appendChild(span);
       }
     }
+
+    marqueeTrackB.dataset.marqueeBase = marqueeTrackB.innerHTML;
   }
+
+  refreshMarqueeMotion();
 }
 
 function initRevealAnimation() {
@@ -506,6 +552,7 @@ if (window.location.search.includes('fx=debug')) {
 }
 
 loadEvent();
+initMarqueeMotion();
 initRevealAnimation();
 initParallaxOrbs();
 initParticleEngine();
