@@ -189,14 +189,6 @@ function toUtcCompact(date) {
   return `${y}${m}${d}T${h}${min}${s}Z`;
 }
 
-function escapeIcsText(text) {
-  return String(text || '')
-    .replace(/\\/g, '\\\\')
-    .replace(/\r?\n/g, '\\n')
-    .replace(/,/g, '\\,')
-    .replace(/;/g, '\\;');
-}
-
 function createGoogleCalendarUrl(ctx) {
   if (!ctx.startAt || !ctx.endAt) return '#';
   const params = new URLSearchParams({
@@ -207,6 +199,14 @@ function createGoogleCalendarUrl(ctx) {
     dates: `${toUtcCompact(ctx.startAt)}/${toUtcCompact(ctx.endAt)}`
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function escapeIcsText(text) {
+  return String(text || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\r?\n/g, '\\n')
+    .replace(/,/g, '\\,')
+    .replace(/;/g, '\\;');
 }
 
 function downloadIcs(ctx, eventId = 'event') {
@@ -276,12 +276,10 @@ function showCopyToast(message) {
   }, 1500);
 }
 
-function initShareAndReminder(event, ctx) {
+function initShareActions(ctx) {
   const shareX = document.getElementById('share-x');
   const shareLine = document.getElementById('share-line');
   const shareCopy = document.getElementById('share-copy');
-  const remindGoogle = document.getElementById('remind-google');
-  const remindIcs = document.getElementById('remind-ics');
 
   const shareUrl = ctx.detailsUrl || window.location.href;
   const xParams = new URLSearchParams({ text: ctx.shareText, url: shareUrl });
@@ -289,7 +287,6 @@ function initShareAndReminder(event, ctx) {
 
   if (shareX) shareX.href = `https://twitter.com/intent/tweet?${xParams.toString()}`;
   if (shareLine) shareLine.href = `https://social-plugins.line.me/lineit/share?${lineParams.toString()}`;
-  if (remindGoogle) remindGoogle.href = createGoogleCalendarUrl(ctx);
 
   if (shareCopy) {
     shareCopy.onclick = async () => {
@@ -297,7 +294,12 @@ function initShareAndReminder(event, ctx) {
       showCopyToast(copied ? 'URLをコピーしました' : 'コピーに失敗しました');
     };
   }
+}
 
+function initReminderActions(event, ctx) {
+  const remindGoogle = document.getElementById('remind-google');
+  const remindIcs = document.getElementById('remind-ics');
+  if (remindGoogle) remindGoogle.href = createGoogleCalendarUrl(ctx);
   if (remindIcs) {
     remindIcs.onclick = () => {
       downloadIcs(ctx, event.eventId);
@@ -398,7 +400,8 @@ function applyEvent(event) {
   }
 
   initCountdown(ctx.startAt);
-  initShareAndReminder(event, ctx);
+  initShareActions(ctx);
+  initReminderActions(event, ctx);
   refreshMarqueeMotion();
 }
 
