@@ -438,6 +438,39 @@ function initTalentCardEffects() {
   const cards = document.querySelectorAll('.talent-card.card-pop');
   if (!cards.length) return;
 
+  function launchCardSparkle(card) {
+    if (!card || prefersReducedMotion()) return;
+    if (card.dataset.sparked === '1') return;
+
+    const rect = card.getBoundingClientRect();
+    const isMobile = window.innerWidth <= 640;
+    const baseCount = isMobile
+      ? Math.round(randomIn(16, 22))
+      : Math.round(randomIn(24, 32));
+    const tries = Number(card.dataset.sparkTries || 0);
+    const emitted = launchConfetti('burst_soft', {
+      originX: rect.left + rect.width * 0.7,
+      originY: rect.top + rect.height * 0.42,
+      count: baseCount
+    });
+
+    if (emitted > 0) {
+      card.dataset.sparked = '1';
+      return;
+    }
+
+    if (tries >= 4) {
+      card.dataset.sparked = '1';
+      return;
+    }
+
+    card.dataset.sparkTries = String(tries + 1);
+    window.setTimeout(() => {
+      if (!card.isConnected) return;
+      launchCardSparkle(card);
+    }, 220);
+  }
+
   cards.forEach((card, index) => {
     card.style.transitionDelay = `${Math.min(index * 50, 250)}ms`;
 
@@ -464,6 +497,7 @@ function initTalentCardEffects() {
       const entered = rect.top < vh * 0.92 && rect.bottom > vh * 0.08;
       if (!entered) return;
       card.classList.add('in');
+      launchCardSparkle(card);
     });
 
     const remaining = Array.from(cards).some((card) => !card.classList.contains('in'));
@@ -589,7 +623,7 @@ function initRevealAnimation() {
         if (!entry.isIntersecting) continue;
         entry.target.classList.add('in');
 
-        if (entry.target.classList.contains('card')) {
+        if (entry.target.classList.contains('card') && entry.target.id !== 'hosts' && entry.target.id !== 'guests') {
           const rect = entry.target.getBoundingClientRect();
           launchConfetti('burst_soft', {
             originX: rect.left + rect.width * 0.35,
@@ -829,9 +863,12 @@ function launchConfetti(type = 'burst_soft', options = {}) {
     burstOptions.dropRandom = 0;
   }
 
+  let emitted = 0;
   for (let i = 0; i < count; i += 1) {
-    createConfettiPiece(type, burstOptions);
+    const piece = createConfettiPiece(type, burstOptions);
+    if (piece) emitted += 1;
   }
+  return emitted;
 }
 
 function launchAngledConfetti(pattern = 'top-center') {

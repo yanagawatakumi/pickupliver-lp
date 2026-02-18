@@ -629,9 +629,9 @@ h2 {
   position: absolute;
   top: 0;
   left: -120%;
-  width: 52%;
+  width: 60%;
   height: 100%;
-  background: linear-gradient(115deg, transparent 10%, #ffffffb3 52%, transparent 90%);
+  background: linear-gradient(115deg, transparent 8%, #ffffffcf 50%, transparent 92%);
   transform: skewX(-18deg);
   pointer-events: none;
 }
@@ -646,7 +646,7 @@ h2 {
 }
 
 .talent-card.reveal.in::after {
-  animation: talent-shine 560ms ease 80ms 1;
+  animation: talent-shine 620ms ease 1;
 }
 
 .talent-card:hover,
@@ -910,7 +910,7 @@ h2 {
 
 @keyframes talent-shine {
   0% { left: -120%; }
-  100% { left: 145%; }
+  100% { left: 155%; }
 }
 
 @keyframes grid-pulse {
