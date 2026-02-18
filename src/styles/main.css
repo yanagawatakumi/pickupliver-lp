@@ -736,6 +736,10 @@ h2 {
   font-weight: 700;
 }
 
+.site-footer p {
+  margin: 4px 0;
+}
+
 .reveal {
   opacity: 0;
   transition: opacity 550ms ease, transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -954,6 +958,28 @@ h2 {
     padding-top: 74px;
   }
 
+  .summary {
+    font-size: 1.03rem;
+    line-height: 1.62;
+  }
+
+  .meta {
+    margin-top: 16px;
+    gap: 8px;
+  }
+
+  .meta-item {
+    padding: 9px 10px;
+  }
+
+  .countdown-text {
+    font-size: clamp(1.28rem, 6.4vw, 1.8rem);
+  }
+
+  .orbit-badges {
+    margin-bottom: 12px;
+  }
+
   h1 {
     margin-top: 8px;
   }
@@ -1011,6 +1037,7 @@ h2 {
   .highlights li { width: fit-content; max-width: 100%; }
   .confetti-piece { width: 8px; height: 14px; }
   .marquee-track span { font-size: 0.7rem; }
+  .site-footer { margin-bottom: 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

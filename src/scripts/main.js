@@ -9,6 +9,11 @@ const SHARE_PAGE_URL = 'https://pickupliver-lp.pages.dev/';
 
 const effectConfig = {
   mode: 'normal',
+  perf: {
+    particleScale: 1,
+    confettiScale: 1,
+    maxConfettiNodes: 520
+  },
   speedLimit: {
     ambient: { min: 72, max: 105 },
     burst_soft: { min: 78, max: 120 },
@@ -58,6 +63,39 @@ function clampEffectSpeed(travel, durationSec, minSpeed, maxSpeed) {
 function debugSpeed(tag, value) {
   if (effectConfig.mode !== 'debug') return;
   console.debug(`[effects:${tag}] speed=${value.toFixed(1)} px/s`);
+}
+
+function getDevicePerfTier() {
+  const memory = Number(navigator.deviceMemory || 0);
+  const cores = Number(navigator.hardwareConcurrency || 0);
+  const reducedMotion = prefersReducedMotion();
+
+  if (reducedMotion || (memory && memory <= 4) || (cores && cores <= 4)) {
+    return 'low';
+  }
+  return 'normal';
+}
+
+function initPerfProfile() {
+  const tier = getDevicePerfTier();
+  if (tier === 'low') {
+    effectConfig.perf.particleScale = 0.62;
+    effectConfig.perf.confettiScale = 0.55;
+    effectConfig.perf.maxConfettiNodes = 320;
+    return;
+  }
+
+  effectConfig.perf.particleScale = 0.8;
+  effectConfig.perf.confettiScale = 0.75;
+  effectConfig.perf.maxConfettiNodes = 460;
+}
+
+function scaledCount(base) {
+  return Math.max(8, Math.round(base * effectConfig.perf.particleScale));
+}
+
+function scaledConfettiCount(base) {
+  return Math.max(16, Math.round(base * effectConfig.perf.confettiScale));
 }
 
 function refreshMarqueeMotion() {
@@ -526,14 +564,23 @@ function initParallaxOrbs() {
   const orbs = document.querySelectorAll('.orb');
   if (!orbs.length) return;
 
+  let scrollRaf = null;
+  let latestY = window.scrollY;
+
+  const applyParallax = () => {
+    scrollRaf = null;
+    orbs.forEach((orb) => {
+      const depth = Number(orb.dataset.depth || 0.02);
+      orb.style.transform = `translate3d(0, ${latestY * depth}px, 0)`;
+    });
+  };
+
   window.addEventListener(
     'scroll',
     () => {
-      const y = window.scrollY;
-      orbs.forEach((orb) => {
-        const depth = Number(orb.dataset.depth || 0.02);
-        orb.style.transform = `translate3d(0, ${y * depth}px, 0)`;
-      });
+      latestY = window.scrollY;
+      if (scrollRaf) return;
+      scrollRaf = window.requestAnimationFrame(applyParallax);
     },
     { passive: true }
   );
@@ -638,12 +685,12 @@ function spawnPersistentParticles(config) {
 }
 
 function initParticleEngine() {
-  if (prefersReducedMotion()) return;
+  if (prefersReducedMotion() || particleState.running) return;
 
   const isMobile = window.innerWidth <= 640;
   const config = isMobile
-    ? { spark: 62, shard: 0, ring: 18 }
-    : { spark: 136, shard: 0, ring: 48 };
+    ? { spark: scaledCount(62), shard: 0, ring: scaledCount(18) }
+    : { spark: scaledCount(136), shard: 0, ring: scaledCount(48) };
 
   particleState.running = true;
   spawnPersistentParticles(config);
@@ -663,6 +710,7 @@ function destroyParticleEngine() {
 function createConfettiPiece(type, options) {
   const fxLayer = document.getElementById('fx-layer');
   if (!fxLayer) return null;
+  if (fxLayer.childElementCount >= effectConfig.perf.maxConfettiNodes) return null;
 
   const palette = ['#ff4fab', '#00c2ff', '#ffd62e', '#ff9b2f', '#8a5dff', '#57ff9f', '#ffffff'];
   const color = palette[Math.floor(Math.random() * palette.length)];
@@ -701,7 +749,8 @@ function launchConfetti(type = 'burst_soft', options = {}) {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const isMobile = viewportWidth <= 640;
-  const count = options.count || (isMobile ? 120 : 240);
+  const baseCount = options.count || (isMobile ? 120 : 240);
+  const count = scaledConfettiCount(baseCount);
   const originX = options.originX ?? viewportWidth * 0.5;
   const originY = options.originY ?? Math.min(240, viewportHeight * 0.34);
 
@@ -804,7 +853,7 @@ function initConfetti() {
     launchConfetti('burst_hard', {
       originX: rect.left + rect.width / 2,
       originY: rect.top + rect.height / 2,
-      count: window.innerWidth <= 640 ? 120 : 240
+      count: window.innerWidth <= 640 ? 96 : 180
     });
   });
 
@@ -824,25 +873,37 @@ function initConfetti() {
         }, delay);
       };
 
-      launchFromBottom(0.08, 0, isMobile ? 260 : 560);
-      launchFromBottom(0.5, 90, isMobile ? 320 : 680);
-      launchFromBottom(0.92, 180, isMobile ? 260 : 560);
-      launchFromBottom(0.24, 300, isMobile ? 220 : 480);
-      launchFromBottom(0.76, 390, isMobile ? 220 : 480);
+      launchFromBottom(0.08, 0, isMobile ? 150 : 300);
+      launchFromBottom(0.5, 90, isMobile ? 180 : 360);
+      launchFromBottom(0.92, 180, isMobile ? 150 : 300);
+      launchFromBottom(0.24, 300, isMobile ? 130 : 260);
+      launchFromBottom(0.76, 390, isMobile ? 130 : 260);
     }, 220);
   }
 
   window.addEventListener('pagehide', cleanupEffects);
 }
 
+function initVisibilityOptimizations() {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      destroyParticleEngine();
+      return;
+    }
+    initParticleEngine();
+  });
+}
+
 if (window.location.search.includes('fx=debug')) {
   setEffectsMode('debug');
 }
 
+initPerfProfile();
 loadEvent();
 initMarqueeMotion();
 initRevealAnimation();
 initParallaxOrbs();
 initParticleEngine();
 initConfetti();
+initVisibilityOptimizations();
 // initPeriodicConfetti();
