@@ -247,7 +247,7 @@ h1 {
 
 .highlights {
   list-style: none;
-  margin: 0 0 10px;
+  margin: 14px 0 10px;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
@@ -261,6 +261,8 @@ h1 {
   padding: 4px 12px;
   font-size: 0.82rem;
   font-weight: 900;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
 }
 
 .pre-cta-message,
@@ -271,6 +273,8 @@ h1 {
   padding: 8px 10px;
   font-size: 0.9rem;
   font-weight: 900;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
 }
 
 .pre-cta-message {
@@ -278,6 +282,7 @@ h1 {
 }
 
 .no-archive-note {
+  margin-top: 12px;
   background: linear-gradient(125deg, #fff7d8 0%, #ffecec 100%);
   color: #7d2c2c;
 }
@@ -295,6 +300,8 @@ h1 {
   margin: 0;
   font-size: clamp(1rem, 2.3vw, 1.2rem);
   font-weight: 700;
+  line-height: 1.5;
+  white-space: pre-line;
 }
 
 .orbit-badges {
@@ -347,6 +354,12 @@ h1 {
   color: #7a5965;
 }
 
+#event-venue {
+  display: block;
+  line-height: 1.42;
+  padding-bottom: 2px;
+}
+
 .cta-row {
   margin-top: 18px;
   display: flex;
@@ -367,6 +380,7 @@ h1 {
   font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.05em;
+  line-height: 1.35;
   color: #7a5965;
 }
 
@@ -401,7 +415,8 @@ h1 {
   align-items: center;
   justify-content: center;
   font-family: inherit;
-  line-height: 1.2;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
   text-decoration: none;
   border: 2px solid var(--line);
   border-radius: 14px;
@@ -430,6 +445,11 @@ button.btn {
   color: #fff;
   min-height: 96px;
   box-shadow: 4px 4px 0 #8a295f, 0 0 14px #ff67bd88;
+}
+
+#cta-primary {
+  line-height: 1.45;
+  padding-bottom: 14px;
 }
 
 .btn-sub {

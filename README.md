@@ -24,3 +24,11 @@
 1. `src/data/event.json` を次回イベント情報に更新
 2. `public/assets/events/<event-id>/` に画像を追加
 3. 必要なら演出強度を調整
+
+## Change Verification Rule
+- すべての修正後に、必ず検証を実施してから報告・反映すること。
+- 最低限の検証項目:
+- `src/scripts/main.js` の構文チェック（`node --check`）
+- `src/data/event.json` の構文チェック（`python3 -m json.tool`）
+- 変更箇所の画面確認（SPを優先、必要に応じてPCも確認）
+- 差分確認（意図したファイル・行のみ変更されていること）
