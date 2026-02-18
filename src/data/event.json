@@ -26,7 +26,7 @@
   ],
   "description": "歌やトークなど盛り沢山。視聴者参加型企画あり。",
   "cta": {
-    "primaryLabel": "配信を視聴する（とーま）",
+    "primaryLabel": "配信を視聴する",
     "primaryUrl": "https://web.colorsing.com/share/live?live_id=1911fb37-2653-4a0b-a797-86d47697b83b",
     "secondaryLabel": "出演者情報を見る",
     "secondaryUrl": "#guests"
