@@ -936,9 +936,10 @@ h2 {
   .slide-pop { transform: translateY(18px) scale(0.98); }
   .orbit-badges {
     display: block;
-    height: 32px;
+    height: 40px;
     margin: 6px 0 10px;
-    overflow: hidden;
+    overflow: visible;
+    z-index: 2;
   }
   .orbit-badges span {
     font-size: 0.66rem;
