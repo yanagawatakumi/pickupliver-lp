@@ -84,6 +84,7 @@ function applyEvent(event) {
   const hostList = document.getElementById('host-list');
   const guestList = document.getElementById('guest-list');
   const snsList = document.getElementById('sns-list');
+  const marqueeTrackB = document.querySelector('.marquee-track.track-b');
 
   if (title) title.textContent = event.title;
   if (summary) summary.textContent = event.description;
@@ -140,6 +141,24 @@ function applyEvent(event) {
       a.textContent = item.label;
       li.appendChild(a);
       snsList.appendChild(li);
+    }
+  }
+
+  if (marqueeTrackB) {
+    const labels = [
+      ...(event.hosts || []).map((host) => `MC: ${host.name}`),
+      ...(event.guestLivers || []).map((guest) => `ゲスト: ${guest.name}`)
+    ];
+
+    if (labels.length) {
+      const loopLabels = [...labels, ...labels];
+      marqueeTrackB.textContent = '';
+
+      for (const label of loopLabels) {
+        const span = document.createElement('span');
+        span.textContent = label;
+        marqueeTrackB.appendChild(span);
+      }
     }
   }
 }
