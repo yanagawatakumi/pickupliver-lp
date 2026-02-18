@@ -660,12 +660,14 @@ h2 {
   }
 
   .sticker-a {
+    top: 18px;
     right: 12px;
     animation: swing 2.8s ease-in-out infinite;
   }
 
   .sticker-b {
-    right: 122px;
+    top: 52px;
+    right: 12px;
     bottom: auto;
     animation: swing 3.1s ease-in-out infinite reverse;
   }
