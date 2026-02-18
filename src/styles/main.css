@@ -448,6 +448,7 @@ button.btn {
 }
 
 #cta-primary {
+  width: 100%;
   line-height: 1.45;
   padding-bottom: 14px;
 }
