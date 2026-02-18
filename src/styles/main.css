@@ -634,8 +634,30 @@ h2 {
 }
 
 @media (max-width: 640px) {
-  .hero { padding: 20px; }
-  .sticker { position: static; display: inline-block; margin-top: 8px; margin-right: 8px; }
+  .hero { padding: 20px; padding-top: 86px; }
+
+  .sticker {
+    position: absolute;
+    right: 12px;
+    margin: 0;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    line-height: 1;
+    z-index: 4;
+    transform: rotate(0deg);
+  }
+
+  .sticker-a {
+    top: 12px;
+    animation: swing 2.8s ease-in-out infinite;
+  }
+
+  .sticker-b {
+    top: 44px;
+    bottom: auto;
+    animation: swing 3.1s ease-in-out infinite reverse;
+  }
+
   .btn { width: 100%; text-align: center; }
   .confetti-piece { width: 8px; height: 14px; }
   .marquee-track span { font-size: 0.7rem; }
