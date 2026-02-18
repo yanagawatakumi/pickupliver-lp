@@ -4,7 +4,6 @@ let burstTimer = null;
 let marqueeResizeRaf = null;
 let countdownTimer = null;
 let copyToastTimer = null;
-let talentCardObserver = null;
 const MARQUEE_SPEED_PX_PER_SEC = 72;
 const SHARE_PAGE_URL = 'https://pickupliver-lp.pages.dev/';
 
@@ -454,26 +453,34 @@ function initTalentCardEffects() {
     return;
   }
 
-  if (talentCardObserver) {
-    talentCardObserver.disconnect();
-    talentCardObserver = null;
+  let revealRaf = null;
+
+  const revealVisibleCards = () => {
+    revealRaf = null;
+    const vh = window.innerHeight;
+    cards.forEach((card) => {
+      if (card.classList.contains('in')) return;
+      const rect = card.getBoundingClientRect();
+      const entered = rect.top < vh * 0.92 && rect.bottom > vh * 0.08;
+      if (!entered) return;
+      card.classList.add('in');
+    });
+
+    const remaining = Array.from(cards).some((card) => !card.classList.contains('in'));
+    if (!remaining) {
+      window.removeEventListener('scroll', queueReveal, { passive: true });
+      window.removeEventListener('resize', queueReveal, { passive: true });
+    }
+  };
+
+  function queueReveal() {
+    if (revealRaf) return;
+    revealRaf = window.requestAnimationFrame(revealVisibleCards);
   }
 
-  talentCardObserver = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        entry.target.classList.add('in');
-        talentCardObserver.unobserve(entry.target);
-      }
-    },
-    { threshold: 0.2 }
-  );
-
-  cards.forEach((card) => {
-    if (card.classList.contains('in')) return;
-    talentCardObserver.observe(card);
-  });
+  queueReveal();
+  window.addEventListener('scroll', queueReveal, { passive: true });
+  window.addEventListener('resize', queueReveal, { passive: true });
 }
 
 function applyEvent(event) {
