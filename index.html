@@ -55,10 +55,30 @@
         </div>
       </div>
 
+      <div id="countdown" class="countdown-panel" aria-live="polite">
+        <p class="countdown-label">配信開始まで</p>
+        <p id="countdown-text" class="countdown-text">--日 --:--:--</p>
+      </div>
       <div class="cta-row">
         <a id="cta-primary" class="btn btn-main pulse" href="#" target="_blank" rel="noopener noreferrer">配信を視聴する</a>
         <a id="cta-secondary" class="btn btn-sub" href="#guests">出演者情報を見る</a>
       </div>
+      <div class="action-block share-actions">
+        <p class="action-title">シェアする</p>
+        <div class="action-row">
+          <a id="share-x" class="btn btn-share" href="#" target="_blank" rel="noopener noreferrer">X</a>
+          <a id="share-line" class="btn btn-share" href="#" target="_blank" rel="noopener noreferrer">LINE</a>
+          <button id="share-copy" class="btn btn-copy" type="button">URLをコピー</button>
+        </div>
+      </div>
+      <div class="action-block reminder-actions">
+        <p class="action-title">予定に追加</p>
+        <div class="action-row">
+          <button id="remind-ics" class="btn btn-remind" type="button">Apple/Outlook</button>
+          <a id="remind-google" class="btn btn-remind" href="#" target="_blank" rel="noopener noreferrer">Google</a>
+        </div>
+      </div>
+      <p id="copy-toast" class="copy-toast" role="status" aria-live="polite">URLをコピーしました</p>
 
       <div class="sticker sticker-a">VOL.1</div>
       <div class="sticker sticker-b">LET'S GO!</div>

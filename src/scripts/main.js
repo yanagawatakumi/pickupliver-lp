@@ -2,6 +2,8 @@ let lastConfettiAt = 0;
 let welcomeBurstPlayed = false;
 let burstTimer = null;
 let marqueeResizeRaf = null;
+let countdownTimer = null;
+let copyToastTimer = null;
 const MARQUEE_SPEED_PX_PER_SEC = 72;
 
 const effectConfig = {
@@ -116,6 +118,195 @@ function formatDateJP(isoDate) {
   return `${year}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}(${weekdays[date.getDay()]})`;
 }
 
+function toIsoDateTime(dateText, timeText, timezone) {
+  if (!dateText) return null;
+  const hasTime = typeof timeText === 'string' && /^\d{1,2}:\d{2}$/.test(timeText);
+  const timePart = hasTime ? timeText : '00:00';
+  if (timezone === 'Asia/Tokyo') {
+    return `${dateText}T${timePart}:00+09:00`;
+  }
+  return `${dateText}T${timePart}:00`;
+}
+
+function parseDateSafe(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getEventContext(event) {
+  const fallbackStartIso = toIsoDateTime(event.date, event.startTime, event.timezone);
+  const startAt = parseDateSafe(event.reminder?.startAtIso || fallbackStartIso);
+  const endFallback = startAt ? new Date(startAt.getTime() + 2 * 60 * 60 * 1000) : null;
+  const endAt = parseDateSafe(event.reminder?.endAtIso) || endFallback;
+  const detailsUrl = event.reminder?.detailsUrl || event.cta?.primaryUrl || window.location.href;
+  const shareText = event.share?.messageTemplate || `${event.title}\n${formatDateJP(event.date)} ${event.startTime} START\n${event.venue}`;
+  return {
+    startAt,
+    endAt,
+    detailsUrl,
+    shareText,
+    reminderTitle: event.reminder?.title || event.title,
+    reminderDescription: event.reminder?.description || event.description,
+    reminderLocation: event.reminder?.location || event.venue
+  };
+}
+
+function formatCountdown(ms) {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+  return `${String(days).padStart(2, '0')}日 ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function initCountdown(startAt) {
+  const countdownText = document.getElementById('countdown-text');
+  if (!countdownText || !startAt) return;
+
+  if (countdownTimer) {
+    window.clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+
+  const render = () => {
+    const diff = startAt.getTime() - Date.now();
+    countdownText.textContent = diff > 0 ? formatCountdown(diff) : '配信中';
+  };
+
+  render();
+  countdownTimer = window.setInterval(render, 1000);
+}
+
+function toUtcCompact(date) {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  const h = String(date.getUTCHours()).padStart(2, '0');
+  const min = String(date.getUTCMinutes()).padStart(2, '0');
+  const s = String(date.getUTCSeconds()).padStart(2, '0');
+  return `${y}${m}${d}T${h}${min}${s}Z`;
+}
+
+function createGoogleCalendarUrl(ctx) {
+  if (!ctx.startAt || !ctx.endAt) return '#';
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: ctx.reminderTitle,
+    details: `${ctx.reminderDescription}\n${ctx.detailsUrl}`,
+    location: ctx.reminderLocation,
+    dates: `${toUtcCompact(ctx.startAt)}/${toUtcCompact(ctx.endAt)}`
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function escapeIcsText(text) {
+  return String(text || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\r?\n/g, '\\n')
+    .replace(/,/g, '\\,')
+    .replace(/;/g, '\\;');
+}
+
+function downloadIcs(ctx, eventId = 'event') {
+  if (!ctx.startAt || !ctx.endAt) return;
+  const uid = `${eventId}-${ctx.startAt.getTime()}@pickupliver`;
+  const dtstamp = toUtcCompact(new Date());
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//PICK UP LIVER//LP Reminder//JA',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART:${toUtcCompact(ctx.startAt)}`,
+    `DTEND:${toUtcCompact(ctx.endAt)}`,
+    `SUMMARY:${escapeIcsText(ctx.reminderTitle)}`,
+    `DESCRIPTION:${escapeIcsText(`${ctx.reminderDescription}\n${ctx.detailsUrl}`)}`,
+    `LOCATION:${escapeIcsText(ctx.reminderLocation)}`,
+    `URL:${escapeIcsText(ctx.detailsUrl)}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ];
+  const content = `${lines.join('\r\n')}\r\n`;
+  const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${eventId || 'event'}-reminder.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function copyToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      console.warn('Clipboard API failed, fallback to textarea copy', error);
+    }
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  const ok = document.execCommand('copy');
+  textarea.remove();
+  return ok;
+}
+
+function showCopyToast(message) {
+  const copyToast = document.getElementById('copy-toast');
+  if (!copyToast) return;
+  copyToast.textContent = message;
+  copyToast.classList.add('show');
+  if (copyToastTimer) window.clearTimeout(copyToastTimer);
+  copyToastTimer = window.setTimeout(() => {
+    copyToast.classList.remove('show');
+  }, 1500);
+}
+
+function initShareActions(ctx) {
+  const shareX = document.getElementById('share-x');
+  const shareLine = document.getElementById('share-line');
+  const shareCopy = document.getElementById('share-copy');
+
+  const shareUrl = ctx.detailsUrl || window.location.href;
+  const xParams = new URLSearchParams({ text: ctx.shareText, url: shareUrl });
+  const lineParams = new URLSearchParams({ url: shareUrl });
+
+  if (shareX) shareX.href = `https://twitter.com/intent/tweet?${xParams.toString()}`;
+  if (shareLine) shareLine.href = `https://social-plugins.line.me/lineit/share?${lineParams.toString()}`;
+
+  if (shareCopy) {
+    shareCopy.onclick = async () => {
+      const copied = await copyToClipboard(shareUrl);
+      showCopyToast(copied ? 'URLをコピーしました' : 'コピーに失敗しました');
+    };
+  }
+}
+
+function initReminderActions(event, ctx) {
+  const remindGoogle = document.getElementById('remind-google');
+  const remindIcs = document.getElementById('remind-ics');
+  if (remindGoogle) remindGoogle.href = createGoogleCalendarUrl(ctx);
+  if (remindIcs) {
+    remindIcs.onclick = () => {
+      downloadIcs(ctx, event.eventId);
+    };
+  }
+}
+
 function applyEvent(event) {
   const title = document.getElementById('event-title');
   const summary = document.getElementById('event-summary');
@@ -129,6 +320,7 @@ function applyEvent(event) {
   const guestList = document.getElementById('guest-list');
   const snsList = document.getElementById('sns-list');
   const marqueeTrackB = document.querySelector('.marquee-track.track-b');
+  const ctx = getEventContext(event);
 
   if (title) title.textContent = event.title;
   if (summary) summary.textContent = event.description;
@@ -207,6 +399,9 @@ function applyEvent(event) {
     marqueeTrackB.dataset.marqueeBase = marqueeTrackB.innerHTML;
   }
 
+  initCountdown(ctx.startAt);
+  initShareActions(ctx);
+  initReminderActions(event, ctx);
   refreshMarqueeMotion();
 }
 
@@ -497,6 +692,11 @@ function cleanupEffects() {
   }
 
   destroyParticleEngine();
+
+  if (countdownTimer) {
+    window.clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
 }
 
 function initConfetti() {
