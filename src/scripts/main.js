@@ -5,6 +5,7 @@ let marqueeResizeRaf = null;
 let countdownTimer = null;
 let copyToastTimer = null;
 const MARQUEE_SPEED_PX_PER_SEC = 72;
+const SHARE_PAGE_URL = 'https://pickupliver-lp.pages.dev/';
 
 const effectConfig = {
   mode: 'normal',
@@ -305,8 +306,7 @@ function initShareActions(ctx) {
   const shareLine = document.getElementById('share-line');
   const shareCopy = document.getElementById('share-copy');
 
-  const pageUrl = `${window.location.origin}${window.location.pathname}`;
-  const shareUrl = pageUrl || window.location.href;
+  const shareUrl = SHARE_PAGE_URL;
   const shareText = ctx.shareText || '';
   const sharePayload = shareText ? `${shareText}\n${shareUrl}` : shareUrl;
   const xParams = new URLSearchParams({ text: ctx.shareText, url: shareUrl });
