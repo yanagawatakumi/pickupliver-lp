@@ -59,6 +59,16 @@
         <p class="countdown-label">配信開始まで</p>
         <p id="countdown-text" class="countdown-text">--日 --:--:--</p>
       </div>
+      <ul id="event-highlights" class="highlights" aria-label="視聴メリット"></ul>
+      <p id="pre-cta-message" class="pre-cta-message" role="note"></p>
+      <p id="no-archive-note" class="no-archive-note" role="note"></p>
+      <div class="action-block reminder-actions">
+        <p class="action-title">予定に追加</p>
+        <div class="action-row">
+          <button id="remind-ics" class="btn btn-remind" type="button">Apple/Outlook</button>
+          <a id="remind-google" class="btn btn-remind" href="#" target="_blank" rel="noopener noreferrer">Google</a>
+        </div>
+      </div>
       <div class="cta-row">
         <a id="cta-primary" class="btn btn-main pulse" href="#" target="_blank" rel="noopener noreferrer">配信を視聴する</a>
         <a id="cta-secondary" class="btn btn-sub" href="#guests">出演者情報を見る</a>
@@ -69,13 +79,6 @@
           <a id="share-x" class="btn btn-share" href="#" target="_blank" rel="noopener noreferrer">X</a>
           <a id="share-line" class="btn btn-share" href="#" target="_blank" rel="noopener noreferrer">LINE</a>
           <button id="share-copy" class="btn btn-copy" type="button">URLをコピー</button>
-        </div>
-      </div>
-      <div class="action-block reminder-actions">
-        <p class="action-title">予定に追加</p>
-        <div class="action-row">
-          <button id="remind-ics" class="btn btn-remind" type="button">Apple/Outlook</button>
-          <a id="remind-google" class="btn btn-remind" href="#" target="_blank" rel="noopener noreferrer">Google</a>
         </div>
       </div>
       <p id="copy-toast" class="copy-toast" role="status" aria-live="polite">URLをコピーしました</p>
@@ -89,12 +92,13 @@
     <main class="layout">
       <section id="hosts" class="card reveal slide-pop">
         <h2>MC</h2>
-        <ul id="host-list" class="chips"></ul>
+        <ul id="host-list" class="talent-grid"></ul>
       </section>
 
       <section id="guests" class="card reveal fade-up">
         <h2>GUEST LIVER</h2>
-        <ul id="guest-list" class="chips"></ul>
+        <ul id="guest-list" class="talent-grid"></ul>
+        <p id="next-pickup-teaser" class="next-pickup-teaser" role="note"></p>
       </section>
 
       <section id="sns" class="card reveal zoom-pop">

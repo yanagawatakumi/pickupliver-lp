@@ -331,6 +331,66 @@ function initReminderActions(event, ctx) {
   }
 }
 
+function createTalentCard(person, roleLabel) {
+  const li = document.createElement('li');
+  li.className = 'talent-card';
+
+  const avatarWrap = document.createElement('span');
+  avatarWrap.className = 'talent-avatar-wrap';
+
+  const avatarImg = document.createElement('img');
+  avatarImg.className = 'talent-avatar';
+  avatarImg.alt = `${person.name}のアイコン`;
+  avatarImg.loading = 'lazy';
+  avatarImg.decoding = 'async';
+
+  const avatarFallback = document.createElement('span');
+  avatarFallback.className = 'talent-avatar-fallback';
+  avatarFallback.textContent = String(person.name || '?').trim().slice(0, 1) || '?';
+
+  avatarWrap.appendChild(avatarImg);
+  avatarWrap.appendChild(avatarFallback);
+
+  if (person.avatarUrl) {
+    avatarImg.src = person.avatarUrl;
+    avatarImg.addEventListener('load', () => {
+      avatarWrap.classList.add('loaded');
+    });
+    avatarImg.addEventListener('error', () => {
+      avatarWrap.classList.remove('loaded');
+    });
+  }
+
+  const meta = document.createElement('div');
+  meta.className = 'talent-meta';
+
+  const name = document.createElement('p');
+  name.className = 'talent-name';
+  name.textContent = person.name || '出演者';
+  meta.appendChild(name);
+
+  if (roleLabel) {
+    const role = document.createElement('p');
+    role.className = 'talent-role';
+    role.textContent = roleLabel;
+    meta.appendChild(role);
+  }
+
+  if (person.profileUrl) {
+    const link = document.createElement('a');
+    link.className = 'talent-link';
+    link.href = person.profileUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = 'プロフィールを見る';
+    meta.appendChild(link);
+  }
+
+  li.appendChild(avatarWrap);
+  li.appendChild(meta);
+  return li;
+}
+
 function applyEvent(event) {
   const title = document.getElementById('event-title');
   const summary = document.getElementById('event-summary');
@@ -344,6 +404,10 @@ function applyEvent(event) {
   const guestList = document.getElementById('guest-list');
   const snsList = document.getElementById('sns-list');
   const marqueeTrackB = document.querySelector('.marquee-track.track-b');
+  const eventHighlights = document.getElementById('event-highlights');
+  const preCtaMessage = document.getElementById('pre-cta-message');
+  const noArchiveNote = document.getElementById('no-archive-note');
+  const nextPickupTeaser = document.getElementById('next-pickup-teaser');
   const ctx = getEventContext(event);
 
   if (title) title.textContent = event.title;
@@ -369,19 +433,40 @@ function applyEvent(event) {
   if (hostList) {
     hostList.innerHTML = '';
     for (const host of event.hosts || []) {
-      const li = document.createElement('li');
-      li.textContent = `${host.role}: ${host.name}`;
-      hostList.appendChild(li);
+      hostList.appendChild(createTalentCard(host, host.role));
     }
   }
 
   if (guestList) {
     guestList.innerHTML = '';
     for (const guest of event.guestLivers || []) {
-      const li = document.createElement('li');
-      li.textContent = guest.name;
-      guestList.appendChild(li);
+      guestList.appendChild(createTalentCard(guest, 'ゲスト'));
     }
+  }
+
+  if (eventHighlights) {
+    eventHighlights.innerHTML = '';
+    const highlights = (event.highlights && event.highlights.length)
+      ? event.highlights
+      : ['参加型企画あり', 'MC×ゲストのコラボ', 'ここだけのトーク'];
+
+    for (const item of highlights.slice(0, 3)) {
+      const li = document.createElement('li');
+      li.textContent = item;
+      eventHighlights.appendChild(li);
+    }
+  }
+
+  if (preCtaMessage) {
+    preCtaMessage.textContent = event.cta?.preCtaMessage || '今すぐ予定追加して、見逃しを防ごう。';
+  }
+
+  if (noArchiveNote) {
+    noArchiveNote.textContent = event.eventNotice?.noArchiveText || 'アーカイブ無し。お見逃しなく！';
+  }
+
+  if (nextPickupTeaser) {
+    nextPickupTeaser.textContent = event.eventNotice?.nextPickupTeaser || '次のPICK UP LIVERに呼ばれるのはあなたかも…？';
   }
 
   if (snsList) {
