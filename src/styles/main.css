@@ -135,7 +135,7 @@ body {
 }
 
 .track-b {
-  animation: marquee-rev 11s linear infinite;
+  animation: marquee-rev 14s linear infinite;
   opacity: 0.9;
   border-top: 2px solid #0000001f;
 }
