@@ -195,6 +195,29 @@ h1 {
   text-shadow: 0 2px 0 #fff, 0 0 18px #ff7dcf66;
 }
 
+.countdown-panel {
+  margin: 10px 0 14px;
+  padding: 10px 14px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(120deg, #fff6c9 0%, #ffe7f6 52%, #dffdff 100%);
+  box-shadow: 4px 4px 0 #0000001a;
+}
+
+.countdown-label {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: #7a5965;
+}
+
+.countdown-text {
+  margin: 4px 0 0;
+  font-size: clamp(1.02rem, 2.2vw, 1.2rem);
+  font-weight: 900;
+}
+
 .hero-flyer {
   width: min(100%, 520px);
   display: block;
@@ -267,6 +290,13 @@ h1 {
   flex-wrap: wrap;
 }
 
+.share-remind-row {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -298,6 +328,47 @@ h1 {
   background: #fff;
   color: var(--ink);
   box-shadow: 4px 4px 0 #4b6e7f;
+}
+
+.btn-share {
+  background: linear-gradient(125deg, #ffffff 0%, #f5f8ff 100%);
+  color: var(--ink);
+  box-shadow: 4px 4px 0 #4f5488;
+}
+
+.btn-copy {
+  background: linear-gradient(125deg, #fffef1 0%, #f3fff1 100%);
+  color: var(--ink);
+  box-shadow: 4px 4px 0 #507e56;
+  font-family: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.btn-remind {
+  background: linear-gradient(125deg, #eaf9ff 0%, #ffffff 100%);
+  color: var(--ink);
+  box-shadow: 4px 4px 0 #356b8f;
+}
+
+.copy-toast {
+  margin: 10px 0 0;
+  display: inline-block;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  padding: 4px 12px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 220ms ease, transform 220ms ease;
+  pointer-events: none;
+}
+
+.copy-toast.show {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .sticker {
@@ -684,6 +755,7 @@ h2 {
   }
 
   .btn { width: 100%; text-align: center; }
+  .share-remind-row { gap: 8px; }
   .confetti-piece { width: 8px; height: 14px; }
   .marquee-track span { font-size: 0.7rem; }
 }
