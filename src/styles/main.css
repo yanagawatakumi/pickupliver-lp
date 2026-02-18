@@ -214,7 +214,7 @@ h1 {
 
 .countdown-text {
   margin: 4px 0 0;
-  font-size: clamp(1.02rem, 2.2vw, 1.2rem);
+  font-size: clamp(1.24rem, 2.8vw, 1.58rem);
   font-weight: 900;
 }
 
