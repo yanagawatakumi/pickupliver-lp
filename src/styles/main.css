@@ -648,12 +648,14 @@ h2 {
   }
 
   .sticker-a {
-    top: 12px;
+    top: 82px;
+    right: 12px;
     animation: swing 2.8s ease-in-out infinite;
   }
 
   .sticker-b {
-    top: 44px;
+    top: 82px;
+    right: 126px;
     bottom: auto;
     animation: swing 3.1s ease-in-out infinite reverse;
   }
