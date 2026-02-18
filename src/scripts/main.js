@@ -4,6 +4,7 @@ let burstTimer = null;
 let marqueeResizeRaf = null;
 let countdownTimer = null;
 let copyToastTimer = null;
+let talentCardObserver = null;
 const MARQUEE_SPEED_PX_PER_SEC = 72;
 const SHARE_PAGE_URL = 'https://pickupliver-lp.pages.dev/';
 
@@ -374,7 +375,9 @@ function initReminderActions(event, ctx) {
 
 function createTalentCard(person, roleLabel) {
   const li = document.createElement('li');
-  li.className = 'talent-card';
+  li.className = 'talent-card reveal card-pop';
+  const isGuest = typeof roleLabel === 'string' && roleLabel.includes('ゲスト');
+  li.classList.add(isGuest ? 'role-guest' : 'role-mc');
 
   const avatarWrap = document.createElement('span');
   avatarWrap.className = 'talent-avatar-wrap';
@@ -430,6 +433,47 @@ function createTalentCard(person, roleLabel) {
   li.appendChild(avatarWrap);
   li.appendChild(meta);
   return li;
+}
+
+function initTalentCardEffects() {
+  const cards = document.querySelectorAll('.talent-card.card-pop');
+  if (!cards.length) return;
+
+  cards.forEach((card, index) => {
+    card.style.transitionDelay = `${Math.min(index * 50, 250)}ms`;
+
+    card.onpointerup = () => {
+      if (prefersReducedMotion()) return;
+      card.classList.add('is-tapped');
+      window.setTimeout(() => card.classList.remove('is-tapped'), 170);
+    };
+  });
+
+  if (prefersReducedMotion()) {
+    cards.forEach((card) => card.classList.add('in'));
+    return;
+  }
+
+  if (talentCardObserver) {
+    talentCardObserver.disconnect();
+    talentCardObserver = null;
+  }
+
+  talentCardObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add('in');
+        talentCardObserver.unobserve(entry.target);
+      }
+    },
+    { threshold: 0.2 }
+  );
+
+  cards.forEach((card) => {
+    if (card.classList.contains('in')) return;
+    talentCardObserver.observe(card);
+  });
 }
 
 function applyEvent(event) {
@@ -521,6 +565,7 @@ function applyEvent(event) {
   initShareActions(ctx);
   initReminderActions(event, ctx);
   refreshMarqueeMotion();
+  initTalentCardEffects();
 }
 
 function initRevealAnimation() {
