@@ -5,31 +5,59 @@
   "startTime": "16:00",
   "timezone": "Asia/Tokyo",
   "venue": "ColorSing 大魔神とーま枠",
+  "highlights": [
+    "参加型企画あり",
+    "MC×ゲストのコラボ",
+    "ここだけのトーク"
+  ],
   "hosts": [
     {
       "name": "大魔神とーま",
       "role": "MC",
-      "profileUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b"
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=1911fb37-2653-4a0b-a797-86d47697b83b",
+      "avatarUrl": "https://api.dicebear.com/9.x/initials/svg?seed=%E5%A4%A7%E9%AD%94%E7%A5%9E%E3%81%A8%E3%83%BC%E3%81%BE"
     },
     {
       "name": "がーくん88",
       "role": "MC",
-      "profileUrl": "https://web.colorsing.com/share/user?user_id=91910bec-747b-4b6d-9882-8cf363242c7e"
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=91910bec-747b-4b6d-9882-8cf363242c7e",
+      "avatarUrl": "https://api.dicebear.com/9.x/initials/svg?seed=%E3%81%8C%E3%83%BC%E3%81%8F%E3%82%9388"
     }
   ],
   "guestLivers": [
-    {"name": "Aya湖", "profileUrl": "https://web.colorsing.com/share/user?user_id=a1c73f0e-3dc7-49f0-ae01-ab9488e0a6d2"},
-    {"name": "Re:N（リン）", "profileUrl": "https://web.colorsing.com/share/user?user_id=974dbf72-121e-4498-b6b9-9fae0c8a90fd"},
-    {"name": "七海ふら", "profileUrl": "https://web.colorsing.com/share/user?user_id=5cb768fc-0561-479c-ba8d-5f95fc978518"},
-    {"name": "ダダッチ", "profileUrl": "https://web.colorsing.com/share/user?user_id=03cc4589-e71b-4b85-ab5c-6c9b883e2644"},
-    {"name": "中山祐真", "profileUrl": "https://web.colorsing.com/share/user?user_id=f7111998-12b8-4446-9dd7-5d1f3d3fa03c"}
+    {
+      "name": "Aya湖",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=a1c73f0e-3dc7-49f0-ae01-ab9488e0a6d2",
+      "avatarUrl": "https://api.dicebear.com/9.x/initials/svg?seed=Aya%E6%B9%96"
+    },
+    {
+      "name": "Re:N（リン）",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=974dbf72-121e-4498-b6b9-9fae0c8a90fd",
+      "avatarUrl": "https://api.dicebear.com/9.x/initials/svg?seed=Re%3AN%EF%BC%88%E3%83%AA%E3%83%B3%EF%BC%89"
+    },
+    {
+      "name": "七海ふら",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=5cb768fc-0561-479c-ba8d-5f95fc978518",
+      "avatarUrl": "https://api.dicebear.com/9.x/initials/svg?seed=%E4%B8%83%E6%B5%B7%E3%81%B5%E3%82%89"
+    },
+    {
+      "name": "ダダッチ",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=03cc4589-e71b-4b85-ab5c-6c9b883e2644",
+      "avatarUrl": "https://api.dicebear.com/9.x/initials/svg?seed=%E3%83%80%E3%83%80%E3%83%83%E3%83%81"
+    },
+    {
+      "name": "中山祐真",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=f7111998-12b8-4446-9dd7-5d1f3d3fa03c",
+      "avatarUrl": "https://api.dicebear.com/9.x/initials/svg?seed=%E4%B8%AD%E5%B1%B1%E7%A5%90%E7%9C%9F"
+    }
   ],
   "description": "歌やトークなど盛り沢山。視聴者参加型企画あり。",
   "cta": {
     "primaryLabel": "配信を視聴する",
-    "primaryUrl": "https://web.colorsing.com/share/live?live_id=1911fb37-2653-4a0b-a797-86d47697b83b",
+    "primaryUrl": "https://web.colorsing.com/share/user?user_id=1911fb37-2653-4a0b-a797-86d47697b83b",
     "secondaryLabel": "出演者情報を見る",
-    "secondaryUrl": "#guests"
+    "secondaryUrl": "#guests",
+    "preCtaMessage": "今すぐ予定追加して、見逃しを防ごう。"
   },
   "share": {
     "messageTemplate": "PICK UP LIVER VOL.1 開催！\n2026.02.21(土) 16:00 START\nColorSing 大魔神とーま枠で配信します。"
@@ -41,6 +69,10 @@
     "description": "歌やトークなど盛り沢山。視聴者参加型企画あり。",
     "location": "ColorSing 大魔神とーま枠",
     "detailsUrl": "https://web.colorsing.com/share/live?live_id=1911fb37-2653-4a0b-a797-86d47697b83b"
+  },
+  "eventNotice": {
+    "noArchiveText": "アーカイブ無し。お見逃しなく！",
+    "nextPickupTeaser": "次のPICK UP LIVERに呼ばれるのはあなたかも…？"
   },
   "assets": {
     "mainFlyer": "/public/assets/events/2026-02-21-pick-up-liver/flyer-main.jpg",
