@@ -934,7 +934,16 @@ h2 {
   .meta { grid-template-columns: 1fr; }
   .talent-grid { grid-template-columns: 1fr; }
   .slide-pop { transform: translateY(18px) scale(0.98); }
-  .orbit-badges { display: none; }
+  .orbit-badges {
+    display: block;
+    height: 32px;
+    margin: 6px 0 10px;
+    overflow: hidden;
+  }
+  .orbit-badges span {
+    font-size: 0.66rem;
+    padding: 2px 7px;
+  }
 }
 
 @media (max-width: 640px) {
