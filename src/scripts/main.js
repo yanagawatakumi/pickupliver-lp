@@ -161,7 +161,7 @@ function formatCountdown(ms) {
   return `${String(days).padStart(2, '0')}日 ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-function initCountdown(startAt) {
+function initCountdown(startAt, endAt) {
   const countdownText = document.getElementById('countdown-text');
   if (!countdownText || !startAt) return;
 
@@ -170,9 +170,32 @@ function initCountdown(startAt) {
     countdownTimer = null;
   }
 
+  const setPlainText = (text) => {
+    countdownText.classList.remove('countdown-text--ended');
+    countdownText.textContent = text;
+  };
+
+  const setEndedText = () => {
+    countdownText.classList.add('countdown-text--ended');
+    countdownText.innerHTML = '<span class="countdown-ended-main">THANK YOU FOR WATCHING!!</span><span class="countdown-ended-sub">次回の開催をお待ちください！</span>';
+  };
+
   const render = () => {
-    const diff = startAt.getTime() - Date.now();
-    countdownText.textContent = diff > 0 ? formatCountdown(diff) : '配信中';
+    const now = Date.now();
+    const startAtMs = startAt.getTime();
+    const endAtMs = endAt ? endAt.getTime() : null;
+
+    if (now < startAtMs) {
+      setPlainText(formatCountdown(startAtMs - now));
+      return;
+    }
+
+    if (!endAtMs || now < endAtMs) {
+      setPlainText('NOW ON AIR');
+      return;
+    }
+
+    setEndedText();
   };
 
   render();
@@ -399,7 +422,7 @@ function applyEvent(event) {
     marqueeTrackB.dataset.marqueeBase = marqueeTrackB.innerHTML;
   }
 
-  initCountdown(ctx.startAt);
+  initCountdown(ctx.startAt, ctx.endAt);
   initShareActions(ctx);
   initReminderActions(event, ctx);
   refreshMarqueeMotion();
