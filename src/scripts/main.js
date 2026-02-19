@@ -4,8 +4,10 @@ let burstTimer = null;
 let marqueeResizeRaf = null;
 let countdownTimer = null;
 let copyToastTimer = null;
+let bgmHintTimer = null;
 const MARQUEE_SPEED_PX_PER_SEC = 72;
 const SHARE_PAGE_URL = 'https://pickupliver-lp.pages.dev/';
+const BGM_HINT_DISMISSED_KEY = 'bgmHintDismissed';
 
 const effectConfig = {
   mode: 'normal',
@@ -983,6 +985,77 @@ function initVisibilityOptimizations() {
   });
 }
 
+function initBgmControls() {
+  const audio = document.getElementById('bgm-audio');
+  const toggle = document.getElementById('bgm-toggle');
+  const hint = document.getElementById('bgm-hint');
+  const hintClose = document.getElementById('bgm-hint-close');
+  if (!audio || !toggle) return;
+
+  const hideHint = (persist = true) => {
+    if (!hint || hint.classList.contains('is-hidden')) return;
+    hint.classList.add('is-hidden');
+    if (bgmHintTimer) {
+      window.clearTimeout(bgmHintTimer);
+      bgmHintTimer = null;
+    }
+    if (!persist) return;
+    try {
+      window.localStorage.setItem(BGM_HINT_DISMISSED_KEY, '1');
+    } catch (_) {
+      // Ignore storage access failure.
+    }
+  };
+
+  const dismissed = (() => {
+    try {
+      return window.localStorage.getItem(BGM_HINT_DISMISSED_KEY) === '1';
+    } catch (_) {
+      return false;
+    }
+  })();
+
+  if (hint) {
+    if (dismissed) {
+      hint.classList.add('is-hidden');
+    } else {
+      bgmHintTimer = window.setTimeout(() => hideHint(true), 6000);
+    }
+  }
+
+  if (hintClose) {
+    hintClose.addEventListener('click', () => hideHint(true));
+  }
+
+  const syncButton = (playing) => {
+    toggle.classList.toggle('is-playing', playing);
+    toggle.textContent = playing ? 'BGM OFF' : 'BGM ON';
+    toggle.setAttribute('aria-pressed', playing ? 'true' : 'false');
+    toggle.setAttribute('aria-label', playing ? 'BGMを停止' : 'BGMを再生');
+  };
+
+  syncButton(false);
+
+  toggle.addEventListener('click', async () => {
+    hideHint(true);
+    if (!audio.paused) {
+      audio.pause();
+      audio.currentTime = 0;
+      syncButton(false);
+      return;
+    }
+
+    audio.volume = 0.15;
+    try {
+      await audio.play();
+      syncButton(true);
+    } catch (error) {
+      console.warn('BGM playback was blocked', error);
+      syncButton(false);
+    }
+  });
+}
+
 if (window.location.search.includes('fx=debug')) {
   setEffectsMode('debug');
 }
@@ -995,4 +1068,5 @@ initParallaxOrbs();
 initParticleEngine();
 initConfetti();
 initVisibilityOptimizations();
+initBgmControls();
 // initPeriodicConfetti();

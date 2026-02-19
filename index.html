@@ -124,6 +124,15 @@
       <p>Built by <a href="https://voicetree.co.jp/" target="_blank" rel="noopener noreferrer">voice tree</a></p>
     </footer>
 
+    <div id="bgm-ui" aria-live="polite">
+      <div id="bgm-hint" class="bgm-hint" role="note">
+        <p class="bgm-hint-text">番組オリジナルソングの再生はこちら</p>
+        <button id="bgm-hint-close" class="bgm-hint-close" type="button" aria-label="案内を閉じる">×</button>
+      </div>
+      <button id="bgm-toggle" class="bgm-toggle" type="button" aria-pressed="false" aria-label="BGMを再生">BGM ON</button>
+    </div>
+    <audio id="bgm-audio" src="/public/assets/common/bgm/pick-up-original.mp3" preload="none" loop></audio>
+
     <script src="/src/scripts/main.js"></script>
   </body>
 </html>
