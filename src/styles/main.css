@@ -229,18 +229,26 @@ h1 {
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  width: 100%;
   font-size: clamp(1rem, 3.6vw, 1.2rem);
   line-height: 1.25;
   white-space: normal;
 }
 
 .countdown-ended-main {
+  display: block;
+  max-width: 100%;
   font-weight: 900;
+  font-size: clamp(0.98rem, 4.8vw, 1.16rem);
   letter-spacing: 0.01em;
-  white-space: nowrap;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .countdown-ended-sub {
+  text-align: center;
   font-size: 0.9em;
   font-weight: 800;
 }
