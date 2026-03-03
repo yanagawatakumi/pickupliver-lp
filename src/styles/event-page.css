@@ -150,6 +150,42 @@ body {
   white-space: nowrap;
 }
 
+.episodes-link {
+  position: fixed;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  left: calc(14px + env(safe-area-inset-left));
+  z-index: 95;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: linear-gradient(125deg, #fffef1 0%, #ecf7ff 100%);
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 4px 4px 0 #46507a;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.episodes-link:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 6px 6px 0 #46507a;
+  filter: saturate(1.06);
+}
+
+.episodes-link:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.episodes-link:focus-visible {
+  outline: 3px solid #1c62e5;
+  outline-offset: 3px;
+}
+
 .hero,
 .layout,
 .site-footer {
@@ -1206,6 +1242,11 @@ h2 {
 }
 
 @media (max-width: 640px) {
+  .episodes-link {
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: calc(10px + env(safe-area-inset-left));
+  }
+
   .hero {
     padding: 20px;
     padding-top: 74px;

@@ -4,110 +4,402 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="PICK UP LIVER の各回アーカイブ一覧" />
-    <title>PICK UP LIVER Episodes</title>
+    <title>PICK UP LIVER 過去回一覧</title>
     <style>
       :root {
-        --bg: #f7f9ff;
-        --card: #ffffff;
-        --ink: #1d2433;
-        --line: #d0d8f0;
-        --accent: #2d6bff;
+        --bg1: #fff9c2;
+        --bg2: #b5f8ff;
+        --bg3: #ffd2ed;
+        --ink: #251a1e;
+        --line: #1d1218;
+        --card: #fff;
       }
+
       * { box-sizing: border-box; }
+
       body {
         margin: 0;
         color: var(--ink);
         font-family: "M PLUS Rounded 1c", "Hiragino Kaku Gothic ProN", sans-serif;
-        background: radial-gradient(circle at 10% 0%, #eef3ff, transparent 40%), radial-gradient(circle at 100% 100%, #fff1f8, transparent 35%), var(--bg);
+        background:
+          radial-gradient(circle at 15% 10%, var(--bg1), transparent 40%),
+          radial-gradient(circle at 90% 20%, var(--bg2), transparent 38%),
+          radial-gradient(circle at 30% 80%, var(--bg3), transparent 42%),
+          linear-gradient(140deg, #fffefa 0%, #f4feff 50%, #fff4fb 100%);
+        overflow-x: hidden;
       }
+
+      .noise {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.03;
+        background-image: radial-gradient(#000 0.5px, transparent 0.5px);
+        background-size: 4px 4px;
+        z-index: -5;
+      }
+
+      .flash-grid {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: linear-gradient(#ffffff00 95%, #ffffff55 95%), linear-gradient(90deg, #ffffff00 95%, #ffffff55 95%);
+        background-size: 34px 34px;
+        opacity: 0.16;
+        mix-blend-mode: soft-light;
+        z-index: -4;
+      }
+
+      .orb {
+        position: fixed;
+        border-radius: 999px;
+        filter: blur(2px);
+        opacity: 0.48;
+        z-index: -2;
+      }
+
+      .orb-a {
+        width: 170px;
+        height: 170px;
+        background: #ff4fab;
+        top: -34px;
+        left: -28px;
+      }
+
+      .orb-b {
+        width: 210px;
+        height: 210px;
+        background: #00c2ff;
+        right: -70px;
+        top: 25%;
+      }
+
+      .orb-c {
+        width: 200px;
+        height: 200px;
+        background: #ffd62e;
+        left: 18%;
+        bottom: -80px;
+      }
+
+      .marquee-wrap {
+        width: 100%;
+        border-top: 3px solid var(--line);
+        border-bottom: 3px solid var(--line);
+        background: linear-gradient(90deg, #ffec64 0%, #ffc1f3 50%, #8ceaff 100%);
+        overflow: hidden;
+      }
+
+      .marquee-track {
+        display: flex;
+        gap: 10px;
+        width: max-content;
+        padding: 7px 0;
+        animation: marquee 24s linear infinite;
+      }
+
+      .marquee-track span {
+        border: 2px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        padding: 2px 12px;
+        font-size: 0.78rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
       .wrap {
-        width: min(920px, calc(100% - 32px));
-        margin: 24px auto 48px;
+        width: min(980px, calc(100% - 28px));
+        margin: 18px auto 42px;
+        display: grid;
+        gap: 14px;
       }
+
+      h1,
+      h2 {
+        font-family: "Yusei Magic", "M PLUS Rounded 1c", sans-serif;
+      }
+
+      .hero-card {
+        background: linear-gradient(130deg, #fff 0%, #fff7fd 45%, #f7ffff 100%);
+        border: 4px solid var(--line);
+        border-radius: 24px;
+        padding: 22px;
+        position: relative;
+        box-shadow: 10px 10px 0 #00000020, 0 0 0 4px #ffffff, 0 0 24px #ff70c182;
+      }
+
+      .kicker {
+        margin: 0;
+        display: inline-block;
+        background: #ffd62e;
+        border: 2px solid var(--line);
+        border-radius: 999px;
+        padding: 4px 12px;
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        font-size: 0.78rem;
+      }
+
       h1 {
-        margin: 0 0 8px;
-        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        margin: 10px 0 8px;
+        font-size: clamp(1.8rem, 5.4vw, 3rem);
+        line-height: 1.08;
       }
+
       .lead {
-        margin: 0 0 18px;
-        opacity: 0.8;
+        margin: 0;
+        font-size: clamp(0.95rem, 2.2vw, 1.08rem);
+        line-height: 1.5;
       }
+
+      .hero-actions {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        border: 2px solid var(--line);
+        border-radius: 14px;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        font-weight: 900;
+        line-height: 1.25;
+      }
+
+      .btn-latest {
+        background: linear-gradient(135deg, #ff4fab 0%, #ff7a4f 100%);
+        color: #fff;
+        box-shadow: 4px 4px 0 #8a295f;
+      }
+
+      .btn-archive {
+        background: #fff;
+        color: var(--ink);
+        box-shadow: 4px 4px 0 #4b6e7f;
+      }
+
+      .list-card {
+        background: var(--card);
+        border: 3px solid var(--line);
+        border-radius: 20px;
+        padding: 16px;
+        box-shadow: 8px 8px 0 #0000001a;
+      }
+
       .archive-list {
         list-style: none;
         margin: 0;
         padding: 0;
         display: grid;
-        gap: 12px;
+        gap: 10px;
       }
+
       .archive-item {
-        background: var(--card);
-        border: 1px solid var(--line);
+        border: 2px solid var(--line);
         border-radius: 14px;
+        background: linear-gradient(125deg, #fffef6 0%, #fff9ff 100%);
         overflow: hidden;
+        box-shadow: 4px 4px 0 #00000016;
       }
+
       .archive-link {
         display: block;
         color: inherit;
         text-decoration: none;
-        padding: 16px;
+        padding: 12px;
       }
+
       .archive-link:hover {
-        background: #f5f8ff;
+        background: linear-gradient(125deg, #fff5d0 0%, #ecfdff 100%);
       }
+
       .archive-head {
         display: flex;
         gap: 10px;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
       }
+
       .archive-head h2 {
         margin: 0;
         font-size: clamp(1rem, 2.5vw, 1.2rem);
       }
+
       .badge-row {
         display: flex;
         gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
       }
+
       .badge {
         border-radius: 999px;
         padding: 2px 8px;
-        font-size: 0.72rem;
-        font-weight: 700;
-        border: 1px solid #b9c8f3;
-        background: #eaf0ff;
+        font-size: 0.7rem;
+        font-weight: 900;
+        border: 2px solid var(--line);
+        background: #fff;
       }
+
       .badge.latest {
-        border-color: #8ea8ff;
         background: #dce6ff;
         color: #0b38b8;
       }
+
       .badge.state {
-        border-color: #f2bfd4;
         background: #ffedf5;
         color: #8f2e53;
       }
+
       .archive-meta {
-        margin: 10px 0 0;
-        font-size: 0.84rem;
+        margin: 8px 0 0;
+        font-size: 0.82rem;
         color: #4a587a;
       }
+
+      .guest-preview {
+        margin-top: 10px;
+        border-radius: 12px;
+        padding: 8px 9px;
+      }
+
+      .guest-heading {
+        margin: 0 0 7px;
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        color: #7a5965;
+      }
+
+      .guest-rows {
+        display: grid;
+        gap: 8px;
+      }
+
+      .guest-row {
+        display: flex;
+        gap: 8px;
+      }
+
+      .guest-row.is-centered {
+        justify-content: center;
+      }
+
+      .guest-item {
+        flex: 0 0 calc((100% - 16px) / 3);
+        max-width: calc((100% - 16px) / 3);
+        text-align: center;
+      }
+
+      .guest-avatar {
+        width: min(86px, 100%);
+        aspect-ratio: 1 / 1;
+        border-radius: 999px;
+        border: 2px solid var(--line);
+        object-fit: cover;
+        display: block;
+        margin: 0 auto;
+        background: #fff;
+      }
+
+      .guest-avatar-fallback {
+        background: linear-gradient(140deg, #fff6c9 0%, #ffe4f4 100%);
+      }
+
+      .guest-name {
+        margin: 5px 0 0;
+        font-size: 0.76rem;
+        font-weight: 900;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+      }
+
       .error {
         margin: 12px 0 0;
         color: #a1282e;
-        font-weight: 700;
+        font-weight: 900;
+      }
+
+      @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+
+      @media (max-width: 640px) {
+        .hero-card {
+          padding: 18px;
+        }
+
+        .archive-link {
+          padding: 10px;
+        }
+
+        .archive-head {
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .badge-row {
+          justify-content: flex-start;
+        }
+
+        .btn {
+          width: 100%;
+        }
+
+        .guest-item {
+          flex-basis: calc((100% - 12px) / 3);
+          max-width: calc((100% - 12px) / 3);
+        }
+
+        .guest-avatar {
+          width: min(72px, 100%);
+        }
       }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800;900&family=Yusei+Magic&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <div class="noise"></div>
+    <div class="flash-grid" aria-hidden="true"></div>
+    <div class="orb orb-a" aria-hidden="true"></div>
+    <div class="orb orb-b" aria-hidden="true"></div>
+    <div class="orb orb-c" aria-hidden="true"></div>
+
+    <div class="marquee-wrap" aria-hidden="true">
+      <div class="marquee-track">
+        <span>PICK UP LIVER</span><span>ARCHIVE</span><span>PAST EPISODES</span><span>CHECK NOW</span>
+        <span>PICK UP LIVER</span><span>ARCHIVE</span><span>PAST EPISODES</span><span>CHECK NOW</span>
+        <span>PICK UP LIVER</span><span>ARCHIVE</span><span>PAST EPISODES</span><span>CHECK NOW</span>
+        <span>PICK UP LIVER</span><span>ARCHIVE</span><span>PAST EPISODES</span><span>CHECK NOW</span>
+      </div>
+    </div>
+
     <main class="wrap">
-      <h1>PICK UP LIVER</h1>
-      <p class="lead">公開中・過去回ページの一覧です。</p>
-      <ul id="events-list" class="archive-list"></ul>
-      <p id="events-error" class="error" hidden></p>
+      <section class="hero-card">
+        <p class="kicker">PICK UP LIVER ARCHIVE</p>
+        <h1>過去回一覧</h1>
+        <p class="lead">過去の配信回をまとめて見返せます。気になる回をタップして詳細ページへ進んでください。</p>
+        <div class="hero-actions">
+          <a class="btn btn-latest" href="/">最新回へ</a>
+        </div>
+      </section>
+
+      <section class="list-card">
+        <ul id="events-list" class="archive-list"></ul>
+        <p id="events-error" class="error" hidden></p>
+      </section>
     </main>
+
     <script src="/src/scripts/events-index.js"></script>
   </body>
 </html>
