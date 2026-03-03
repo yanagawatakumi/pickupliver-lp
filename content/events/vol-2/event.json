@@ -1,0 +1,89 @@
+{
+  "eventId": "2026-03-14-pick-up-liver-vol2",
+  "title": "PICK UP LIVER VOL.2",
+  "date": "2026-03-14",
+  "startTime": "16:00",
+  "timezone": "Asia/Tokyo",
+  "venue": "ColorSing 大魔神とーま枠",
+  "highlights": [
+    "参加型企画あり",
+    "MC×ゲストのコラボ",
+    "ここだけのトーク"
+  ],
+  "hosts": [
+    {
+      "name": "大魔神とーま",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/thoma.jpg"
+    },
+    {
+      "name": "がーくん88",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=91910bec-747b-4b6d-9882-8cf363242c7e",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/ga-kun88.jpg"
+    }
+  ],
+  "guestLivers": [
+    {
+      "name": "momoko&なち",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/momoko&なち.JPG",
+      "profileLinks": [
+        {
+          "label": "momoko",
+          "url": "https://web.colorsing.com/share/user?user_id=b842da5b-8cea-4671-8796-6b02c259346b"
+        },
+        {
+          "label": "なち",
+          "url": "https://web.colorsing.com/share/user?user_id=ad286101-2c5c-4fb9-b712-cd5cfaf324d4"
+        }
+      ]
+    },
+    {
+      "name": "団長です。",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=8d2c6898-b2b1-41af-8a16-e61e9d536d34",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/団長です。.JPG"
+    },
+    {
+      "name": "junok",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=8e8294b9-79c7-4e75-9a27-bbe2c4d1c3e7",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/junok.JPG"
+    },
+    {
+      "name": "えり",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=e0d8f4fd-0cee-4431-9550-52f2fb476f91",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/えり.JPG"
+    },
+    {
+      "name": "しぇるな",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=c8ed95c7-369a-4eb2-ade0-0784a5a8fed0",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/しぇるな.png"
+    }
+  ],
+  "description": "\n「第1回だけじゃ全然足りない！」そんな声にお応えして、さらに豪華に、さらに熱く、次なるステージへ。\n\n実力派Lシンガーたちの新たな顔が見える、ここだけのガチトーク＆極上の歌枠。\n\nそして今回はなんと、VLiverの方もゲストで登場！？\nリアルとバーチャルが交差する時、一体何が起こるのか——。\n\n一度ハマったら抜け出せない、至高のエンターテインメント。 \n第1回を超え、ColorSingの歴史を塗り替える一夜を見逃すな！🔥",
+  "cta": {
+    "primaryLabel": "配信を視聴する",
+    "primaryUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+    "secondaryLabel": "出演者情報を見る",
+    "secondaryUrl": "#guests",
+    "preCtaMessage": "今すぐ予定追加して、見逃しを防ごう。"
+  },
+  "share": {
+    "messageTemplate": "PICK UP LIVER VOL.2 開催！\n2026.03.14(土) 16:00 START\nColorSing 大魔神とーま枠で配信します。"
+  },
+  "reminder": {
+    "startAtIso": "2026-03-14T16:00:00+09:00",
+    "endAtIso": "2026-03-14T19:00:00+09:00",
+    "title": "PICK UP LIVER VOL.2",
+    "description": "歌やトークなど盛り沢山。視聴者参加型企画あり。",
+    "location": "ColorSing 大魔神とーま枠",
+    "detailsUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b"
+  },
+  "eventNotice": {
+    "noArchiveText": "アーカイブ無し。お見逃しなく！",
+    "nextPickupTeaser": "次のPICK UP LIVERに呼ばれるのはあなたかも…？"
+  },
+  "assets": {
+    "mainFlyer": "/public/assets/events/vol-2/flyer-main.jpg"
+  }
+}

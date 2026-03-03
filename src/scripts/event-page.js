@@ -6,8 +6,9 @@ let countdownTimer = null;
 let copyToastTimer = null;
 let bgmHintTimer = null;
 const MARQUEE_SPEED_PX_PER_SEC = 72;
-const SHARE_PAGE_URL = 'https://pickupliver-lp.pages.dev/';
 const BGM_HINT_DISMISSED_KEY = 'bgmHintDismissed';
+const DEFAULT_EVENT_DATA_PATH = '/content/events/vol-1/event.json';
+const DEFAULT_SHELL_TEMPLATE_PATH = '/src/templates/event-shell.html';
 
 const effectConfig = {
   mode: 'normal',
@@ -142,9 +143,44 @@ function initMarqueeMotion() {
   );
 }
 
+function getMetaContent(name) {
+  const node = document.querySelector(`meta[name="${name}"]`);
+  if (!node) return '';
+  return String(node.getAttribute('content') || '').trim();
+}
+
+function resolveEventDataPath() {
+  return getMetaContent('vt:event-data') || DEFAULT_EVENT_DATA_PATH;
+}
+
+function resolveShellTemplatePath() {
+  return getMetaContent('vt:shell-template') || DEFAULT_SHELL_TEMPLATE_PATH;
+}
+
+function resolveShareUrl() {
+  return window.location.href.split('#')[0];
+}
+
+function extractVolumeLabel(event) {
+  const title = String(event?.title || '');
+  const matched = title.match(/VOL\.\d+/i);
+  if (matched) return matched[0].toUpperCase();
+  const slug = getMetaContent('vt:episode-slug');
+  const num = slug.match(/vol-(\d+)/i)?.[1];
+  if (num) return `VOL.${num}`;
+  return 'VOL.';
+}
+
+async function renderShell() {
+  const response = await fetch(resolveShellTemplatePath(), { cache: 'no-store' });
+  if (!response.ok) throw new Error('Failed to load event shell template');
+  const html = await response.text();
+  document.body.innerHTML = html;
+}
+
 async function loadEvent() {
   try {
-    const response = await fetch('/src/data/event.json', { cache: 'no-store' });
+    const response = await fetch(resolveEventDataPath(), { cache: 'no-store' });
     if (!response.ok) throw new Error('Failed to load event data');
     const event = await response.json();
     applyEvent(event);
@@ -346,7 +382,7 @@ function initShareActions(ctx) {
   const shareLine = document.getElementById('share-line');
   const shareCopy = document.getElementById('share-copy');
 
-  const shareUrl = SHARE_PAGE_URL;
+  const shareUrl = resolveShareUrl();
   const shareText = ctx.shareText || '';
   const sharePayload = shareText ? `${shareText}\n${shareUrl}` : shareUrl;
   const xParams = new URLSearchParams({ text: ctx.shareText, url: shareUrl });
@@ -421,14 +457,51 @@ function createTalentCard(person, roleLabel) {
     meta.appendChild(role);
   }
 
-  if (person.profileUrl) {
-    const link = document.createElement('a');
-    link.className = 'talent-link';
-    link.href = person.profileUrl;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.textContent = 'プロフィールを見る';
-    meta.appendChild(link);
+  const tags = [];
+  if (Array.isArray(person.tags)) {
+    person.tags.forEach((tag) => {
+      if (typeof tag === 'string' && tag.trim()) tags.push(tag.trim());
+    });
+  }
+  if (typeof person.introducedBy === 'string' && person.introducedBy.trim()) {
+    const by = person.introducedBy.trim();
+    tags.push(by.endsWith('さん') ? `${by}紹介` : `${by}さん紹介`);
+  }
+
+  if (tags.length) {
+    const tagList = document.createElement('div');
+    tagList.className = 'talent-tags';
+    tags.forEach((tag) => {
+      const el = document.createElement('span');
+      el.className = 'talent-tag';
+      el.textContent = tag;
+      tagList.appendChild(el);
+    });
+    meta.appendChild(tagList);
+  }
+
+  const profileLinks = Array.isArray(person.profileLinks) && person.profileLinks.length
+    ? person.profileLinks
+    : (person.profileUrl ? [{ label: 'プロフィールを見る', url: person.profileUrl }] : []);
+
+  if (profileLinks.length) {
+    const linksWrap = document.createElement('div');
+    linksWrap.className = 'talent-links';
+
+    profileLinks.forEach((entry) => {
+      if (!entry?.url) return;
+      const link = document.createElement('a');
+      link.className = 'talent-link';
+      link.href = entry.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = entry.label || 'プロフィールを見る';
+      linksWrap.appendChild(link);
+    });
+
+    if (linksWrap.childElementCount > 0) {
+      meta.appendChild(linksWrap);
+    }
   }
 
   li.appendChild(avatarWrap);
@@ -529,10 +602,12 @@ function applyEvent(event) {
   const mainFlyer = document.getElementById('main-flyer');
   const hostList = document.getElementById('host-list');
   const guestList = document.getElementById('guest-list');
+  const marqueeTrackA = document.querySelector('.marquee-track.track-a');
   const marqueeTrackB = document.querySelector('.marquee-track.track-b');
   const eventHighlights = document.getElementById('event-highlights');
   const noArchiveNote = document.getElementById('no-archive-note');
   const nextPickupTeaser = document.getElementById('next-pickup-teaser');
+  const volumeSticker = document.getElementById('event-volume-sticker');
   const ctx = getEventContext(event);
 
   if (title) title.textContent = event.title;
@@ -548,6 +623,23 @@ function applyEvent(event) {
 
   if (mainFlyer && event.assets?.mainFlyer) {
     mainFlyer.src = event.assets.mainFlyer;
+    mainFlyer.alt = `${event.title || 'PICK UP LIVER'} フライヤー`;
+  }
+
+  document.title = event.title || 'PICK UP LIVER';
+
+  const volumeLabel = extractVolumeLabel(event);
+  if (volumeSticker) volumeSticker.textContent = volumeLabel;
+
+  if (marqueeTrackA) {
+    const labels = ['PICK UP LIVER', volumeLabel, `${event.startTime} START`, 'COLOR SING', 'JOIN NOW'];
+    marqueeTrackA.textContent = '';
+    labels.forEach((label) => {
+      const span = document.createElement('span');
+      span.textContent = label;
+      marqueeTrackA.appendChild(span);
+    });
+    marqueeTrackA.dataset.marqueeBase = marqueeTrackA.innerHTML;
   }
 
   if (hostList) {
@@ -1060,13 +1152,26 @@ if (window.location.search.includes('fx=debug')) {
   setEffectsMode('debug');
 }
 
-initPerfProfile();
-loadEvent();
-initMarqueeMotion();
-initRevealAnimation();
-initParallaxOrbs();
-initParticleEngine();
-initConfetti();
-initVisibilityOptimizations();
-initBgmControls();
-// initPeriodicConfetti();
+async function bootEventPage() {
+  initPerfProfile();
+
+  try {
+    await renderShell();
+  } catch (error) {
+    console.error(error);
+    document.body.innerHTML = '<main style="padding:24px;font-family:sans-serif">ページの読み込みに失敗しました。時間をおいて再度お試しください。</main>';
+    return;
+  }
+
+  await loadEvent();
+  initMarqueeMotion();
+  initRevealAnimation();
+  initParallaxOrbs();
+  initParticleEngine();
+  initConfetti();
+  initVisibilityOptimizations();
+  initBgmControls();
+  // initPeriodicConfetti();
+}
+
+bootEventPage();

@@ -18,6 +18,8 @@
 ## 更新方法
 - ファイルを更新してGitHubにpushすると自動で再デプロイされる
 
-## 次回イベント時
-- `/Users/yana/Downloads/VoiceTree/HP作成/260221_PICKUPLIVER/src/data/event.json` を更新
-- `/Users/yana/Downloads/VoiceTree/HP作成/260221_PICKUPLIVER/public/assets/events/<event-id>/` に画像追加
+## 新しい回を追加する時
+1. `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/content/events/vol-<n>/event.json` を追加
+2. `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/public/assets/events/vol-<n>/` に画像を追加
+3. `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/events/vol-<n>/index.html` を作成
+4. `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/content/events/index.json` の `latest` と `episodes` を更新

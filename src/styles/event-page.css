@@ -723,6 +723,25 @@ h2 {
   color: #7a5965;
 }
 
+.talent-tags {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.talent-tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid #f09fc3;
+  background: #fff0f7;
+  color: #8a2d57;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
 .talent-link {
   margin-top: 4px;
   display: inline-block;
@@ -730,6 +749,12 @@ h2 {
   font-weight: 900;
   color: #153a78;
   text-decoration-thickness: 2px;
+}
+
+.talent-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
 }
 
 .next-pickup-teaser {

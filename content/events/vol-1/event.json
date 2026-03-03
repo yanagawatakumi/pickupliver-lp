@@ -15,40 +15,40 @@
       "name": "大魔神とーま",
       "role": "MC",
       "profileUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
-      "avatarUrl": "/public/assets/events/2026-02-21-pick-up-liver/avatars/thoma.jpg"
+      "avatarUrl": "/public/assets/events/vol-1/avatars/thoma.jpg"
     },
     {
       "name": "がーくん88",
       "role": "MC",
       "profileUrl": "https://web.colorsing.com/share/user?user_id=91910bec-747b-4b6d-9882-8cf363242c7e",
-      "avatarUrl": "/public/assets/events/2026-02-21-pick-up-liver/avatars/ga-kun88.jpg"
+      "avatarUrl": "/public/assets/events/vol-1/avatars/ga-kun88.jpg"
     }
   ],
   "guestLivers": [
     {
       "name": "Aya湖",
       "profileUrl": "https://web.colorsing.com/share/user?user_id=a1c73f0e-3dc7-49f0-ae01-ab9488e0a6d2",
-      "avatarUrl": "/public/assets/events/2026-02-21-pick-up-liver/avatars/ayako.jpg"
+      "avatarUrl": "/public/assets/events/vol-1/avatars/ayako.jpg"
     },
     {
       "name": "Re:N（リン）",
       "profileUrl": "https://web.colorsing.com/share/user?user_id=974dbf72-121e-4498-b6b9-9fae0c8a90fd",
-      "avatarUrl": "/public/assets/events/2026-02-21-pick-up-liver/avatars/re-n.jpg"
+      "avatarUrl": "/public/assets/events/vol-1/avatars/re-n.jpg"
     },
     {
       "name": "七海ふら",
       "profileUrl": "https://web.colorsing.com/share/user?user_id=5cb768fc-0561-479c-ba8d-5f95fc978518",
-      "avatarUrl": "/public/assets/events/2026-02-21-pick-up-liver/avatars/nanami-fura.jpg"
+      "avatarUrl": "/public/assets/events/vol-1/avatars/nanami-fura.jpg"
     },
     {
       "name": "ダダッチ",
       "profileUrl": "https://web.colorsing.com/share/user?user_id=03cc4589-e71b-4b85-ab5c-6c9b883e2644",
-      "avatarUrl": "/public/assets/events/2026-02-21-pick-up-liver/avatars/dadacchi.jpg"
+      "avatarUrl": "/public/assets/events/vol-1/avatars/dadacchi.jpg"
     },
     {
       "name": "中山祐真",
       "profileUrl": "https://web.colorsing.com/share/user?user_id=f7111998-12b8-4446-9dd7-5d1f3d3fa03c",
-      "avatarUrl": "/public/assets/events/2026-02-21-pick-up-liver/avatars/nakayama-yuma.jpg"
+      "avatarUrl": "/public/assets/events/vol-1/avatars/nakayama-yuma.jpg"
     }
   ],
   "description": "\nColorSing初の、本格的な生配信番組がスタート！\n\n歌配信はもちろん、様々なトーク企画を通じて、まだ見ぬ一面を掘り下げます！\nあの懐かしい番組のパロディも!?\n\n新しいイチオシLシンガーに出会えるチャンス✨\n記念すべき第一回を見逃すな！",
@@ -75,7 +75,7 @@
     "nextPickupTeaser": "次のPICK UP LIVERに呼ばれるのはあなたかも…？"
   },
   "assets": {
-    "mainFlyer": "/public/assets/events/2026-02-21-pick-up-liver/flyer-main.jpg",
-    "socialPost": "/public/assets/events/2026-02-21-pick-up-liver/social-post.png"
+    "mainFlyer": "/public/assets/events/vol-1/flyer-main.jpg",
+    "socialPost": "/public/assets/events/vol-1/social-post.png"
   }
 }
