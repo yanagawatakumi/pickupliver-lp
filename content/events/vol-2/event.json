@@ -6,9 +6,9 @@
   "timezone": "Asia/Tokyo",
   "venue": "ColorSing 大魔神とーま枠",
   "highlights": [
-    "参加型企画あり",
+    "視聴者参加型企画あり",
     "MC×ゲストのコラボ",
-    "ここだけのトーク"
+    "リアル×バーチャルのクロストーク"
   ],
   "hosts": [
     {
@@ -90,6 +90,13 @@
     "nextPickupTeaser": "次のPICK UP LIVERに呼ばれるのはあなたかも…？"
   },
   "assets": {
-    "mainFlyer": "/public/assets/events/vol-2/flyer-main.jpg"
+    "mainFlyer": "/public/assets/events/vol-2/flyer-main.jpg",
+    "storyImages": [
+      "/public/assets/events/vol-2/story-01.png",
+      "/public/assets/events/vol-2/story-02.png",
+      "/public/assets/events/vol-2/story-03.png",
+      "/public/assets/events/vol-2/story-04.png"
+    ],
+    "storyCaption": "vol.1 の様子"
   }
 }

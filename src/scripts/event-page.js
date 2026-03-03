@@ -635,6 +635,8 @@ function initTalentCardEffects() {
 function applyEvent(event) {
   const title = document.getElementById('event-title');
   const summary = document.getElementById('event-summary');
+  const storyImagesWrap = document.getElementById('event-story-images');
+  const storyCaption = document.getElementById('event-story-caption');
   const date = document.getElementById('event-date');
   const time = document.getElementById('event-time');
   const venue = document.getElementById('event-venue');
@@ -652,6 +654,57 @@ function applyEvent(event) {
 
   if (title) title.textContent = event.title;
   if (summary) summary.textContent = event.description;
+
+  if (storyImagesWrap) {
+    storyImagesWrap.innerHTML = '';
+    const storyImages = Array.isArray(event.assets?.storyImages) ? event.assets.storyImages : [];
+    const captionText = typeof event.assets?.storyCaption === 'string'
+      ? event.assets.storyCaption.trim()
+      : '';
+
+    const normalized = storyImages
+      .map((item, index) => {
+        if (typeof item === 'string' && item.trim()) {
+          return {
+            url: item.trim(),
+            alt: `${event.title || 'PICK UP LIVER'} イメージ ${index + 1}`
+          };
+        }
+
+        if (item && typeof item.url === 'string' && item.url.trim()) {
+          return {
+            url: item.url.trim(),
+            alt: typeof item.alt === 'string' && item.alt.trim()
+              ? item.alt.trim()
+              : `${event.title || 'PICK UP LIVER'} イメージ ${index + 1}`
+          };
+        }
+
+        return null;
+      })
+      .filter(Boolean);
+
+    if (normalized.length) {
+      normalized.forEach((item) => {
+        const image = document.createElement('img');
+        image.className = 'story-image';
+        image.src = item.url;
+        image.alt = item.alt;
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        storyImagesWrap.appendChild(image);
+      });
+      storyImagesWrap.hidden = false;
+      if (storyCaption) {
+        storyCaption.textContent = captionText || 'vol.1 の様子';
+        storyCaption.hidden = false;
+      }
+    } else {
+      storyImagesWrap.hidden = true;
+      if (storyCaption) storyCaption.hidden = true;
+    }
+  }
+
   if (date) date.textContent = formatDateJP(event.date);
   if (time) time.textContent = `${event.startTime} START`;
   if (venue) venue.textContent = event.venue;
