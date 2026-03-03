@@ -65,7 +65,6 @@ function renderEpisodes(target, episodes) {
       const guestPreview = guestRows.length
         ? `
           <div class="guest-preview">
-            <p class="guest-heading">GUEST LIVER</p>
             <div class="guest-rows">
               ${guestRows
                 .map((row) => `
