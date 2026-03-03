@@ -28,6 +28,8 @@
     {
       "name": "momoko&なち",
       "avatarUrl": "/public/assets/events/vol-2/avatars/momoko&なち.JPG",
+      "introducedBy": "ダダッチ",
+      "introducerAvatarUrl": "/public/assets/events/vol-1/avatars/dadacchi.jpg",
       "profileLinks": [
         {
           "label": "momoko",
@@ -42,7 +44,9 @@
     {
       "name": "団長です。",
       "profileUrl": "https://web.colorsing.com/share/user?user_id=8d2c6898-b2b1-41af-8a16-e61e9d536d34",
-      "avatarUrl": "/public/assets/events/vol-2/avatars/danchou.JPG"
+      "avatarUrl": "/public/assets/events/vol-2/avatars/danchou.JPG",
+      "introducedBy": "Aya湖",
+      "introducerAvatarUrl": "/public/assets/events/vol-1/avatars/ayako.jpg"
     },
     {
       "name": "junok",
@@ -52,7 +56,9 @@
     {
       "name": "えり",
       "profileUrl": "https://web.colorsing.com/share/user?user_id=e0d8f4fd-0cee-4431-9550-52f2fb476f91",
-      "avatarUrl": "/public/assets/events/vol-2/avatars/えり.JPG"
+      "avatarUrl": "/public/assets/events/vol-2/avatars/えり.JPG",
+      "introducedBy": "ふら",
+      "introducerAvatarUrl": "/public/assets/events/vol-1/avatars/nanami-fura.jpg"
     },
     {
       "name": "しぇるな",

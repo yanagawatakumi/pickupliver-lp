@@ -457,15 +457,51 @@ function createTalentCard(person, roleLabel) {
     meta.appendChild(role);
   }
 
+  const introducedBy = typeof person.introducedBy === 'string' ? person.introducedBy.trim() : '';
+  let offer = null;
+  if (introducedBy) {
+    offer = document.createElement('div');
+    offer.className = 'talent-offer';
+
+    const offerAvatarWrap = document.createElement('span');
+    offerAvatarWrap.className = 'talent-offer-avatar-wrap';
+
+    const offerAvatar = document.createElement('img');
+    offerAvatar.className = 'talent-offer-avatar';
+    offerAvatar.alt = `${introducedBy}のアイコン`;
+    offerAvatar.loading = 'lazy';
+    offerAvatar.decoding = 'async';
+
+    const offerFallback = document.createElement('span');
+    offerFallback.className = 'talent-offer-avatar-fallback';
+    offerFallback.textContent = String(introducedBy || '?').slice(0, 1);
+
+    offerAvatarWrap.appendChild(offerAvatar);
+    offerAvatarWrap.appendChild(offerFallback);
+
+    if (person.introducerAvatarUrl) {
+      offerAvatar.src = person.introducerAvatarUrl;
+      offerAvatar.addEventListener('load', () => {
+        offerAvatarWrap.classList.add('loaded');
+      });
+      offerAvatar.addEventListener('error', () => {
+        offerAvatarWrap.classList.remove('loaded');
+      });
+    }
+
+    const offerText = document.createElement('span');
+    offerText.className = 'talent-offer-text';
+    offerText.textContent = `${introducedBy}からのリアルオファー`;
+
+    offer.appendChild(offerAvatarWrap);
+    offer.appendChild(offerText);
+  }
+
   const tags = [];
   if (Array.isArray(person.tags)) {
     person.tags.forEach((tag) => {
       if (typeof tag === 'string' && tag.trim()) tags.push(tag.trim());
     });
-  }
-  if (typeof person.introducedBy === 'string' && person.introducedBy.trim()) {
-    const by = person.introducedBy.trim();
-    tags.push(by.endsWith('さん') ? `${by}紹介` : `${by}さん紹介`);
   }
 
   if (tags.length) {
@@ -502,6 +538,10 @@ function createTalentCard(person, roleLabel) {
     if (linksWrap.childElementCount > 0) {
       meta.appendChild(linksWrap);
     }
+  }
+
+  if (offer) {
+    meta.appendChild(offer);
   }
 
   li.appendChild(avatarWrap);
