@@ -139,10 +139,6 @@ function stageByIndex(index) {
   return state.config.stages[index];
 }
 
-function isOniStage() {
-  return String(state.stage?.id || '') === 'oni';
-}
-
 function isEffectActive(effectKey) {
   const until = state.activeEffects[effectKey] || 0;
   return state.nowMs < until;
@@ -786,7 +782,7 @@ function spawnFood() {
 
 function spawnHazardBurst() {
   const burst = Number(state.stage?.hazardBurst || 2);
-  const burstCount = isOniStage() ? Math.max(1, Math.round(burst * 0.5)) : burst;
+  const burstCount = Math.max(1, Math.round(burst * 0.5));
   const stageIndex = state.selectedStageIndex;
   const speedMin = 118 + stageIndex * 18;
   const speedMax = 168 + stageIndex * 24;
@@ -829,7 +825,7 @@ function spawnBoss() {
 function spawnBossHazardPattern() {
   if (!state.boss) return;
   const baseRing = 8 + state.selectedStageIndex;
-  const ring = isOniStage() ? Math.max(4, Math.round(baseRing * 0.5)) : baseRing;
+  const ring = Math.max(4, Math.round(baseRing * 0.5));
   for (let i = 0; i < ring; i += 1) {
     const angle = (Math.PI * 2 * i) / ring;
     const speed = 135 + state.selectedStageIndex * 18;
@@ -880,8 +876,8 @@ function startStage(index) {
   state.activeEffects.barrierUntilMs = 0;
   state.activeEffects.speedBoostUntilMs = 0;
   state.activeEffects.speedMultiplier = 1;
-  const renderScale = String(stage.id || '') === 'oni' ? 2 : 1;
-  const hitAreaScale = String(stage.id || '') === 'oni' ? 2 : 1;
+  const renderScale = 2;
+  const hitAreaScale = 2;
   const baseRadius = 24;
   const renderRadius = baseRadius * renderScale;
   const hitRadius = baseRadius * Math.sqrt(PLAYER_HIT_AREA_RATIO * hitAreaScale);
