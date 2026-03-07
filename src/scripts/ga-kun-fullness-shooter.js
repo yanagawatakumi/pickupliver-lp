@@ -2,10 +2,24 @@ const CONFIG_PATH_DEFAULT = '/content/games/ga-kun-fullness-shooter/config.json'
 const FOOD_ASSET_BASE_PATH = '/public/assets/games/ga-kun-fullness-shooter/foods';
 const UNLOCK_KEY = 'vt_ga_kun_shooter_unlock_v1';
 const PLAYER_HIT_AREA_RATIO = 0.8;
-const POINTER_PLAYER_Y_OFFSET = 54;
+const POINTER_PLAYER_Y_OFFSET = 64;
 const BANNER_SHOW_MS = 3000;
 const CLEAR_FLASH_MS = 3000;
 const STAGE_BG = ['#19142b', '#111e37', '#1d2f3a', '#2a1629'];
+const SFX_MASTER_GAIN = 0.45;
+const SFX_COOLDOWN_MS = {
+  shot: 70,
+  foodHit: 65,
+  foodComplete: 95,
+  playerHit: 220,
+  skillDrop: 250,
+  skillActivate: 180,
+  bossAppear: 900,
+  bossHit: 90,
+  bossConsume: 700,
+  clear: 1200,
+  gameOver: 1000
+};
 
 const refs = {
   stageButtons: document.getElementById('stage-buttons'),
@@ -61,7 +75,15 @@ const state = {
   skillSlotTimer: null,
   clearFlashTimer: null,
   images: new Map(),
-  skillDockCanvasHeight: 68
+  skillDockCanvasHeight: 68,
+  audio: {
+    ctx: null,
+    master: null,
+    unlocked: false,
+    warmupDone: false,
+    unlockHooksInstalled: false,
+    lastPlayedAtMs: new Map()
+  }
 };
 
 const input = {
@@ -166,6 +188,216 @@ function syncLayoutMetrics() {
   const scale = canvas.height / canvasRect.height;
   const dockHeightCanvas = dockRect.height * scale;
   state.skillDockCanvasHeight = clamp(46, dockHeightCanvas, 180);
+}
+
+function audioContextCtor() {
+  return window.AudioContext || window.webkitAudioContext || null;
+}
+
+function playWarmupSignal() {
+  const audioCtx = state.audio.ctx;
+  const master = state.audio.master;
+  if (!audioCtx || !master || state.audio.warmupDone) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const now = audioCtx.currentTime;
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(440, now);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.0002, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+  osc.connect(gain);
+  gain.connect(master);
+  osc.start(now);
+  osc.stop(now + 0.04);
+  state.audio.warmupDone = true;
+}
+
+function unlockAudio() {
+  const Ctor = audioContextCtor();
+  if (!Ctor) return false;
+  if (!state.audio.ctx) {
+    const audioCtx = new Ctor();
+    const master = audioCtx.createGain();
+    master.gain.value = SFX_MASTER_GAIN;
+    master.connect(audioCtx.destination);
+    state.audio.ctx = audioCtx;
+    state.audio.master = master;
+  }
+  if (state.audio.ctx.state !== 'running') {
+    state.audio.ctx.resume()
+      .then(() => {
+        state.audio.unlocked = true;
+        playWarmupSignal();
+      })
+      .catch(() => {});
+  }
+  if (state.audio.ctx.state === 'running') {
+    state.audio.unlocked = true;
+    playWarmupSignal();
+    return true;
+  }
+  return false;
+}
+
+function installAudioUnlockHooks() {
+  if (state.audio.unlockHooksInstalled) return;
+  const unlockOnce = () => {
+    unlockAudio();
+  };
+  window.addEventListener('pointerdown', unlockOnce, { passive: true });
+  window.addEventListener('touchstart', unlockOnce, { passive: true });
+  window.addEventListener('click', unlockOnce, { passive: true });
+  window.addEventListener('keydown', unlockOnce);
+  state.audio.unlockHooksInstalled = true;
+}
+
+function canPlaySfx(kind) {
+  if (!state.audio.unlocked || !state.audio.ctx || !state.audio.master || state.audio.ctx.state !== 'running') {
+    unlockAudio();
+    return false;
+  }
+  const now = Number(state.nowMs || window.performance.now());
+  const cooldown = Number(SFX_COOLDOWN_MS[kind] || 0);
+  const lastAt = Number(state.audio.lastPlayedAtMs.get(kind) || -Infinity);
+  if (now - lastAt < cooldown) return false;
+  state.audio.lastPlayedAtMs.set(kind, now);
+  return true;
+}
+
+function playTone({
+  freq = 440,
+  toFreq = null,
+  duration = 0.08,
+  volume = 0.1,
+  type = 'sine',
+  delaySec = 0,
+  attackSec = 0.003,
+  releaseSec = 0.06
+} = {}) {
+  const audioCtx = state.audio.ctx;
+  const master = state.audio.master;
+  if (!audioCtx || !master) return;
+
+  const startAt = audioCtx.currentTime + Math.max(0, delaySec);
+  const endAt = startAt + Math.max(0.02, duration);
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = type;
+  osc.frequency.setValueAtTime(Math.max(30, freq), startAt);
+  if (Number.isFinite(toFreq) && toFreq !== freq) {
+    osc.frequency.exponentialRampToValueAtTime(Math.max(30, toFreq), endAt);
+  }
+
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume), startAt + Math.max(0.001, attackSec));
+  gain.gain.exponentialRampToValueAtTime(0.0001, endAt + Math.max(0.01, releaseSec));
+
+  osc.connect(gain);
+  gain.connect(master);
+  osc.start(startAt);
+  osc.stop(endAt + Math.max(0.01, releaseSec) + 0.01);
+}
+
+function playNoise({
+  duration = 0.07,
+  volume = 0.08,
+  delaySec = 0,
+  highpass = 500
+} = {}) {
+  const audioCtx = state.audio.ctx;
+  const master = state.audio.master;
+  if (!audioCtx || !master) return;
+
+  const frameCount = Math.max(1, Math.floor(audioCtx.sampleRate * Math.max(0.02, duration)));
+  const buffer = audioCtx.createBuffer(1, frameCount, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < frameCount; i += 1) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / frameCount);
+  }
+
+  const startAt = audioCtx.currentTime + Math.max(0, delaySec);
+  const source = audioCtx.createBufferSource();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = Math.max(100, highpass);
+
+  source.buffer = buffer;
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume), startAt + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + Math.max(0.02, duration));
+
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(master);
+  source.start(startAt);
+  source.stop(startAt + Math.max(0.02, duration) + 0.01);
+}
+
+function playSfx(kind, options = {}) {
+  if (!canPlaySfx(kind)) return;
+
+  switch (kind) {
+    case 'shot':
+      playTone({ freq: 760, toFreq: 600, duration: 0.04, volume: 0.03, type: 'triangle' });
+      break;
+    case 'foodHit':
+      playTone({ freq: 230, toFreq: 180, duration: 0.045, volume: 0.05, type: 'square' });
+      break;
+    case 'foodComplete':
+      playTone({ freq: 360, toFreq: 520, duration: 0.09, volume: 0.085, type: 'sine' });
+      playTone({ freq: 520, toFreq: 700, duration: 0.08, volume: 0.05, type: 'triangle', delaySec: 0.025 });
+      break;
+    case 'playerHit':
+      playNoise({ duration: 0.07, volume: 0.09, highpass: 340 });
+      playTone({ freq: 180, toFreq: 95, duration: 0.12, volume: 0.08, type: 'sawtooth' });
+      break;
+    case 'skillDrop':
+      playTone({ freq: 620, toFreq: 820, duration: 0.1, volume: 0.09, type: 'triangle' });
+      playTone({ freq: 820, toFreq: 1080, duration: 0.08, volume: 0.07, type: 'sine', delaySec: 0.06 });
+      break;
+    case 'skillActivate': {
+      const skillType = String(options.skillType || '');
+      if (skillType === 'heal') {
+        playTone({ freq: 410, toFreq: 560, duration: 0.12, volume: 0.09, type: 'sine' });
+      } else if (skillType === 'barrier') {
+        playTone({ freq: 300, toFreq: 390, duration: 0.14, volume: 0.08, type: 'triangle' });
+        playTone({ freq: 390, toFreq: 300, duration: 0.11, volume: 0.06, type: 'triangle', delaySec: 0.07 });
+      } else if (skillType === 'time_stop') {
+        playTone({ freq: 760, toFreq: 320, duration: 0.16, volume: 0.07, type: 'square' });
+      } else if (skillType === 'speed_boost') {
+        playTone({ freq: 260, toFreq: 560, duration: 0.12, volume: 0.085, type: 'sawtooth' });
+      } else {
+        playTone({ freq: 270, toFreq: 470, duration: 0.16, volume: 0.09, type: 'triangle' });
+      }
+      break;
+    }
+    case 'bossAppear':
+      playTone({ freq: 120, toFreq: 260, duration: 0.35, volume: 0.11, type: 'sawtooth' });
+      playNoise({ duration: 0.11, volume: 0.06, highpass: 220, delaySec: 0.04 });
+      break;
+    case 'bossHit':
+      playTone({ freq: 150, toFreq: 120, duration: 0.05, volume: 0.06, type: 'square' });
+      break;
+    case 'bossConsume':
+      playTone({ freq: 280, toFreq: 520, duration: 0.2, volume: 0.1, type: 'triangle' });
+      playTone({ freq: 520, toFreq: 880, duration: 0.22, volume: 0.08, type: 'sine', delaySec: 0.08 });
+      break;
+    case 'clear':
+      playTone({ freq: 420, toFreq: 560, duration: 0.12, volume: 0.09, type: 'triangle' });
+      playTone({ freq: 560, toFreq: 740, duration: 0.14, volume: 0.09, type: 'triangle', delaySec: 0.12 });
+      playTone({ freq: 740, toFreq: 980, duration: 0.16, volume: 0.09, type: 'sine', delaySec: 0.24 });
+      break;
+    case 'gameOver':
+      playTone({ freq: 280, toFreq: 180, duration: 0.16, volume: 0.08, type: 'square' });
+      playTone({ freq: 180, toFreq: 110, duration: 0.22, volume: 0.08, type: 'square', delaySec: 0.15 });
+      break;
+    default:
+      break;
+  }
 }
 
 function preloadImage(url) {
@@ -282,6 +514,7 @@ function buildStageButtons() {
     button.appendChild(title);
     button.addEventListener('click', () => {
       if (index > state.unlockedStageIndex) return;
+      unlockAudio();
       startStage(index);
     });
     refs.stageButtons.appendChild(button);
@@ -359,6 +592,7 @@ function setupControls() {
   };
 
   canvas.addEventListener('pointerdown', (event) => {
+    unlockAudio();
     input.pointerActive = true;
     onPointer(event.clientX, event.clientY);
     canvas.setPointerCapture(event.pointerId);
@@ -458,6 +692,7 @@ function applyFoodReward(food, shouldRollDrop = true) {
     state.fullness = Math.min(Number(state.stage?.bossAtFullness || 80), state.fullness + gain);
   }
   state.score += scoreGain;
+  playSfx('foodComplete');
 
   if (!state.bossSpawned && state.fullness >= Number(state.stage?.bossAtFullness || 80)) {
     spawnBoss();
@@ -469,6 +704,7 @@ function applyFoodReward(food, shouldRollDrop = true) {
 function activateSkill(skill) {
   if (!skill) return;
   showSkillBanner(skill);
+  playSfx('skillActivate', { skillType: skill.type });
 
   switch (skill.type) {
     case 'screen_clear': {
@@ -514,6 +750,7 @@ function rollGuestDrop() {
   if (!Array.isArray(state.config?.skills) || !state.config.skills.length) return;
   if (Math.random() > state.dropRate) return;
   const skill = randomPick(state.config.skills);
+  playSfx('skillDrop');
   resetDropRate();
   enqueueSkill(skill);
 }
@@ -568,6 +805,7 @@ function spawnBoss() {
   if (!boss) return;
 
   state.bossSpawned = true;
+  playSfx('bossAppear');
   state.boss = {
     id: boss.id,
     name: boss.name,
@@ -610,6 +848,7 @@ function startStage(index) {
   }
 
   state.stage = stage;
+  unlockAudio();
   state.selectedStageIndex = index;
   state.running = true;
   state.ended = false;
@@ -666,6 +905,7 @@ function endStage(win) {
   state.ended = true;
 
   if (win) {
+    playSfx('clear');
     const clearedIndex = state.selectedStageIndex;
     if (clearedIndex + 1 > state.unlockedStageIndex) {
       state.unlockedStageIndex = Math.min(clearedIndex + 1, (state.config?.stages?.length || 1) - 1);
@@ -693,6 +933,7 @@ function endStage(win) {
     return;
   }
 
+  playSfx('gameOver');
   setOverlay('ゲームオーバー！', {
     visible: true,
     showStageButtons: true
@@ -701,6 +942,7 @@ function endStage(win) {
 }
 
 function onBossConsumed() {
+  playSfx('bossConsume');
   state.boss = null;
   state.fullness = 100;
   state.score += 1200;
@@ -712,6 +954,7 @@ function handleShooting(nowMs) {
   const interval = Number(state.config?.player?.shotIntervalMs || 180);
   if (nowMs - state.lastShotMs < interval) return;
   state.lastShotMs = nowMs;
+  playSfx('shot');
   state.bullets.push({
     x: state.player.x,
     y: state.player.y - state.player.radius - 10,
@@ -813,6 +1056,7 @@ function resolveCollisions() {
       const rr = (bullet.radius + foodHitRadius(food)) ** 2;
       if (distanceSq(bullet.x, bullet.y, food.x, food.y) > rr) continue;
 
+      playSfx('foodHit');
       food.hp -= 1;
       state.bullets.splice(bi, 1);
       consumed = true;
@@ -830,6 +1074,7 @@ function resolveCollisions() {
       const rr = (bullet.radius + state.boss.radius) ** 2;
       if (distanceSq(bullet.x, bullet.y, state.boss.x, state.boss.y) <= rr) {
         state.bullets.splice(bi, 1);
+        playSfx('bossHit');
         state.boss.hp -= 1;
         if (state.boss.hp <= 0) onBossConsumed();
       }
@@ -845,6 +1090,7 @@ function resolveCollisions() {
     if (barrierActive) continue;
     if (state.nowMs < state.invulnerableUntilMs) continue;
 
+    playSfx('playerHit');
     state.hp -= Number(hazard.damage || 1);
     state.invulnerableUntilMs = state.nowMs + 820;
     if (state.hp <= 0) {
@@ -1005,6 +1251,7 @@ async function bootstrap() {
     state.selectedStageIndex = clamp(0, state.unlockedStageIndex, state.config.stages.length - 1);
     state.dropRate = Number(state.config.dropSystem.baseRate || 0.1);
     loadAssetsFromConfig();
+    installAudioUnlockHooks();
     setupControls();
     renderSkillDock();
     syncLayoutMetrics();
