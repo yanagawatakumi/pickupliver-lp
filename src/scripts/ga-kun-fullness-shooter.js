@@ -1,6 +1,8 @@
 const CONFIG_PATH_DEFAULT = '/content/games/ga-kun-fullness-shooter/config.json';
 const FOOD_ASSET_BASE_PATH = '/public/assets/games/ga-kun-fullness-shooter/foods';
 const UNLOCK_KEY = 'vt_ga_kun_shooter_unlock_v1';
+const PLAYER_HIT_AREA_RATIO = 0.8;
+const POINTER_PLAYER_Y_OFFSET = 54;
 const BANNER_SHOW_MS = 3000;
 const CLEAR_FLASH_MS = 3000;
 const STAGE_BG = ['#19142b', '#111e37', '#1d2f3a', '#2a1629'];
@@ -241,6 +243,18 @@ function drawImageByLongEdge(url, x, y, longEdge, fallbackColor) {
     return;
   }
   drawCircle(x, y, Math.max(6, (Number(longEdge) || 12) * 0.5), fallbackColor);
+}
+
+function foodRenderScale(food) {
+  const scale = Number(food?.renderScale || 1);
+  if (!Number.isFinite(scale) || scale <= 0) return 1;
+  return scale;
+}
+
+function foodHitRadius(food) {
+  const baseRadius = Number(food?.radius || 0);
+  if (!Number.isFinite(baseRadius) || baseRadius <= 0) return 0;
+  return baseRadius * foodRenderScale(food);
 }
 
 function buildStageButtons() {
@@ -509,20 +523,23 @@ function spawnFood() {
   if (!foods.length) return;
   const base = randomPick(foods);
   const radius = Number(base.radius || 24);
+  const renderScale = foodRenderScale(base);
+  const hitRadius = radius * renderScale;
   state.foods.push({
     id: base.id,
     name: base.name,
-    x: randomIn(radius + 4, canvas.width - radius - 4),
-    y: -radius - 6,
+    x: randomIn(hitRadius + 4, canvas.width - hitRadius - 4),
+    y: -hitRadius - 6,
     vx: randomIn(-18, 18),
     vy: randomIn(Number(base.speedMin || 40), Number(base.speedMax || 60)),
     hp: Number(base.hp || 1),
     fullness: Number(base.fullness || 5),
     score: Number(base.score || 100),
     radius,
+    hitRadius,
     color: base.color || '#f2b777',
     imageUrl: resolveFoodImageUrl(base.id, base.imageUrl),
-    renderScale: Number(base.renderScale || 1)
+    renderScale
   });
 }
 
@@ -622,6 +639,7 @@ function startStage(index) {
     x: canvas.width / 2,
     y: playfieldBottomY() - 64,
     radius: 24,
+    hitRadius: 24 * Math.sqrt(PLAYER_HIT_AREA_RATIO),
     speed: 250 * Number(state.config?.player?.moveSpeed || 1)
   };
   if (state.clearFlashTimer) {
@@ -718,8 +736,10 @@ function updatePlayer(dtSec) {
     state.player.x += (mx / len) * speed * dtSec;
     state.player.y += (my / len) * speed * dtSec;
   } else if (input.pointerActive) {
-    const dx = input.pointerX - state.player.x;
-    const dy = input.pointerY - state.player.y;
+    const targetX = input.pointerX;
+    const targetY = input.pointerY - POINTER_PLAYER_Y_OFFSET;
+    const dx = targetX - state.player.x;
+    const dy = targetY - state.player.y;
     const dist = Math.hypot(dx, dy);
     if (dist > 1) {
       const step = Math.min(dist, speed * dtSec);
@@ -763,9 +783,10 @@ function updateEntities(dtSec, nowMs) {
 
   if (!timeStop) {
     state.foods.forEach((food) => {
+      const limitRadius = foodHitRadius(food);
       food.x += food.vx * dtSec;
       food.y += food.vy * dtSec;
-      if (food.x < food.radius || food.x > canvas.width - food.radius) {
+      if (food.x < limitRadius || food.x > canvas.width - limitRadius) {
         food.vx *= -1;
       }
     });
@@ -776,7 +797,7 @@ function updateEntities(dtSec, nowMs) {
   }
 
   const playBottom = playfieldBottomY();
-  state.foods = state.foods.filter((food) => food.y < playBottom + food.radius + 10);
+  state.foods = state.foods.filter((food) => food.y < playBottom + foodHitRadius(food) + 10);
   state.hazards = state.hazards.filter(
     (hazard) => hazard.y < playBottom + 30 && hazard.x > -30 && hazard.x < canvas.width + 30
   );
@@ -789,7 +810,7 @@ function resolveCollisions() {
     let consumed = false;
     for (let fi = state.foods.length - 1; fi >= 0; fi -= 1) {
       const food = state.foods[fi];
-      const rr = (bullet.radius + food.radius) ** 2;
+      const rr = (bullet.radius + foodHitRadius(food)) ** 2;
       if (distanceSq(bullet.x, bullet.y, food.x, food.y) > rr) continue;
 
       food.hp -= 1;
@@ -818,7 +839,7 @@ function resolveCollisions() {
   const barrierActive = isEffectActive('barrierUntilMs');
   for (let hi = state.hazards.length - 1; hi >= 0; hi -= 1) {
     const hazard = state.hazards[hi];
-    const rr = (hazard.radius + state.player.radius) ** 2;
+    const rr = (hazard.radius + Number(state.player.hitRadius || state.player.radius || 0)) ** 2;
     if (distanceSq(hazard.x, hazard.y, state.player.x, state.player.y) > rr) continue;
     state.hazards.splice(hi, 1);
     if (barrierActive) continue;
@@ -875,7 +896,7 @@ function drawBackground() {
 
 function drawFoods() {
   state.foods.forEach((food) => {
-    const longEdge = Math.max(10, food.radius * 2 * Number(food.renderScale || 1));
+    const longEdge = Math.max(10, foodHitRadius(food) * 2);
     drawImageByLongEdge(food.imageUrl, food.x, food.y, longEdge, food.color);
     if (food.hp > 1) {
       ctx.font = '900 10px "M PLUS Rounded 1c"';
@@ -883,8 +904,8 @@ function drawFoods() {
       ctx.textAlign = 'center';
       ctx.strokeStyle = '#1a101b';
       ctx.lineWidth = 3;
-      ctx.strokeText(`x${food.hp}`, food.x, food.y - food.radius - 5);
-      ctx.fillText(`x${food.hp}`, food.x, food.y - food.radius - 5);
+      ctx.strokeText(`x${food.hp}`, food.x, food.y - foodHitRadius(food) - 5);
+      ctx.fillText(`x${food.hp}`, food.x, food.y - foodHitRadius(food) - 5);
     }
   });
 }
