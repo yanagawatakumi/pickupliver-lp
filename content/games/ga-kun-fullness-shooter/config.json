@@ -1,0 +1,165 @@
+{
+  "player": {
+    "maxHp": 3,
+    "moveSpeed": 1.0,
+    "shotIntervalMs": 180,
+    "avatarUrl": "/public/assets/events/vol-2/avatars/ga-kun88.jpg"
+  },
+  "dropSystem": {
+    "baseRate": 0.1,
+    "pity": {
+      "everySec": 20,
+      "plusRate": 0.01,
+      "maxRate": 0.15
+    },
+    "trigger": "food_completed",
+    "activation": "auto_immediate"
+  },
+  "skills": [
+    {
+      "guestId": "danchou",
+      "guestName": "団長です。",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/danchou.JPG",
+      "type": "screen_clear",
+      "label": "一掃オーダー",
+      "params": {
+        "bossDamage": 8
+      }
+    },
+    {
+      "guestId": "momoko_nachi",
+      "guestName": "momoko&なち",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/momoko&なち.JPG",
+      "type": "time_stop",
+      "label": "時間ストップ",
+      "params": {
+        "durationSec": 2.5
+      }
+    },
+    {
+      "guestId": "shelna",
+      "guestName": "しぇるな",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/しぇるな.png",
+      "type": "barrier",
+      "label": "バリア展開",
+      "params": {
+        "durationSec": 8.0
+      }
+    },
+    {
+      "guestId": "junok",
+      "guestName": "junok",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/junok.JPG",
+      "type": "speed_boost",
+      "label": "移動速度2倍",
+      "params": {
+        "speedMultiplier": 2.0,
+        "durationSec": 20.0
+      }
+    },
+    {
+      "guestId": "eri",
+      "guestName": "えり",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/えり.JPG",
+      "type": "heal",
+      "label": "おかわり回復",
+      "params": {
+        "fullHeal": true
+      }
+    }
+  ],
+  "stages": [
+    {
+      "id": "easy",
+      "label": "簡単",
+      "theme": "朝食",
+      "unlockBy": null,
+      "bossAtFullness": 80,
+      "foodSpawnMs": 860,
+      "hazardSpawnMs": 1100,
+      "hazardBurst": 2,
+      "foods": [
+        { "id": "toast", "name": "トースト", "hp": 1, "fullness": 2, "score": 70, "radius": 40, "speedMin": 36, "speedMax": 54, "color": "#f7c56c" },
+        { "id": "fried-egg", "name": "目玉焼き", "hp": 1, "fullness": 2, "score": 80, "radius": 44, "speedMin": 34, "speedMax": 52, "color": "#fce6a2" },
+        { "id": "sandwich", "name": "サンド", "hp": 2, "fullness": 4, "score": 110, "radius": 52, "speedMin": 32, "speedMax": 48, "color": "#e9c482" }
+      ],
+      "boss": {
+        "id": "giant-breakfast-plate",
+        "name": "巨大朝食プレート",
+        "hp": 60,
+        "size": 88,
+        "drift": 68,
+        "hazardCadenceMs": 940
+      }
+    },
+    {
+      "id": "normal",
+      "label": "普通",
+      "theme": "昼食",
+      "unlockBy": "easy",
+      "bossAtFullness": 80,
+      "foodSpawnMs": 780,
+      "hazardSpawnMs": 980,
+      "hazardBurst": 3,
+      "foods": [
+        { "id": "ramen", "name": "ラーメン", "hp": 2, "fullness": 2, "score": 120, "radius": 33, "speedMin": 42, "speedMax": 64, "color": "#f6c57f" },
+        { "id": "curry", "name": "カレー", "hp": 2, "fullness": 2, "score": 140, "radius": 35, "speedMin": 40, "speedMax": 62, "color": "#d9a663" },
+        { "id": "cutlet-bowl", "name": "カツ丼", "hp": 3, "fullness": 3, "score": 180, "radius": 39, "speedMin": 38, "speedMax": 58, "color": "#df9f50" }
+      ],
+      "boss": {
+        "id": "giant-lunch-box",
+        "name": "巨大ランチモンスター",
+        "hp": 72,
+        "size": 94,
+        "drift": 84,
+        "hazardCadenceMs": 860
+      }
+    },
+    {
+      "id": "hard",
+      "label": "難しい",
+      "theme": "夕食",
+      "unlockBy": "normal",
+      "bossAtFullness": 80,
+      "foodSpawnMs": 1400,
+      "hazardSpawnMs": 860,
+      "hazardBurst": 4,
+      "foods": [
+        { "id": "steak", "name": "ステーキ", "hp": 4, "fullness": 2, "score": 150, "radius": 34, "speedMin": 48, "speedMax": 70, "color": "#e28b70" },
+        { "id": "sushi", "name": "寿司盛り", "hp": 6, "fullness": 3, "score": 200, "radius": 39, "speedMin": 44, "speedMax": 66, "color": "#ffb7a2" },
+        { "id": "hot-pot", "name": "鍋", "hp": 6, "fullness": 3, "score": 230, "radius": 43, "speedMin": 40, "speedMax": 60, "color": "#d57a61" }
+      ],
+      "boss": {
+        "id": "giant-dinner-core",
+        "name": "巨大ディナーコア",
+        "hp": 88,
+        "size": 102,
+        "drift": 96,
+        "hazardCadenceMs": 760
+      }
+    },
+    {
+      "id": "oni",
+      "label": "鬼",
+      "theme": "宴会",
+      "unlockBy": "hard",
+      "bossAtFullness": 80,
+      "foodSpawnMs": 1240,
+      "hazardSpawnMs": 730,
+      "hazardBurst": 5,
+      "foods": [
+        { "id": "party-sushi", "name": "宴会寿司", "hp": 4, "fullness": 2, "score": 210, "radius": 30, "speedMin": 54, "speedMax": 78, "color": "#ff7f7f" },
+        { "id": "tower-karaage", "name": "唐揚げタワー", "hp": 4, "fullness": 3, "score": 250, "radius": 33, "speedMin": 52, "speedMax": 76, "color": "#cf7d42" },
+        { "id": "pizza", "name": "メガ盛り", "hp": 5, "fullness": 4, "score": 310, "radius": 36, "speedMin": 50, "speedMax": 70, "color": "#be5247" }
+      ],
+      "boss": {
+        "id": "to-ma",
+        "name": "宴会カイジュウ盛り",
+        "hp": 118,
+        "size": 112,
+        "drift": 114,
+        "hazardCadenceMs": 640
+      }
+    }
+  ]
+}

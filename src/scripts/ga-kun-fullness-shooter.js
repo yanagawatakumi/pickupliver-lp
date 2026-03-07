@@ -1,0 +1,1008 @@
+const CONFIG_PATH_DEFAULT = '/content/games/ga-kun-fullness-shooter/config.json';
+const FOOD_ASSET_BASE_PATH = '/public/assets/games/ga-kun-fullness-shooter/foods';
+const UNLOCK_KEY = 'vt_ga_kun_shooter_unlock_v1';
+const BANNER_SHOW_MS = 3000;
+const CLEAR_FLASH_MS = 3000;
+const STAGE_BG = ['#19142b', '#111e37', '#1d2f3a', '#2a1629'];
+
+const refs = {
+  stageButtons: document.getElementById('stage-buttons'),
+  stageNote: document.getElementById('stage-note'),
+  skillDock: document.getElementById('skill-dock'),
+  hpValue: document.getElementById('hp-value'),
+  fullnessFill: document.getElementById('fullness-fill'),
+  fullnessValue: document.getElementById('fullness-value'),
+  scoreValue: document.getElementById('score-value'),
+  overlayScreen: document.getElementById('overlay-screen'),
+  overlayMessage: document.getElementById('overlay-message'),
+  clearFlash: document.getElementById('clear-flash'),
+};
+
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+
+const state = {
+  config: null,
+  selectedStageIndex: 0,
+  unlockedStageIndex: 0,
+  stage: null,
+  running: false,
+  ended: false,
+  nowMs: 0,
+  elapsedSec: 0,
+  lastFrameMs: 0,
+  lastShotMs: 0,
+  lastFoodSpawnMs: 0,
+  lastHazardSpawnMs: 0,
+  lastBossHazardMs: 0,
+  dropRate: 0.1,
+  pitySteps: 0,
+  lastDropSuccessSec: 0,
+  hp: 3,
+  fullness: 0,
+  score: 0,
+  player: null,
+  bullets: [],
+  foods: [],
+  hazards: [],
+  boss: null,
+  bossSpawned: false,
+  invulnerableUntilMs: 0,
+  skillQueue: [],
+  skillProcessing: false,
+  activeEffects: {
+    timeStopUntilMs: 0,
+    barrierUntilMs: 0,
+    speedBoostUntilMs: 0,
+    speedMultiplier: 1
+  },
+  skillSlotTimer: null,
+  clearFlashTimer: null,
+  images: new Map(),
+  skillDockCanvasHeight: 68
+};
+
+const input = {
+  left: false,
+  right: false,
+  up: false,
+  down: false,
+  pointerActive: false,
+  pointerX: canvas.width / 2,
+  pointerY: canvas.height - 80
+};
+
+function metaContent(name) {
+  const node = document.querySelector(`meta[name="${name}"]`);
+  return node ? String(node.getAttribute('content') || '').trim() : '';
+}
+
+function resolveConfigPath() {
+  return metaContent('vt:game-config') || CONFIG_PATH_DEFAULT;
+}
+
+function clamp(min, value, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function randomIn(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function randomPick(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function distanceSq(ax, ay, bx, by) {
+  const dx = ax - bx;
+  const dy = ay - by;
+  return dx * dx + dy * dy;
+}
+
+function readUnlockedStageIndex(stageCount) {
+  const raw = window.localStorage.getItem(UNLOCK_KEY);
+  const value = Number.parseInt(raw || '0', 10);
+  if (!Number.isFinite(value)) return 0;
+  return clamp(0, value, Math.max(stageCount - 1, 0));
+}
+
+function persistUnlockedStageIndex(index) {
+  window.localStorage.setItem(UNLOCK_KEY, String(index));
+}
+
+function stageByIndex(index) {
+  if (!state.config?.stages?.[index]) return null;
+  return state.config.stages[index];
+}
+
+function isEffectActive(effectKey) {
+  const until = state.activeEffects[effectKey] || 0;
+  return state.nowMs < until;
+}
+
+function moveSpeedMultiplier() {
+  if (!isEffectActive('speedBoostUntilMs')) return 1;
+  return state.activeEffects.speedMultiplier || 1;
+}
+
+function setStageNote(message) {
+  if (refs.stageNote) refs.stageNote.textContent = message;
+}
+
+function setOverlay(message, options = {}) {
+  const {
+    visible = true,
+    showStageButtons = true
+  } = options;
+
+  if (refs.overlayMessage) refs.overlayMessage.textContent = message;
+  if (refs.overlayScreen) refs.overlayScreen.classList.toggle('is-hidden', !visible);
+  if (refs.stageButtons) refs.stageButtons.hidden = !showStageButtons;
+}
+
+function setClearFlash(visible) {
+  if (!refs.clearFlash) return;
+  refs.clearFlash.hidden = !visible;
+}
+
+function syncHud() {
+  if (refs.hpValue) refs.hpValue.textContent = `${Math.max(0, state.hp)} / ${state.config?.player?.maxHp || 3}`;
+  if (refs.fullnessValue) refs.fullnessValue.textContent = `${Math.round(state.fullness)}%`;
+  if (refs.fullnessFill) refs.fullnessFill.style.width = `${clamp(0, state.fullness, 100)}%`;
+  if (refs.scoreValue) refs.scoreValue.textContent = `${Math.round(state.score)}`;
+}
+
+function playfieldBottomY() {
+  return canvas.height - Math.max(0, state.skillDockCanvasHeight || 0);
+}
+
+function syncLayoutMetrics() {
+  if (!refs.skillDock) return;
+  const canvasRect = canvas.getBoundingClientRect();
+  const dockRect = refs.skillDock.getBoundingClientRect();
+  if (!canvasRect.height || !dockRect.height) return;
+  const scale = canvas.height / canvasRect.height;
+  const dockHeightCanvas = dockRect.height * scale;
+  state.skillDockCanvasHeight = clamp(46, dockHeightCanvas, 180);
+}
+
+function preloadImage(url) {
+  if (!url) return null;
+  if (state.images.has(url)) return state.images.get(url);
+  const image = new Image();
+  image.src = url;
+  state.images.set(url, image);
+  return image;
+}
+
+function resolveFoodImageUrl(id, explicitUrl) {
+  if (typeof explicitUrl === 'string' && explicitUrl.trim()) return explicitUrl.trim();
+  if (!id) return '';
+  return `${FOOD_ASSET_BASE_PATH}/${id}.png`;
+}
+
+function loadAssetsFromConfig() {
+  preloadImage(state.config?.player?.avatarUrl);
+  (state.config?.skills || []).forEach((skill) => preloadImage(skill.avatarUrl));
+  (state.config?.stages || []).forEach((stage) => {
+    (stage.foods || []).forEach((food) => {
+      preloadImage(resolveFoodImageUrl(food.id, food.imageUrl));
+    });
+    if (stage?.boss?.id) {
+      preloadImage(resolveFoodImageUrl(stage.boss.id, stage.boss.imageUrl));
+    }
+  });
+}
+
+function drawCircle(x, y, radius, fill, stroke = '#1c141f') {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = stroke;
+  ctx.stroke();
+}
+
+function drawImageCircle(url, x, y, radius, fallbackColor, zoom = 1) {
+  const image = url ? state.images.get(url) : null;
+  if (image && image.complete && image.naturalWidth > 0) {
+    const zoomRatio = Number.isFinite(zoom) ? Math.max(1, zoom) : 1;
+    const drawRadius = radius * zoomRatio;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(image, x - drawRadius, y - drawRadius, drawRadius * 2, drawRadius * 2);
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#1f1521';
+    ctx.stroke();
+    return;
+  }
+  drawCircle(x, y, radius, fallbackColor);
+}
+
+function drawImageByLongEdge(url, x, y, longEdge, fallbackColor) {
+  const image = url ? state.images.get(url) : null;
+  if (image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0) {
+    const edge = Math.max(8, Number(longEdge) || 8);
+    let drawW = edge;
+    let drawH = edge;
+    if (image.naturalWidth >= image.naturalHeight) {
+      drawH = edge * (image.naturalHeight / image.naturalWidth);
+    } else {
+      drawW = edge * (image.naturalWidth / image.naturalHeight);
+    }
+    ctx.drawImage(image, x - drawW / 2, y - drawH / 2, drawW, drawH);
+    return;
+  }
+  drawCircle(x, y, Math.max(6, (Number(longEdge) || 12) * 0.5), fallbackColor);
+}
+
+function buildStageButtons() {
+  if (!refs.stageButtons) return;
+  refs.stageButtons.innerHTML = '';
+  const stages = state.config?.stages || [];
+
+  stages.forEach((stage, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'stage-btn';
+
+    const locked = index > state.unlockedStageIndex;
+    if (locked) {
+      button.classList.add('is-locked');
+      button.disabled = true;
+    }
+    if (index === state.selectedStageIndex) {
+      button.classList.add('is-selected');
+    }
+
+    const title = document.createElement('strong');
+    title.textContent = `${stage.label} / ${stage.theme}`;
+
+    button.appendChild(title);
+    button.addEventListener('click', () => {
+      if (index > state.unlockedStageIndex) return;
+      startStage(index);
+    });
+    refs.stageButtons.appendChild(button);
+  });
+}
+
+function clearSkillSlotHighlight() {
+  if (!refs.skillDock) return;
+  refs.skillDock.querySelectorAll('.skill-slot.is-active').forEach((slot) => {
+    slot.classList.remove('is-active');
+  });
+}
+
+function renderSkillDock() {
+  if (!refs.skillDock) return;
+  refs.skillDock.innerHTML = '';
+
+  const skills = Array.isArray(state.config?.skills) ? state.config.skills : [];
+  skills.forEach((skill) => {
+    const slot = document.createElement('div');
+    slot.className = 'skill-slot';
+    slot.dataset.skillId = String(skill.guestId || '');
+
+    const avatarFrame = document.createElement('div');
+    avatarFrame.className = 'skill-slot-avatar-frame';
+
+    const avatar = document.createElement('img');
+    avatar.className = 'skill-slot-avatar';
+    avatar.src = skill.avatarUrl || '';
+    avatar.alt = `${skill.guestName || 'ゲスト'}のアイコン`;
+    avatar.loading = 'lazy';
+    avatar.decoding = 'async';
+
+    const meta = document.createElement('div');
+    meta.className = 'skill-slot-meta';
+
+    const name = document.createElement('p');
+    name.className = 'skill-slot-name';
+    name.textContent = skill.guestName || skill.guestId || 'guest';
+
+    const label = document.createElement('p');
+    label.className = 'skill-slot-label';
+    label.textContent = skill.label || '必殺技';
+
+    avatarFrame.appendChild(avatar);
+    meta.appendChild(name);
+    meta.appendChild(label);
+    slot.appendChild(avatarFrame);
+    slot.appendChild(meta);
+    refs.skillDock.appendChild(slot);
+  });
+}
+
+function setupControls() {
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') input.left = true;
+    if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') input.right = true;
+    if (event.key === 'ArrowUp' || event.key.toLowerCase() === 'w') input.up = true;
+    if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') input.down = true;
+  });
+
+  window.addEventListener('keyup', (event) => {
+    if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') input.left = false;
+    if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') input.right = false;
+    if (event.key === 'ArrowUp' || event.key.toLowerCase() === 'w') input.up = false;
+    if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') input.down = false;
+  });
+
+  const onPointer = (clientX, clientY) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    input.pointerX = (clientX - rect.left) * scaleX;
+    input.pointerY = (clientY - rect.top) * scaleY;
+  };
+
+  canvas.addEventListener('pointerdown', (event) => {
+    input.pointerActive = true;
+    onPointer(event.clientX, event.clientY);
+    canvas.setPointerCapture(event.pointerId);
+  });
+  canvas.addEventListener('pointermove', (event) => {
+    if (!input.pointerActive) return;
+    onPointer(event.clientX, event.clientY);
+  });
+  canvas.addEventListener('pointerup', () => {
+    input.pointerActive = false;
+  });
+  canvas.addEventListener('pointercancel', () => {
+    input.pointerActive = false;
+  });
+
+  window.addEventListener('resize', syncLayoutMetrics);
+}
+
+function resetDropRate() {
+  state.dropRate = Number(state.config?.dropSystem?.baseRate || 0.1);
+  state.pitySteps = 0;
+  state.lastDropSuccessSec = state.elapsedSec;
+}
+
+function computeDropRate() {
+  const baseRate = Number(state.config?.dropSystem?.baseRate || 0.1);
+  const pity = state.config?.dropSystem?.pity || {};
+  const everySec = Number(pity.everySec || 20);
+  const plusRate = Number(pity.plusRate || 0.01);
+  const maxRate = Number(pity.maxRate || 0.15);
+  if (everySec <= 0 || plusRate <= 0) {
+    state.dropRate = clamp(baseRate, baseRate, maxRate);
+    return;
+  }
+  const noDropSec = Math.max(0, state.elapsedSec - state.lastDropSuccessSec);
+  const steps = Math.floor(noDropSec / everySec);
+  state.pitySteps = steps;
+  state.dropRate = clamp(baseRate, baseRate + steps * plusRate, maxRate);
+}
+
+function enqueueSkill(skill) {
+  if (!skill) return;
+  state.skillQueue.push(skill);
+  processSkillQueue();
+}
+
+function showSkillBanner(skill) {
+  if (!refs.skillDock) return;
+  clearSkillSlotHighlight();
+
+  let targetSlot = null;
+  refs.skillDock.querySelectorAll('.skill-slot').forEach((slot) => {
+    if (slot.dataset.skillId === String(skill.guestId || '')) {
+      targetSlot = slot;
+    }
+  });
+  if (targetSlot) targetSlot.classList.add('is-active');
+
+  if (state.skillSlotTimer) window.clearTimeout(state.skillSlotTimer);
+  state.skillSlotTimer = window.setTimeout(() => {
+    clearSkillSlotHighlight();
+    state.skillSlotTimer = null;
+  }, BANNER_SHOW_MS);
+}
+
+function extendTimedEffect(effectKey, durationSec, extra = {}) {
+  const base = Math.max(state.activeEffects[effectKey] || 0, state.nowMs);
+  state.activeEffects[effectKey] = base + durationSec * 1000;
+  if (effectKey === 'speedBoostUntilMs' && Number.isFinite(extra.speedMultiplier)) {
+    state.activeEffects.speedMultiplier = Math.max(1, extra.speedMultiplier);
+  }
+}
+
+function resolveSkill(skillType) {
+  return (state.config?.skills || []).find((item) => item.type === skillType);
+}
+
+function processSkillQueue() {
+  if (state.skillProcessing) return;
+  if (!state.skillQueue.length) return;
+  state.skillProcessing = true;
+  const skill = state.skillQueue.shift();
+
+  activateSkill(skill);
+
+  window.setTimeout(() => {
+    state.skillProcessing = false;
+    processSkillQueue();
+  }, 140);
+}
+
+function applyFoodReward(food, shouldRollDrop = true) {
+  const gain = Number(food?.fullness || 0);
+  const scoreGain = Number(food?.score || 100);
+
+  if (!state.bossSpawned) {
+    state.fullness = Math.min(Number(state.stage?.bossAtFullness || 80), state.fullness + gain);
+  }
+  state.score += scoreGain;
+
+  if (!state.bossSpawned && state.fullness >= Number(state.stage?.bossAtFullness || 80)) {
+    spawnBoss();
+  }
+
+  if (shouldRollDrop) rollGuestDrop();
+}
+
+function activateSkill(skill) {
+  if (!skill) return;
+  showSkillBanner(skill);
+
+  switch (skill.type) {
+    case 'screen_clear': {
+      const existingFoods = state.foods.slice();
+      state.foods.length = 0;
+      existingFoods.forEach((food) => applyFoodReward(food, false));
+      state.hazards.length = 0;
+      break;
+    }
+    case 'time_stop': {
+      const durationSec = Number(skill.params?.durationSec || 2.5);
+      extendTimedEffect('timeStopUntilMs', durationSec);
+      break;
+    }
+    case 'barrier': {
+      const durationSec = Number(skill.params?.durationSec || 4.0);
+      extendTimedEffect('barrierUntilMs', durationSec);
+      break;
+    }
+    case 'speed_boost': {
+      const durationSec = Number(skill.params?.durationSec || 20.0);
+      const speedMultiplier = Number(skill.params?.speedMultiplier || 2.0);
+      extendTimedEffect('speedBoostUntilMs', durationSec, { speedMultiplier });
+      break;
+    }
+    case 'heal': {
+      const maxHp = Number(state.config?.player?.maxHp || 3);
+      const isFullHeal = Boolean(skill.params?.fullHeal);
+      if (isFullHeal) {
+        state.hp = maxHp;
+        break;
+      }
+      const heal = Number(skill.params?.hp || 1);
+      state.hp = Math.min(maxHp, state.hp + heal);
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+function rollGuestDrop() {
+  if (!Array.isArray(state.config?.skills) || !state.config.skills.length) return;
+  if (Math.random() > state.dropRate) return;
+  const skill = randomPick(state.config.skills);
+  resetDropRate();
+  enqueueSkill(skill);
+}
+
+function spawnFood() {
+  const foods = state.stage?.foods || [];
+  if (!foods.length) return;
+  const base = randomPick(foods);
+  const radius = Number(base.radius || 24);
+  state.foods.push({
+    id: base.id,
+    name: base.name,
+    x: randomIn(radius + 4, canvas.width - radius - 4),
+    y: -radius - 6,
+    vx: randomIn(-18, 18),
+    vy: randomIn(Number(base.speedMin || 40), Number(base.speedMax || 60)),
+    hp: Number(base.hp || 1),
+    fullness: Number(base.fullness || 5),
+    score: Number(base.score || 100),
+    radius,
+    color: base.color || '#f2b777',
+    imageUrl: resolveFoodImageUrl(base.id, base.imageUrl),
+    renderScale: Number(base.renderScale || 1)
+  });
+}
+
+function spawnHazardBurst() {
+  const burst = Number(state.stage?.hazardBurst || 2);
+  const stageIndex = state.selectedStageIndex;
+  const speedMin = 118 + stageIndex * 18;
+  const speedMax = 168 + stageIndex * 24;
+
+  for (let i = 0; i < burst; i += 1) {
+    state.hazards.push({
+      x: randomIn(12, canvas.width - 12),
+      y: -16,
+      vx: randomIn(-22, 22),
+      vy: randomIn(speedMin, speedMax),
+      radius: randomIn(6, 11),
+      color: i % 2 === 0 ? '#ff784f' : '#ffe07d',
+      damage: 1
+    });
+  }
+}
+
+function spawnBoss() {
+  if (state.bossSpawned) return;
+  const boss = state.stage?.boss;
+  if (!boss) return;
+
+  state.bossSpawned = true;
+  state.boss = {
+    id: boss.id,
+    name: boss.name,
+    x: canvas.width / 2,
+    y: 108,
+    radius: Number(boss.size || 90),
+    hp: Number(boss.hp || 70),
+    maxHp: Number(boss.hp || 70),
+    drift: Number(boss.drift || 80),
+    driftPhase: 0,
+    imageUrl: resolveFoodImageUrl(boss.id, boss.imageUrl),
+    renderScale: Number(boss.renderScale || 1)
+  };
+}
+
+function spawnBossHazardPattern() {
+  if (!state.boss) return;
+  const ring = 8 + state.selectedStageIndex;
+  for (let i = 0; i < ring; i += 1) {
+    const angle = (Math.PI * 2 * i) / ring;
+    const speed = 135 + state.selectedStageIndex * 18;
+    state.hazards.push({
+      x: state.boss.x + Math.cos(angle) * (state.boss.radius * 0.38),
+      y: state.boss.y + Math.sin(angle) * (state.boss.radius * 0.38),
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed + 30,
+      radius: 6 + (i % 2),
+      color: '#ff6f7f',
+      damage: 1
+    });
+  }
+}
+
+function startStage(index) {
+  const stage = stageByIndex(index);
+  if (!stage) return;
+  if (index > state.unlockedStageIndex) {
+    setStageNote('この難易度はまだ解放されていません。');
+    return;
+  }
+
+  state.stage = stage;
+  state.selectedStageIndex = index;
+  state.running = true;
+  state.ended = false;
+  state.elapsedSec = 0;
+  state.nowMs = 0;
+  state.lastFrameMs = 0;
+  state.lastShotMs = 0;
+  state.lastFoodSpawnMs = 0;
+  state.lastHazardSpawnMs = 0;
+  state.lastBossHazardMs = 0;
+  state.hp = Number(state.config?.player?.maxHp || 3);
+  state.fullness = 0;
+  state.score = 0;
+  state.boss = null;
+  state.bossSpawned = false;
+  state.invulnerableUntilMs = 0;
+  state.bullets = [];
+  state.foods = [];
+  state.hazards = [];
+  state.skillQueue = [];
+  state.skillProcessing = false;
+  state.activeEffects.timeStopUntilMs = 0;
+  state.activeEffects.barrierUntilMs = 0;
+  state.activeEffects.speedBoostUntilMs = 0;
+  state.activeEffects.speedMultiplier = 1;
+  state.player = {
+    x: canvas.width / 2,
+    y: playfieldBottomY() - 64,
+    radius: 24,
+    speed: 250 * Number(state.config?.player?.moveSpeed || 1)
+  };
+  if (state.clearFlashTimer) {
+    window.clearTimeout(state.clearFlashTimer);
+    state.clearFlashTimer = null;
+  }
+  if (state.skillSlotTimer) {
+    window.clearTimeout(state.skillSlotTimer);
+    state.skillSlotTimer = null;
+  }
+  setClearFlash(false);
+  clearSkillSlotHighlight();
+  resetDropRate();
+  setOverlay('', {
+    visible: false,
+    showStageButtons: false
+  });
+  setStageNote(`${stage.label} ステージを開始しました。`);
+  syncHud();
+}
+
+function endStage(win) {
+  state.running = false;
+  state.ended = true;
+
+  if (win) {
+    const clearedIndex = state.selectedStageIndex;
+    if (clearedIndex + 1 > state.unlockedStageIndex) {
+      state.unlockedStageIndex = Math.min(clearedIndex + 1, (state.config?.stages?.length || 1) - 1);
+      persistUnlockedStageIndex(state.unlockedStageIndex);
+    }
+    setOverlay('', {
+      visible: false,
+      showStageButtons: false
+    });
+    setClearFlash(true);
+    setStageNote(`${state.stage.label} クリア！ 次の難易度が解放されました。`);
+    buildStageButtons();
+    if (state.clearFlashTimer) {
+      window.clearTimeout(state.clearFlashTimer);
+      state.clearFlashTimer = null;
+    }
+    state.clearFlashTimer = window.setTimeout(() => {
+      setClearFlash(false);
+      setOverlay('難易度を選んでスタート', {
+        visible: true,
+        showStageButtons: true
+      });
+      state.clearFlashTimer = null;
+    }, CLEAR_FLASH_MS);
+    return;
+  }
+
+  setOverlay('ゲームオーバー！', {
+    visible: true,
+    showStageButtons: true
+  });
+  setStageNote('HPが0になりました。');
+}
+
+function onBossConsumed() {
+  state.boss = null;
+  state.fullness = 100;
+  state.score += 1200;
+  syncHud();
+  endStage(true);
+}
+
+function handleShooting(nowMs) {
+  const interval = Number(state.config?.player?.shotIntervalMs || 180);
+  if (nowMs - state.lastShotMs < interval) return;
+  state.lastShotMs = nowMs;
+  state.bullets.push({
+    x: state.player.x,
+    y: state.player.y - state.player.radius - 10,
+    vy: -420,
+    radius: 8,
+    renderRadius: 14
+  });
+}
+
+function updatePlayer(dtSec) {
+  if (!state.player) return;
+  const speed = state.player.speed * moveSpeedMultiplier();
+  let mx = 0;
+  let my = 0;
+  if (input.left) mx -= 1;
+  if (input.right) mx += 1;
+  if (input.up) my -= 1;
+  if (input.down) my += 1;
+
+  if (mx !== 0 || my !== 0) {
+    const len = Math.hypot(mx, my) || 1;
+    state.player.x += (mx / len) * speed * dtSec;
+    state.player.y += (my / len) * speed * dtSec;
+  } else if (input.pointerActive) {
+    const dx = input.pointerX - state.player.x;
+    const dy = input.pointerY - state.player.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > 1) {
+      const step = Math.min(dist, speed * dtSec);
+      state.player.x += (dx / dist) * step;
+      state.player.y += (dy / dist) * step;
+    }
+  }
+
+  const radius = state.player.radius;
+  const playBottom = playfieldBottomY();
+  state.player.x = clamp(radius + 6, state.player.x, canvas.width - radius - 6);
+  state.player.y = clamp(radius + 10, state.player.y, playBottom - radius - 8);
+}
+
+function updateEntities(dtSec, nowMs) {
+  const timeStop = isEffectActive('timeStopUntilMs');
+
+  if (!timeStop && nowMs - state.lastFoodSpawnMs >= Number(state.stage?.foodSpawnMs || 800)) {
+    state.lastFoodSpawnMs = nowMs;
+    spawnFood();
+  }
+  if (!timeStop && nowMs - state.lastHazardSpawnMs >= Number(state.stage?.hazardSpawnMs || 1000)) {
+    state.lastHazardSpawnMs = nowMs;
+    spawnHazardBurst();
+  }
+
+  if (state.boss && !timeStop) {
+    state.boss.driftPhase += dtSec * 1.3;
+    state.boss.x = canvas.width / 2 + Math.sin(state.boss.driftPhase) * state.boss.drift;
+    const cadence = Number(state.stage?.boss?.hazardCadenceMs || 880);
+    if (nowMs - state.lastBossHazardMs >= cadence) {
+      state.lastBossHazardMs = nowMs;
+      spawnBossHazardPattern();
+    }
+  }
+
+  state.bullets.forEach((bullet) => {
+    bullet.y += bullet.vy * dtSec;
+  });
+  state.bullets = state.bullets.filter((bullet) => bullet.y > -20);
+
+  if (!timeStop) {
+    state.foods.forEach((food) => {
+      food.x += food.vx * dtSec;
+      food.y += food.vy * dtSec;
+      if (food.x < food.radius || food.x > canvas.width - food.radius) {
+        food.vx *= -1;
+      }
+    });
+    state.hazards.forEach((hazard) => {
+      hazard.x += hazard.vx * dtSec;
+      hazard.y += hazard.vy * dtSec;
+    });
+  }
+
+  const playBottom = playfieldBottomY();
+  state.foods = state.foods.filter((food) => food.y < playBottom + food.radius + 10);
+  state.hazards = state.hazards.filter(
+    (hazard) => hazard.y < playBottom + 30 && hazard.x > -30 && hazard.x < canvas.width + 30
+  );
+}
+
+function resolveCollisions() {
+  for (let bi = state.bullets.length - 1; bi >= 0; bi -= 1) {
+    const bullet = state.bullets[bi];
+
+    let consumed = false;
+    for (let fi = state.foods.length - 1; fi >= 0; fi -= 1) {
+      const food = state.foods[fi];
+      const rr = (bullet.radius + food.radius) ** 2;
+      if (distanceSq(bullet.x, bullet.y, food.x, food.y) > rr) continue;
+
+      food.hp -= 1;
+      state.bullets.splice(bi, 1);
+      consumed = true;
+
+      if (food.hp <= 0) {
+        state.foods.splice(fi, 1);
+        applyFoodReward(food, true);
+      }
+      break;
+    }
+
+    if (consumed) continue;
+
+    if (state.boss) {
+      const rr = (bullet.radius + state.boss.radius) ** 2;
+      if (distanceSq(bullet.x, bullet.y, state.boss.x, state.boss.y) <= rr) {
+        state.bullets.splice(bi, 1);
+        state.boss.hp -= 1;
+        if (state.boss.hp <= 0) onBossConsumed();
+      }
+    }
+  }
+
+  const barrierActive = isEffectActive('barrierUntilMs');
+  for (let hi = state.hazards.length - 1; hi >= 0; hi -= 1) {
+    const hazard = state.hazards[hi];
+    const rr = (hazard.radius + state.player.radius) ** 2;
+    if (distanceSq(hazard.x, hazard.y, state.player.x, state.player.y) > rr) continue;
+    state.hazards.splice(hi, 1);
+    if (barrierActive) continue;
+    if (state.nowMs < state.invulnerableUntilMs) continue;
+
+    state.hp -= Number(hazard.damage || 1);
+    state.invulnerableUntilMs = state.nowMs + 820;
+    if (state.hp <= 0) {
+      state.hp = 0;
+      endStage(false);
+      return;
+    }
+  }
+}
+
+function updateGame(dtSec, nowMs) {
+  state.nowMs = nowMs;
+  state.elapsedSec += dtSec;
+  computeDropRate();
+
+  if (!state.player) return;
+  updatePlayer(dtSec);
+  handleShooting(nowMs);
+  updateEntities(dtSec, nowMs);
+  resolveCollisions();
+
+  if (!state.bossSpawned && state.fullness >= Number(state.stage?.bossAtFullness || 80)) {
+    spawnBoss();
+  }
+
+  if (!isEffectActive('speedBoostUntilMs')) {
+    state.activeEffects.speedMultiplier = 1;
+  }
+  syncHud();
+}
+
+function drawBackground() {
+  const color = STAGE_BG[state.selectedStageIndex] || STAGE_BG[0];
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, color);
+  gradient.addColorStop(1, '#09080e');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const stripe = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  stripe.addColorStop(0, '#ffffff0f');
+  stripe.addColorStop(1, '#ffffff00');
+  ctx.fillStyle = stripe;
+  for (let i = 0; i < 14; i += 1) {
+    const y = (i * 62 + (state.elapsedSec * 70) % 62) % canvas.height;
+    ctx.fillRect(0, y, canvas.width, 1);
+  }
+}
+
+function drawFoods() {
+  state.foods.forEach((food) => {
+    const longEdge = Math.max(10, food.radius * 2 * Number(food.renderScale || 1));
+    drawImageByLongEdge(food.imageUrl, food.x, food.y, longEdge, food.color);
+    if (food.hp > 1) {
+      ctx.font = '900 10px "M PLUS Rounded 1c"';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.strokeStyle = '#1a101b';
+      ctx.lineWidth = 3;
+      ctx.strokeText(`x${food.hp}`, food.x, food.y - food.radius - 5);
+      ctx.fillText(`x${food.hp}`, food.x, food.y - food.radius - 5);
+    }
+  });
+}
+
+function drawHazards() {
+  state.hazards.forEach((hazard) => {
+    drawCircle(hazard.x, hazard.y, hazard.radius, hazard.color);
+  });
+}
+
+function drawBoss() {
+  if (!state.boss) return;
+  const longEdge = Math.max(20, state.boss.radius * 2 * Number(state.boss.renderScale || 1));
+  drawImageByLongEdge(state.boss.imageUrl, state.boss.x, state.boss.y, longEdge, '#ff9f8a');
+
+  const w = Math.min(200, canvas.width - 120);
+  const h = 14;
+  const x = canvas.width / 2 - w / 2;
+  const y = 46;
+  const ratio = clamp(0, state.boss.hp / state.boss.maxHp, 1);
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#1d131f';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = '#ff4c70';
+  ctx.fillRect(x + 2, y + 2, (w - 4) * ratio, h - 4);
+}
+
+function drawBullets() {
+  state.bullets.forEach((bullet) => {
+    drawImageCircle(
+      state.config?.player?.avatarUrl,
+      bullet.x,
+      bullet.y,
+      Number(bullet.renderRadius || bullet.radius || 4),
+      '#7edfff',
+      1.2
+    );
+  });
+}
+
+function drawPlayer() {
+  if (!state.player) return;
+  const color = state.nowMs < state.invulnerableUntilMs ? '#f0a4c4' : '#9ad8ff';
+  drawImageCircle(state.config?.player?.avatarUrl, state.player.x, state.player.y, state.player.radius, color, 1.2);
+
+  if (isEffectActive('barrierUntilMs')) {
+    ctx.beginPath();
+    ctx.arc(state.player.x, state.player.y, state.player.radius + 8, 0, Math.PI * 2);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#86ffe3';
+    ctx.stroke();
+  }
+}
+
+function drawStageText() {
+  if (!state.stage) return;
+  ctx.fillStyle = '#ffffffc7';
+  ctx.font = '900 14px "M PLUS Rounded 1c"';
+  ctx.textAlign = 'left';
+  ctx.fillText(`${state.stage.label} / ${state.stage.theme}`, 14, Math.max(84, playfieldBottomY() - 10));
+}
+
+function render() {
+  drawBackground();
+  drawFoods();
+  drawHazards();
+  drawBoss();
+  drawBullets();
+  drawPlayer();
+  drawStageText();
+}
+
+function frameLoop(timestamp) {
+  if (!state.lastFrameMs) state.lastFrameMs = timestamp;
+  const dtSec = Math.min((timestamp - state.lastFrameMs) / 1000, 0.05);
+  state.lastFrameMs = timestamp;
+
+  if (state.running) updateGame(dtSec, timestamp);
+  render();
+  window.requestAnimationFrame(frameLoop);
+}
+
+async function loadConfig() {
+  const path = resolveConfigPath();
+  const response = await fetch(path, { cache: 'no-store' });
+  if (!response.ok) throw new Error('ゲーム設定ファイルの読み込みに失敗しました');
+  return response.json();
+}
+
+async function bootstrap() {
+  try {
+    state.config = await loadConfig();
+    state.unlockedStageIndex = readUnlockedStageIndex(state.config.stages.length);
+    state.selectedStageIndex = clamp(0, state.unlockedStageIndex, state.config.stages.length - 1);
+    state.dropRate = Number(state.config.dropSystem.baseRate || 0.1);
+    loadAssetsFromConfig();
+    setupControls();
+    renderSkillDock();
+    syncLayoutMetrics();
+    buildStageButtons();
+    syncHud();
+    setOverlay('難易度を選んでスタート', {
+      visible: true,
+      showStageButtons: true
+    });
+    setStageNote('まずは「簡単」から始めよう。');
+    window.requestAnimationFrame(frameLoop);
+  } catch (error) {
+    console.error(error);
+    setOverlay('ゲームの初期化に失敗しました', {
+      visible: true,
+      showStageButtons: false
+    });
+    setStageNote('設定読み込みでエラーが発生しました。');
+  }
+}
+
+bootstrap();
