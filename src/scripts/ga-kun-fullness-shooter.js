@@ -139,6 +139,10 @@ function stageByIndex(index) {
   return state.config.stages[index];
 }
 
+function isOniStage() {
+  return String(state.stage?.id || '') === 'oni';
+}
+
 function isEffectActive(effectKey) {
   const until = state.activeEffects[effectKey] || 0;
   return state.nowMs < until;
@@ -782,11 +786,12 @@ function spawnFood() {
 
 function spawnHazardBurst() {
   const burst = Number(state.stage?.hazardBurst || 2);
+  const burstCount = isOniStage() ? Math.max(1, Math.round(burst * 0.5)) : burst;
   const stageIndex = state.selectedStageIndex;
   const speedMin = 118 + stageIndex * 18;
   const speedMax = 168 + stageIndex * 24;
 
-  for (let i = 0; i < burst; i += 1) {
+  for (let i = 0; i < burstCount; i += 1) {
     state.hazards.push({
       x: randomIn(12, canvas.width - 12),
       y: -16,
@@ -823,7 +828,8 @@ function spawnBoss() {
 
 function spawnBossHazardPattern() {
   if (!state.boss) return;
-  const ring = 8 + state.selectedStageIndex;
+  const baseRing = 8 + state.selectedStageIndex;
+  const ring = isOniStage() ? Math.max(4, Math.round(baseRing * 0.5)) : baseRing;
   for (let i = 0; i < ring; i += 1) {
     const angle = (Math.PI * 2 * i) / ring;
     const speed = 135 + state.selectedStageIndex * 18;
@@ -874,11 +880,17 @@ function startStage(index) {
   state.activeEffects.barrierUntilMs = 0;
   state.activeEffects.speedBoostUntilMs = 0;
   state.activeEffects.speedMultiplier = 1;
+  const renderScale = String(stage.id || '') === 'oni' ? 2 : 1;
+  const hitAreaScale = String(stage.id || '') === 'oni' ? 2 : 1;
+  const baseRadius = 24;
+  const renderRadius = baseRadius * renderScale;
+  const hitRadius = baseRadius * Math.sqrt(PLAYER_HIT_AREA_RATIO * hitAreaScale);
   state.player = {
     x: canvas.width / 2,
-    y: playfieldBottomY() - 64,
-    radius: 24,
-    hitRadius: 24 * Math.sqrt(PLAYER_HIT_AREA_RATIO),
+    y: playfieldBottomY() - (renderRadius + 22),
+    radius: baseRadius,
+    renderRadius,
+    hitRadius,
     speed: 250 * Number(state.config?.player?.moveSpeed || 1)
   };
   if (state.clearFlashTimer) {
@@ -955,9 +967,10 @@ function handleShooting(nowMs) {
   if (nowMs - state.lastShotMs < interval) return;
   state.lastShotMs = nowMs;
   playSfx('shot');
+  const launchRadius = Number(state.player.renderRadius || state.player.radius || 24);
   state.bullets.push({
     x: state.player.x,
-    y: state.player.y - state.player.radius - 10,
+    y: state.player.y - launchRadius - 10,
     vy: -420,
     radius: 8,
     renderRadius: 14
@@ -991,7 +1004,10 @@ function updatePlayer(dtSec) {
     }
   }
 
-  const radius = state.player.radius;
+  const radius = Math.max(
+    Number(state.player.radius || 0),
+    Number(state.player.renderRadius || 0)
+  );
   const playBottom = playfieldBottomY();
   state.player.x = clamp(radius + 6, state.player.x, canvas.width - radius - 6);
   state.player.y = clamp(radius + 10, state.player.y, playBottom - radius - 8);
@@ -1198,11 +1214,12 @@ function drawBullets() {
 function drawPlayer() {
   if (!state.player) return;
   const color = state.nowMs < state.invulnerableUntilMs ? '#f0a4c4' : '#9ad8ff';
-  drawImageCircle(state.config?.player?.avatarUrl, state.player.x, state.player.y, state.player.radius, color, 1.2);
+  const renderRadius = Number(state.player.renderRadius || state.player.radius || 24);
+  drawImageCircle(state.config?.player?.avatarUrl, state.player.x, state.player.y, renderRadius, color, 1.2);
 
   if (isEffectActive('barrierUntilMs')) {
     ctx.beginPath();
-    ctx.arc(state.player.x, state.player.y, state.player.radius + 8, 0, Math.PI * 2);
+    ctx.arc(state.player.x, state.player.y, renderRadius + 8, 0, Math.PI * 2);
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#86ffe3';
     ctx.stroke();
