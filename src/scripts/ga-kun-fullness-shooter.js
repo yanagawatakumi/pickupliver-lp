@@ -1559,11 +1559,11 @@ function render() {
   drawBackground();
   drawCenterSkillCallout();
   drawFoods();
-  drawHazards();
   drawBoss();
   drawBullets();
   drawPlayer();
   drawStageText();
+  drawHazards();
 }
 
 function frameLoop(timestamp) {
