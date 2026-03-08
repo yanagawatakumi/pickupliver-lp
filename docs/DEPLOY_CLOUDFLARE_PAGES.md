@@ -15,6 +15,20 @@
 5. Deploy を実行
 6. `*.pages.dev` の無料サブドメインで公開確認
 
+## 鬼ステージ クリア人数API（D1）設定
+`/api/oni-clear` を動かすには、Pages Functions に D1 を `DB` 名でバインドする必要があります。
+
+1. Cloudflare Dashboard > `D1` > `Create database`
+2. 任意名でDBを作成（例: `pickupliver-game-db`）
+3. Cloudflare Dashboard > `Workers & Pages` > 対象 `Pages` プロジェクト > `Settings` > `Functions` > `D1 bindings`
+4. `Add binding`
+   - Variable name: `DB`
+   - D1 database: 作成したDBを選択
+5. 保存後、`main` に push して再デプロイ
+6. 動作確認:
+   - `GET https://pickupliver-lp.pages.dev/api/oni-clear` が `ok: true` を返す
+   - 鬼ステージクリア時に `あなたはX人目のクリア者です` が表示される
+
 ## 更新方法
 - ファイルを更新してGitHubにpushすると自動で再デプロイされる
 

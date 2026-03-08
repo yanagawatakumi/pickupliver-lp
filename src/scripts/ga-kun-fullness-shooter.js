@@ -8,6 +8,8 @@ const CLEAR_FLASH_MS = 3000;
 const CENTER_CALLOUT_MS = 1000;
 const CENTER_IN_MS = 120;
 const CENTER_OUT_MS = 120;
+const ONI_CLEAR_API_PATH = '/api/oni-clear';
+const DEBUG_DANCHOU_CLICK_SKILL = true;
 const STAGE_BG = ['#19142b', '#111e37', '#1d2f3a', '#2a1629'];
 const SFX_MASTER_GAIN = 0.45;
 const SFX_COOLDOWN_MS = {
@@ -192,6 +194,25 @@ function readUnlockedStageIndex(stageCount) {
 
 function persistUnlockedStageIndex(index) {
   window.localStorage.setItem(UNLOCK_KEY, String(index));
+}
+
+async function announceOniClearRank() {
+  try {
+    const response = await fetch(ONI_CLEAR_API_PATH, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ stageId: 'oni', clearedAt: new Date().toISOString() })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload?.error || `oni-clear api status ${response.status}`);
+    const rank = Number(payload?.rank || 0);
+    if (!Number.isFinite(rank) || rank <= 0) throw new Error('invalid oni-clear rank');
+
+    setStageNote(`あなたは${rank}人目のクリア者です`);
+  } catch (error) {
+    console.warn('oni clear rank unavailable', error);
+    setStageNote('鬼ステージクリア！ クリア人数の取得に失敗しました');
+  }
 }
 
 function stageByIndex(index) {
@@ -555,6 +576,10 @@ function buildStageButtons() {
   const stages = state.config?.stages || [];
 
   stages.forEach((stage, index) => {
+    const isHiddenStage = String(stage?.id || '') === 'oni';
+    const isHiddenStageVisible = !isHiddenStage || index <= state.unlockedStageIndex;
+    if (!isHiddenStageVisible) return;
+
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'stage-btn';
@@ -624,6 +649,18 @@ function renderSkillDock() {
     meta.appendChild(label);
     slot.appendChild(avatarFrame);
     slot.appendChild(meta);
+
+    if (DEBUG_DANCHOU_CLICK_SKILL && String(skill.guestId || '') === 'danchou') {
+      slot.title = 'DEBUG: 団長必殺技を即時発動';
+      slot.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!state.running) return;
+        unlockAudio();
+        enqueueSkill(skill);
+      });
+    }
+
     refs.skillDock.appendChild(slot);
   });
 }
@@ -995,16 +1032,30 @@ function endStage(win) {
   if (win) {
     playSfx('clear');
     const clearedIndex = state.selectedStageIndex;
+    const previousUnlockedIndex = state.unlockedStageIndex;
+    let hiddenStageUnlocked = false;
     if (clearedIndex + 1 > state.unlockedStageIndex) {
       state.unlockedStageIndex = Math.min(clearedIndex + 1, (state.config?.stages?.length || 1) - 1);
       persistUnlockedStageIndex(state.unlockedStageIndex);
+      const hiddenIndex = (state.config?.stages || []).findIndex((stage) => String(stage?.id || '') === 'oni');
+      if (hiddenIndex >= 0 && previousUnlockedIndex < hiddenIndex && state.unlockedStageIndex >= hiddenIndex) {
+        hiddenStageUnlocked = true;
+      }
     }
     setOverlay('', {
       visible: false,
       showStageButtons: false
     });
     setClearFlash(true);
-    setStageNote(`${state.stage.label} クリア！ 次の難易度が解放されました。`);
+    const isOniClear = String(state.stage?.id || '') === 'oni';
+    if (isOniClear) {
+      setStageNote('鬼ステージクリア！ 集計中...');
+      void announceOniClearRank();
+    } else if (hiddenStageUnlocked) {
+      setStageNote('隠しステージ出現！');
+    } else {
+      setStageNote(`${state.stage.label} クリア！ 次の難易度が解放されました。`);
+    }
     buildStageButtons();
     if (state.clearFlashTimer) {
       window.clearTimeout(state.clearFlashTimer);
@@ -1393,15 +1444,6 @@ function drawFoods() {
   state.foods.forEach((food) => {
     const longEdge = Math.max(10, foodHitRadius(food) * 2);
     drawImageByLongEdge(food.imageUrl, food.x, food.y, longEdge, food.color);
-    if (food.hp > 1) {
-      ctx.font = '900 10px "M PLUS Rounded 1c"';
-      ctx.fillStyle = '#fff';
-      ctx.textAlign = 'center';
-      ctx.strokeStyle = '#1a101b';
-      ctx.lineWidth = 3;
-      ctx.strokeText(`x${food.hp}`, food.x, food.y - foodHitRadius(food) - 5);
-      ctx.fillText(`x${food.hp}`, food.x, food.y - foodHitRadius(food) - 5);
-    }
   });
 }
 
