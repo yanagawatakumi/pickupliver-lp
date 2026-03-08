@@ -409,13 +409,14 @@ h1 {
   gap: 6px;
   padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(180deg, #130f1800 0%, #130f18c7 42%, #130f18eb 100%);
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .skill-slot {
   width: 48px;
   height: 48px;
   flex: 0 0 48px;
+  pointer-events: auto;
   border: 2px solid #fff;
   border-radius: 999px;
   background: #00000024;
@@ -427,6 +428,8 @@ h1 {
   min-width: 0;
   padding: 0;
   overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition:
     width 220ms ease,
     height 220ms ease,

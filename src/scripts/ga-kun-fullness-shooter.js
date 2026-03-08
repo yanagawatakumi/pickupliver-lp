@@ -652,12 +652,22 @@ function renderSkillDock() {
 
     if (DEBUG_DANCHOU_CLICK_SKILL && String(skill.guestId || '') === 'danchou') {
       slot.title = 'DEBUG: 団長必殺技を即時発動';
-      slot.addEventListener('click', (event) => {
+      const triggerDebugSkill = (event) => {
         event.preventDefault();
         event.stopPropagation();
         if (!state.running) return;
+        const now = window.performance.now();
+        const lastMs = Number(slot.dataset.debugLastTapMs || '0');
+        if (Number.isFinite(lastMs) && now - lastMs < 220) return;
+        slot.dataset.debugLastTapMs = String(now);
         unlockAudio();
         enqueueSkill(skill);
+      };
+      slot.addEventListener('click', triggerDebugSkill);
+      slot.addEventListener('touchstart', triggerDebugSkill, { passive: false });
+      slot.addEventListener('pointerdown', (event) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        triggerDebugSkill(event);
       });
     }
 
