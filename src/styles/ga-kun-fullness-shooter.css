@@ -403,6 +403,9 @@ h1 {
   color: #fff8d8;
   font-size: clamp(0.86rem, 3.2vw, 1rem);
   font-weight: 900;
+  line-height: 1.4;
+  text-align: center;
+  white-space: pre-line;
   letter-spacing: 0.02em;
   text-shadow: 0 1px 0 #000;
   animation: clear-flash-pop 200ms ease-out both;

@@ -211,7 +211,9 @@ async function announceOniClearRank() {
     const rank = Number(payload?.rank || 0);
     if (!Number.isFinite(rank) || rank <= 0) throw new Error('invalid oni-clear rank');
 
-    const message = `鬼ステージクリアおめでとう！あなたは${rank}人目のクリア者です。`;
+    const message = `鬼ステージクリアおめでとう！
+あなたは、${rank}人目のクリア者です！
+ブラボ〜〜！！！`;
     setStageNote(message);
     setClearFlashContent('満腹', message);
   } catch (error) {
