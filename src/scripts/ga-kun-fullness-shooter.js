@@ -10,7 +10,6 @@ const CENTER_CALLOUT_MS = 1000;
 const CENTER_IN_MS = 120;
 const CENTER_OUT_MS = 120;
 const ONI_CLEAR_API_PATH = '/api/oni-clear';
-const DEBUG_DANCHOU_CLICK_SKILL = true;
 const STAGE_BG = ['#19142b', '#111e37', '#1d2f3a', '#2a1629'];
 const SFX_MASTER_GAIN = 0.45;
 const SFX_COOLDOWN_MS = {
@@ -708,27 +707,6 @@ function renderSkillDock() {
     meta.appendChild(label);
     slot.appendChild(avatarFrame);
     slot.appendChild(meta);
-
-    if (DEBUG_DANCHOU_CLICK_SKILL && String(skill.guestId || '') === 'danchou') {
-      slot.title = 'DEBUG: 団長必殺技を即時発動';
-      const triggerDebugSkill = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (!state.running) return;
-        const now = window.performance.now();
-        const lastMs = Number(slot.dataset.debugLastTapMs || '0');
-        if (Number.isFinite(lastMs) && now - lastMs < 220) return;
-        slot.dataset.debugLastTapMs = String(now);
-        unlockAudio();
-        enqueueSkill(skill);
-      };
-      slot.addEventListener('click', triggerDebugSkill);
-      slot.addEventListener('touchstart', triggerDebugSkill, { passive: false });
-      slot.addEventListener('pointerdown', (event) => {
-        if (event.pointerType === 'mouse' && event.button !== 0) return;
-        triggerDebugSkill(event);
-      });
-    }
 
     refs.skillDock.appendChild(slot);
   });
