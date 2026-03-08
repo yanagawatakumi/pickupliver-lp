@@ -5,6 +5,9 @@ const PLAYER_HIT_AREA_RATIO = 0.8;
 const POINTER_PLAYER_Y_OFFSET = 64;
 const BANNER_SHOW_MS = 3000;
 const CLEAR_FLASH_MS = 3000;
+const CENTER_CALLOUT_MS = 1000;
+const CENTER_IN_MS = 120;
+const CENTER_OUT_MS = 120;
 const STAGE_BG = ['#19142b', '#111e37', '#1d2f3a', '#2a1629'];
 const SFX_MASTER_GAIN = 0.45;
 const SFX_COOLDOWN_MS = {
@@ -72,6 +75,7 @@ const state = {
     speedBoostUntilMs: 0,
     speedMultiplier: 1
   },
+  centerSkillCallout: null,
   skillSlotTimer: null,
   clearFlashTimer: null,
   images: new Map(),
@@ -121,6 +125,62 @@ function distanceSq(ax, ay, bx, by) {
   const dx = ax - bx;
   const dy = ay - by;
   return dx * dx + dy * dy;
+}
+
+function easeOutCubic(value) {
+  const t = clamp(0, value, 1);
+  return 1 - (1 - t) ** 3;
+}
+
+function easeInCubic(value) {
+  const t = clamp(0, value, 1);
+  return t ** 3;
+}
+
+function roundedRectPath(x, y, width, height, radius) {
+  const r = Math.max(0, Math.min(radius, width * 0.5, height * 0.5));
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.arcTo(x + width, y, x + width, y + r, r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.arcTo(x + width, y + height, x + width - r, y + height, r);
+  ctx.lineTo(x + r, y + height);
+  ctx.arcTo(x, y + height, x, y + height - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function cutCornerPanelPath(x, y, width, height, cut) {
+  const c = Math.max(2, Math.min(cut, width * 0.2, height * 0.4));
+  ctx.beginPath();
+  ctx.moveTo(x + c, y);
+  ctx.lineTo(x + width - c, y);
+  ctx.lineTo(x + width, y + c);
+  ctx.lineTo(x + width, y + height - c);
+  ctx.lineTo(x + width - c, y + height);
+  ctx.lineTo(x + c, y + height);
+  ctx.lineTo(x, y + height - c);
+  ctx.lineTo(x, y + c);
+  ctx.closePath();
+}
+
+function skillCalloutPalette(skillType) {
+  switch (String(skillType || '')) {
+    case 'screen_clear':
+      return { core: '#2f1111', accent: '#ff7b52', glow: '#ffd0a3' };
+    case 'time_stop':
+      return { core: '#161736', accent: '#6da5ff', glow: '#c4d6ff' };
+    case 'barrier':
+      return { core: '#0e2a23', accent: '#59f0c7', glow: '#befbec' };
+    case 'speed_boost':
+      return { core: '#2d162f', accent: '#f46bff', glow: '#ffd5ff' };
+    case 'heal':
+      return { core: '#2f2310', accent: '#ffd866', glow: '#fff4c7' };
+    default:
+      return { core: '#211727', accent: '#d7b56d', glow: '#f3e2b5' };
+  }
 }
 
 function readUnlockedStageIndex(stageCount) {
@@ -658,6 +718,23 @@ function showSkillBanner(skill) {
   }, BANNER_SHOW_MS);
 }
 
+function setCenterSkillCallout(skill) {
+  if (!skill) return;
+  const now = Number(state.nowMs || window.performance.now());
+  state.centerSkillCallout = {
+    guestName: String(skill.guestName || skill.guestId || 'GUEST'),
+    skillLabel: String(skill.label || '必殺技'),
+    skillType: String(skill.type || ''),
+    avatarUrl: String(skill.avatarUrl || ''),
+    startedAtMs: now,
+    untilMs: now + CENTER_CALLOUT_MS
+  };
+}
+
+function clearCenterSkillCallout() {
+  state.centerSkillCallout = null;
+}
+
 function extendTimedEffect(effectKey, durationSec, extra = {}) {
   const base = Math.max(state.activeEffects[effectKey] || 0, state.nowMs);
   state.activeEffects[effectKey] = base + durationSec * 1000;
@@ -704,6 +781,7 @@ function applyFoodReward(food, shouldRollDrop = true) {
 function activateSkill(skill) {
   if (!skill) return;
   showSkillBanner(skill);
+  setCenterSkillCallout(skill);
   playSfx('skillActivate', { skillType: skill.type });
 
   switch (skill.type) {
@@ -897,6 +975,7 @@ function startStage(index) {
     window.clearTimeout(state.skillSlotTimer);
     state.skillSlotTimer = null;
   }
+  clearCenterSkillCallout();
   setClearFlash(false);
   clearSkillSlotHighlight();
   resetDropRate();
@@ -911,6 +990,7 @@ function startStage(index) {
 function endStage(win) {
   state.running = false;
   state.ended = true;
+  clearCenterSkillCallout();
 
   if (win) {
     playSfx('clear');
@@ -1093,6 +1173,17 @@ function resolveCollisions() {
     }
   }
 
+  const playerFoodRadius = Number(state.player?.renderRadius || state.player?.radius || 0);
+  if (playerFoodRadius > 0) {
+    for (let fi = state.foods.length - 1; fi >= 0; fi -= 1) {
+      const food = state.foods[fi];
+      const rr = (playerFoodRadius + foodHitRadius(food)) ** 2;
+      if (distanceSq(state.player.x, state.player.y, food.x, food.y) > rr) continue;
+      state.foods.splice(fi, 1);
+      applyFoodReward(food, true);
+    }
+  }
+
   const barrierActive = isEffectActive('barrierUntilMs');
   for (let hi = state.hazards.length - 1; hi >= 0; hi -= 1) {
     const hazard = state.hazards[hi];
@@ -1150,6 +1241,152 @@ function drawBackground() {
     const y = (i * 62 + (state.elapsedSec * 70) % 62) % canvas.height;
     ctx.fillRect(0, y, canvas.width, 1);
   }
+}
+
+function drawCenterSkillCallout() {
+  if (!state.running) return;
+  const callout = state.centerSkillCallout;
+  if (!callout) return;
+
+  const now = Number(state.nowMs || window.performance.now());
+  if (now >= callout.untilMs) {
+    clearCenterSkillCallout();
+    return;
+  }
+
+  const elapsed = Math.max(0, now - callout.startedAtMs);
+  const total = CENTER_CALLOUT_MS;
+  const inMs = CENTER_IN_MS;
+  const outMs = CENTER_OUT_MS;
+
+  let offsetX = 0;
+  let alphaScale = 1;
+  if (elapsed < inMs) {
+    const eased = easeOutCubic(elapsed / inMs);
+    offsetX = -42 * (1 - eased);
+    alphaScale = eased;
+  } else if (elapsed > total - outMs) {
+    const eased = easeInCubic((elapsed - (total - outMs)) / outMs);
+    offsetX = 24 * eased;
+    alphaScale = 1 - eased;
+  }
+
+  if (alphaScale <= 0.001) return;
+
+  const palette = skillCalloutPalette(callout.skillType);
+  const panelWidth = canvas.width * 0.68;
+  const panelHeight = canvas.height * 0.128;
+  const panelX = (canvas.width - panelWidth) * 0.5 + offsetX;
+  const panelY = canvas.height * 0.5 - panelHeight * 0.5 - canvas.height * 0.06;
+  const cut = Math.min(18, panelHeight * 0.24);
+  const stripePhase = ((elapsed * 0.55) % 56) - 56;
+
+  ctx.save();
+
+  cutCornerPanelPath(panelX, panelY, panelWidth, panelHeight, cut);
+  const bgGradient = ctx.createLinearGradient(panelX, panelY, panelX + panelWidth, panelY + panelHeight);
+  bgGradient.addColorStop(0, `${palette.core}dd`);
+  bgGradient.addColorStop(0.55, `${palette.core}bb`);
+  bgGradient.addColorStop(1, '#0b0f17dd');
+  ctx.fillStyle = bgGradient;
+  ctx.globalAlpha = 0.34 * alphaScale;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.shadowBlur = 14;
+  ctx.shadowColor = `${palette.accent}aa`;
+  ctx.lineWidth = 2.6;
+  ctx.strokeStyle = `${palette.accent}${Math.floor(190 * alphaScale).toString(16).padStart(2, '0')}`;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  const innerX = panelX + 5;
+  const innerY = panelY + 5;
+  const innerW = panelWidth - 10;
+  const innerH = panelHeight - 10;
+  cutCornerPanelPath(innerX, innerY, innerW, innerH, Math.max(6, cut - 5));
+  ctx.lineWidth = 1.4;
+  ctx.strokeStyle = `rgba(255,255,255,${0.24 * alphaScale})`;
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.26 * alphaScale;
+  ctx.strokeStyle = palette.glow;
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  for (let sx = stripePhase; sx < panelWidth + 56; sx += 24) {
+    ctx.moveTo(panelX + sx, panelY + panelHeight * 0.1);
+    ctx.lineTo(panelX + sx + 14, panelY + panelHeight * 0.9);
+  }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  const badgeW = 108;
+  const badgeH = 18;
+  const badgeX = panelX + panelWidth - badgeW - 14;
+  const badgeY = panelY - 8;
+  cutCornerPanelPath(badgeX, badgeY, badgeW, badgeH, 6);
+  ctx.fillStyle = `rgba(8,12,18,${0.62 * alphaScale})`;
+  ctx.fill();
+  ctx.strokeStyle = `rgba(255,255,255,${0.34 * alphaScale})`;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.font = '800 10px "M PLUS Rounded 1c", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = `rgba(240,248,255,${0.68 * alphaScale})`;
+  ctx.fillText('SPECIAL SKILL', badgeX + badgeW * 0.5, badgeY + badgeH * 0.52);
+
+  const avatarRadius = 24;
+  const avatarX = panelX + 42;
+  const avatarY = panelY + panelHeight * 0.5;
+  const ringPhase = (elapsed / total) * Math.PI * 2;
+
+  ctx.beginPath();
+  ctx.arc(avatarX, avatarY, avatarRadius, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(255,255,255,${0.14 * alphaScale})`;
+  ctx.fill();
+  ctx.lineWidth = 2.2;
+  ctx.strokeStyle = `rgba(255,255,255,${0.52 * alphaScale})`;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(avatarX, avatarY, avatarRadius + 4, ringPhase, ringPhase + Math.PI * 1.2);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = `rgba(215,181,109,${0.62 * alphaScale})`;
+  ctx.stroke();
+
+  const avatarImage = callout.avatarUrl ? state.images.get(callout.avatarUrl) : null;
+  if (avatarImage && avatarImage.complete && avatarImage.naturalWidth > 0) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(avatarX, avatarY, avatarRadius - 1, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(avatarImage, avatarX - (avatarRadius - 1), avatarY - (avatarRadius - 1), (avatarRadius - 1) * 2, (avatarRadius - 1) * 2);
+    ctx.restore();
+  }
+
+  const textX = avatarX + avatarRadius + 16;
+  const nameY = panelY + panelHeight * 0.36;
+  const skillY = panelY + panelHeight * 0.69;
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.font = '900 20px "Yusei Magic", "Yuji Syuku", sans-serif';
+  ctx.strokeStyle = `rgba(0,0,0,${0.42 * alphaScale})`;
+  ctx.lineWidth = 3;
+  ctx.strokeText(callout.guestName, textX, nameY, panelWidth - 146);
+  ctx.fillStyle = `rgba(242,239,255,${0.78 * alphaScale})`;
+  ctx.fillText(callout.guestName, textX, nameY, panelWidth - 146);
+
+  ctx.font = '900 16px "M PLUS Rounded 1c", sans-serif';
+  ctx.strokeStyle = `rgba(0,0,0,${0.48 * alphaScale})`;
+  ctx.lineWidth = 3.2;
+  ctx.strokeText(callout.skillLabel, textX, skillY, panelWidth - 146);
+  ctx.fillStyle = `rgba(255,231,174,${0.8 * alphaScale})`;
+  ctx.fillText(callout.skillLabel, textX, skillY, panelWidth - 146);
+
+  ctx.restore();
 }
 
 function drawFoods() {
@@ -1232,6 +1469,7 @@ function drawStageText() {
 
 function render() {
   drawBackground();
+  drawCenterSkillCallout();
   drawFoods();
   drawHazards();
   drawBoss();
