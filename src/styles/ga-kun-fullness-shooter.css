@@ -368,6 +368,23 @@ h1 {
   color: #49324b;
 }
 
+.overlay-all-clear {
+  margin: 6px 0 0;
+  padding: 6px 12px;
+  border: 2px solid #fff4be;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f5b500 0%, #ffdf58 100%);
+  color: #2a1b1f;
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 #fff7d0;
+}
+
+.overlay-all-clear[hidden] {
+  display: none;
+}
+
 .clear-flash {
   position: absolute;
   inset: 0;

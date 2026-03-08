@@ -1,6 +1,7 @@
 const CONFIG_PATH_DEFAULT = '/content/games/ga-kun-fullness-shooter/config.json';
 const FOOD_ASSET_BASE_PATH = '/public/assets/games/ga-kun-fullness-shooter/foods';
 const UNLOCK_KEY = 'vt_ga_kun_shooter_unlock_v1';
+const ALL_CLEAR_KEY = 'vt_ga_kun_shooter_all_clear_v1';
 const PLAYER_HIT_AREA_RATIO = 0.8;
 const POINTER_PLAYER_Y_OFFSET = 64;
 const BANNER_SHOW_MS = 3000;
@@ -28,6 +29,7 @@ const SFX_COOLDOWN_MS = {
 
 const refs = {
   stageButtons: document.getElementById('stage-buttons'),
+  allClearMessage: document.getElementById('all-clear-message'),
   stageNote: document.getElementById('stage-note'),
   skillDock: document.getElementById('skill-dock'),
   hpValue: document.getElementById('hp-value'),
@@ -49,6 +51,7 @@ const state = {
   config: null,
   selectedStageIndex: 0,
   unlockedStageIndex: 0,
+  allStagesCleared: false,
   stage: null,
   running: false,
   ended: false,
@@ -199,6 +202,22 @@ function persistUnlockedStageIndex(index) {
   window.localStorage.setItem(UNLOCK_KEY, String(index));
 }
 
+function readAllStagesCleared() {
+  try {
+    return window.localStorage.getItem(ALL_CLEAR_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function persistAllStagesCleared(value) {
+  try {
+    window.localStorage.setItem(ALL_CLEAR_KEY, value ? '1' : '0');
+  } catch {
+    // ignore storage failures
+  }
+}
+
 async function announceOniClearRank() {
   try {
     const response = await fetch(ONI_CLEAR_API_PATH, {
@@ -252,6 +271,7 @@ function setOverlay(message, options = {}) {
   if (refs.overlayMessage) refs.overlayMessage.textContent = message;
   if (refs.overlayScreen) refs.overlayScreen.classList.toggle('is-hidden', !visible);
   if (refs.stageButtons) refs.stageButtons.hidden = !showStageButtons;
+  if (refs.allClearMessage) refs.allClearMessage.hidden = !(visible && showStageButtons && state.allStagesCleared);
 }
 
 function setClearFlash(visible) {
@@ -1097,6 +1117,8 @@ function endStage(win) {
     setClearFlash(true);
     const isOniClear = String(state.stage?.id || '') === 'oni';
     if (isOniClear) {
+      state.allStagesCleared = true;
+      persistAllStagesCleared(true);
       setStageNote('鬼ステージクリア！ 集計中...');
       setClearFlashContent('満腹', '鬼ステージクリアおめでとう！クリア人数を集計中...');
       setClearFlashAction(true);
@@ -1589,6 +1611,7 @@ async function bootstrap() {
   try {
     state.config = await loadConfig();
     state.unlockedStageIndex = readUnlockedStageIndex(state.config.stages.length);
+    state.allStagesCleared = readAllStagesCleared();
     state.selectedStageIndex = clamp(0, state.unlockedStageIndex, state.config.stages.length - 1);
     state.dropRate = Number(state.config.dropSystem.baseRate || 0.1);
     loadAssetsFromConfig();
