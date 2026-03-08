@@ -412,6 +412,29 @@ h1 {
   display: none;
 }
 
+.clear-flash-action {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fff8d9 0%, #ffe2a6 100%);
+  color: #2b1f1c;
+  font: inherit;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: 0 3px 10px #0000004a;
+}
+
+.clear-flash-action:active {
+  transform: translateY(1px);
+}
+
+.clear-flash-action[hidden] {
+  display: none;
+}
+
 .clear-flash[hidden] {
   display: none;
 }
