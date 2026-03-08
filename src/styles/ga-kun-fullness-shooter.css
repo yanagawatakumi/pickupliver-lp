@@ -373,13 +373,15 @@ h1 {
   inset: 0;
   z-index: 13;
   display: flex;
+  flex-direction: column;
+  gap: 10px;
   align-items: center;
   justify-content: center;
   pointer-events: none;
   background: radial-gradient(circle at 50% 50%, #ffffff20 0%, #ffffff00 62%);
 }
 
-.clear-flash span {
+.clear-flash-main {
   font-family: "Yuji Syuku", "Yusei Magic", sans-serif;
   font-size: clamp(6.6rem, 28vw, 10.5rem);
   line-height: 1;
@@ -390,6 +392,24 @@ h1 {
   color: #fff;
   text-shadow: 0 3px 0 #1f0f1d, 0 0 30px #ff89cf;
   animation: clear-flash-pop 260ms ease-out both;
+}
+
+.clear-flash-sub {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 2px solid #ffffffbb;
+  background: #14111bcc;
+  color: #fff8d8;
+  font-size: clamp(0.86rem, 3.2vw, 1rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 #000;
+  animation: clear-flash-pop 200ms ease-out both;
+}
+
+.clear-flash-sub[hidden] {
+  display: none;
 }
 
 .clear-flash[hidden] {

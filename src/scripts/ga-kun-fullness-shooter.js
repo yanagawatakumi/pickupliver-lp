@@ -37,6 +37,8 @@ const refs = {
   overlayScreen: document.getElementById('overlay-screen'),
   overlayMessage: document.getElementById('overlay-message'),
   clearFlash: document.getElementById('clear-flash'),
+  clearFlashMain: document.getElementById('clear-flash-main'),
+  clearFlashSub: document.getElementById('clear-flash-sub'),
 };
 
 const canvas = document.getElementById('game-canvas');
@@ -208,10 +210,14 @@ async function announceOniClearRank() {
     const rank = Number(payload?.rank || 0);
     if (!Number.isFinite(rank) || rank <= 0) throw new Error('invalid oni-clear rank');
 
-    setStageNote(`あなたは${rank}人目のクリア者です`);
+    const message = `あなたは${rank}人目のクリア者です`;
+    setStageNote(message);
+    setClearFlashContent('満腹', message);
   } catch (error) {
     console.warn('oni clear rank unavailable', error);
-    setStageNote('鬼ステージクリア！ クリア人数の取得に失敗しました');
+    const message = '鬼ステージクリア！ クリア人数の取得に失敗しました';
+    setStageNote(message);
+    setClearFlashContent('満腹', 'クリア人数の取得に失敗しました');
   }
 }
 
@@ -248,6 +254,15 @@ function setOverlay(message, options = {}) {
 function setClearFlash(visible) {
   if (!refs.clearFlash) return;
   refs.clearFlash.hidden = !visible;
+}
+
+function setClearFlashContent(mainText = '満腹', subText = '') {
+  if (refs.clearFlashMain) refs.clearFlashMain.textContent = String(mainText || '満腹');
+  if (refs.clearFlashSub) {
+    const value = String(subText || '').trim();
+    refs.clearFlashSub.textContent = value;
+    refs.clearFlashSub.hidden = value.length === 0;
+  }
 }
 
 function syncHud() {
@@ -1023,6 +1038,7 @@ function startStage(index) {
     state.skillSlotTimer = null;
   }
   clearCenterSkillCallout();
+  setClearFlashContent('満腹', '');
   setClearFlash(false);
   clearSkillSlotHighlight();
   resetDropRate();
@@ -1056,10 +1072,12 @@ function endStage(win) {
       visible: false,
       showStageButtons: false
     });
+    setClearFlashContent('満腹', '');
     setClearFlash(true);
     const isOniClear = String(state.stage?.id || '') === 'oni';
     if (isOniClear) {
       setStageNote('鬼ステージクリア！ 集計中...');
+      setClearFlashContent('満腹', 'クリア人数を集計中...');
       void announceOniClearRank();
     } else if (hiddenStageUnlocked) {
       setStageNote('隠しステージ出現！');
@@ -1071,14 +1089,16 @@ function endStage(win) {
       window.clearTimeout(state.clearFlashTimer);
       state.clearFlashTimer = null;
     }
+    const clearFlashDurationMs = isOniClear ? CLEAR_FLASH_MS + 1200 : CLEAR_FLASH_MS;
     state.clearFlashTimer = window.setTimeout(() => {
       setClearFlash(false);
+      setClearFlashContent('満腹', '');
       setOverlay('難易度を選んでスタート', {
         visible: true,
         showStageButtons: true
       });
       state.clearFlashTimer = null;
-    }, CLEAR_FLASH_MS);
+    }, clearFlashDurationMs);
     return;
   }
 
