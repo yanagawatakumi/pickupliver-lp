@@ -9,12 +9,7 @@ function json(data, status = 200) {
 }
 
 async function ensureSchema(db) {
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS counters (
-      key TEXT PRIMARY KEY,
-      value INTEGER NOT NULL
-    );
-  `);
+  await db.prepare('CREATE TABLE IF NOT EXISTS counters (key TEXT PRIMARY KEY, value INTEGER NOT NULL);').run();
 }
 
 async function nextOniClearRank(db) {
