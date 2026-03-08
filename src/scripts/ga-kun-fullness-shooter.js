@@ -29,7 +29,6 @@ const SFX_COOLDOWN_MS = {
 
 const refs = {
   stageButtons: document.getElementById('stage-buttons'),
-  allClearMessage: document.getElementById('all-clear-message'),
   stageNote: document.getElementById('stage-note'),
   skillDock: document.getElementById('skill-dock'),
   hpValue: document.getElementById('hp-value'),
@@ -271,7 +270,6 @@ function setOverlay(message, options = {}) {
   if (refs.overlayMessage) refs.overlayMessage.textContent = message;
   if (refs.overlayScreen) refs.overlayScreen.classList.toggle('is-hidden', !visible);
   if (refs.stageButtons) refs.stageButtons.hidden = !showStageButtons;
-  if (refs.allClearMessage) refs.allClearMessage.hidden = !(visible && showStageButtons && state.allStagesCleared);
 }
 
 function setClearFlash(visible) {
@@ -657,6 +655,13 @@ function buildStageButtons() {
       startStage(index);
     });
     refs.stageButtons.appendChild(button);
+
+    if (String(stage?.id || '') === 'oni' && state.allStagesCleared) {
+      const allClear = document.createElement('p');
+      allClear.className = 'overlay-all-clear';
+      allClear.textContent = '全ステージクリア！';
+      refs.stageButtons.appendChild(allClear);
+    }
   });
 }
 
