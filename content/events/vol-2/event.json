@@ -70,6 +70,18 @@
   "cta": {
     "primaryLabel": "配信を視聴する",
     "primaryUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+    "miniGameLabel": "がーくん満腹シューティングで遊ぶ",
+    "miniGameUrl": "/games/ga-kun-fullness-shooter/",
+    "miniGameGimmick": {
+      "enabled": true,
+      "type": "floating_face",
+      "targetUrl": "/games/ga-kun-fullness-shooter/",
+      "avatarUrl": "/public/assets/events/vol-2/avatars/ga-kun88.jpg",
+      "intervalSecMin": 10,
+      "intervalSecMax": 15,
+      "visibleSec": 6,
+      "maxAppearancesPerSession": 3
+    },
     "secondaryLabel": "出演者情報を見る",
     "secondaryUrl": "#guests",
     "preCtaMessage": "今すぐ予定追加して、見逃しを防ごう。"

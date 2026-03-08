@@ -7,6 +7,7 @@ let copyToastTimer = null;
 let bgmHintTimer = null;
 const MARQUEE_SPEED_PX_PER_SEC = 72;
 const BGM_HINT_DISMISSED_KEY = 'bgmHintDismissed';
+const MINI_GAME_GIMMICK_SESSION_KEY_PREFIX = 'miniGameGimmickSeen';
 const DEFAULT_EVENT_DATA_PATH = '/content/events/vol-1/event.json';
 const DEFAULT_SHELL_TEMPLATE_PATH = '/src/templates/event-shell.html';
 
@@ -31,6 +32,13 @@ const particleState = {
   timers: new Map()
 };
 
+const miniGameGimmickState = {
+  scheduleTimer: null,
+  hideTimer: null,
+  node: null,
+  navigating: false
+};
+
 function setEffectsMode(mode = 'normal') {
   effectConfig.mode = mode;
 }
@@ -45,6 +53,11 @@ function randomIn(min, max) {
 
 function clamp(min, value, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function toFiniteNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function computeTravelAndDuration(startX, startY, endX, endY, minSpeed, maxSpeed) {
@@ -169,6 +182,173 @@ function extractVolumeLabel(event) {
   const num = slug.match(/vol-(\d+)/i)?.[1];
   if (num) return `VOL.${num}`;
   return 'VOL.';
+}
+
+function clearMiniGameGimmickNode() {
+  if (miniGameGimmickState.node && miniGameGimmickState.node.isConnected) {
+    miniGameGimmickState.node.remove();
+  }
+  miniGameGimmickState.node = null;
+}
+
+function cleanupMiniGameGimmick() {
+  if (miniGameGimmickState.scheduleTimer) {
+    window.clearTimeout(miniGameGimmickState.scheduleTimer);
+    miniGameGimmickState.scheduleTimer = null;
+  }
+  if (miniGameGimmickState.hideTimer) {
+    window.clearTimeout(miniGameGimmickState.hideTimer);
+    miniGameGimmickState.hideTimer = null;
+  }
+  miniGameGimmickState.navigating = false;
+  clearMiniGameGimmickNode();
+}
+
+function getMiniGameGimmickSessionKey(eventId, slug) {
+  const safeEventId = String(eventId || 'event').trim() || 'event';
+  const safeSlug = String(slug || 'episode').trim() || 'episode';
+  return `${MINI_GAME_GIMMICK_SESSION_KEY_PREFIX}:${safeSlug}:${safeEventId}`;
+}
+
+function readMiniGameGimmickCount(sessionKey) {
+  try {
+    const value = Number.parseInt(window.sessionStorage.getItem(sessionKey) || '0', 10);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  } catch (_) {
+    return 0;
+  }
+}
+
+function writeMiniGameGimmickCount(sessionKey, count) {
+  try {
+    window.sessionStorage.setItem(sessionKey, String(Math.max(0, count)));
+  } catch (_) {
+    // Ignore storage access failure.
+  }
+}
+
+function buildMiniGameGimmickConfig(event) {
+  const slug = getMetaContent('vt:episode-slug').toLowerCase();
+  if (slug !== 'vol-2') return null;
+
+  const gimmick = event?.cta?.miniGameGimmick;
+  if (!gimmick || gimmick.enabled !== true) return null;
+  if (String(gimmick.type || '').trim() !== 'floating_face') return null;
+
+  const targetUrl = String(gimmick.targetUrl || '').trim();
+  const avatarUrl = String(gimmick.avatarUrl || '').trim();
+  if (!targetUrl || !avatarUrl) return null;
+
+  const intervalSecMin = clamp(5, toFiniteNumber(gimmick.intervalSecMin, 10), 120);
+  const intervalSecMax = clamp(intervalSecMin, toFiniteNumber(gimmick.intervalSecMax, 15), 180);
+  const visibleSec = clamp(3, toFiniteNumber(gimmick.visibleSec, 6), 12);
+  const maxAppearancesPerSession = Math.round(clamp(1, toFiniteNumber(gimmick.maxAppearancesPerSession, 3), 10));
+  const sessionKey = getMiniGameGimmickSessionKey(event?.eventId, slug);
+
+  return {
+    targetUrl,
+    avatarUrl,
+    intervalSecMin,
+    intervalSecMax,
+    visibleSec,
+    maxAppearancesPerSession,
+    sessionKey
+  };
+}
+
+function getMiniGameGimmickTopPx() {
+  const vh = window.innerHeight;
+  const minTop = Math.max(vh * 0.18, 76);
+  const maxTop = Math.min(vh * 0.72, vh - 180);
+  if (maxTop <= minTop) return minTop;
+  return randomIn(minTop, maxTop);
+}
+
+function spawnMiniGameGimmick(config) {
+  clearMiniGameGimmickNode();
+
+  const reducedMotion = prefersReducedMotion();
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'mini-game-gimmick-trigger';
+  button.setAttribute('aria-label', 'ミニゲームへ移動');
+  button.title = 'ミニゲームへ移動';
+
+  const face = document.createElement('img');
+  face.className = 'mini-game-gimmick-face';
+  face.src = config.avatarUrl;
+  face.alt = '';
+  face.loading = 'eager';
+  face.decoding = 'async';
+  face.addEventListener('error', () => {
+    button.classList.add('is-fallback');
+    face.remove();
+  });
+  button.appendChild(face);
+
+  if (reducedMotion) {
+    button.classList.add('is-static');
+    button.style.setProperty('--mini-game-gimmick-duration', `${config.visibleSec}s`);
+  } else {
+    button.style.setProperty('--mini-game-gimmick-duration', `${config.visibleSec}s`);
+    button.style.setProperty('--mini-game-gimmick-y', `${Math.round(getMiniGameGimmickTopPx())}px`);
+    button.style.setProperty('--mini-game-gimmick-start-x', `${window.innerWidth + 94}px`);
+    button.style.setProperty('--mini-game-gimmick-end-x', '-94px');
+  }
+
+  const goToMiniGame = () => {
+    if (miniGameGimmickState.navigating) return;
+    miniGameGimmickState.navigating = true;
+    button.disabled = true;
+    button.classList.add('is-hit');
+    window.setTimeout(() => {
+      window.location.href = config.targetUrl;
+    }, 120);
+  };
+
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    goToMiniGame();
+  });
+
+  document.body.appendChild(button);
+  miniGameGimmickState.node = button;
+
+  if (miniGameGimmickState.hideTimer) window.clearTimeout(miniGameGimmickState.hideTimer);
+  miniGameGimmickState.hideTimer = window.setTimeout(() => {
+    if (miniGameGimmickState.navigating) return;
+    clearMiniGameGimmickNode();
+    miniGameGimmickState.hideTimer = null;
+  }, config.visibleSec * 1000);
+}
+
+function scheduleMiniGameGimmick(config) {
+  if (miniGameGimmickState.navigating) return;
+  const shownCount = readMiniGameGimmickCount(config.sessionKey);
+  if (shownCount >= config.maxAppearancesPerSession) return;
+
+  const delayMs = randomIn(config.intervalSecMin * 1000, config.intervalSecMax * 1000);
+  if (miniGameGimmickState.scheduleTimer) window.clearTimeout(miniGameGimmickState.scheduleTimer);
+  miniGameGimmickState.scheduleTimer = window.setTimeout(() => {
+    miniGameGimmickState.scheduleTimer = null;
+    if (document.hidden) {
+      scheduleMiniGameGimmick(config);
+      return;
+    }
+
+    const latestCount = readMiniGameGimmickCount(config.sessionKey);
+    if (latestCount >= config.maxAppearancesPerSession) return;
+    writeMiniGameGimmickCount(config.sessionKey, latestCount + 1);
+    spawnMiniGameGimmick(config);
+    scheduleMiniGameGimmick(config);
+  }, Math.round(delayMs));
+}
+
+function initMiniGameGimmick(event) {
+  cleanupMiniGameGimmick();
+  const config = buildMiniGameGimmickConfig(event);
+  if (!config) return;
+  scheduleMiniGameGimmick(config);
 }
 
 async function renderShell() {
@@ -641,6 +821,9 @@ function applyEvent(event) {
   const time = document.getElementById('event-time');
   const venue = document.getElementById('event-venue');
   const ctaPrimary = document.getElementById('cta-primary');
+  const ctaMiniGame = document.getElementById('cta-minigame');
+  const miniGamePromo = document.getElementById('mini-game-promo');
+  const miniGameAvatar = document.getElementById('mini-game-avatar');
   const mainFlyer = document.getElementById('main-flyer');
   const hostList = document.getElementById('host-list');
   const guestList = document.getElementById('guest-list');
@@ -712,6 +895,40 @@ function applyEvent(event) {
   if (ctaPrimary) {
     ctaPrimary.textContent = event.cta.primaryLabel;
     ctaPrimary.href = event.cta.primaryUrl || '#';
+  }
+
+  if (ctaMiniGame) {
+    const miniGameUrl = typeof event.cta?.miniGameUrl === 'string' ? event.cta.miniGameUrl.trim() : '';
+    if (miniGameUrl) {
+      ctaMiniGame.hidden = false;
+      ctaMiniGame.href = miniGameUrl;
+      ctaMiniGame.textContent = event.cta?.miniGameLabel || 'がーくん満腹シューティングで遊ぶ';
+      ctaMiniGame.target = '_self';
+      ctaMiniGame.rel = '';
+      if (miniGamePromo) miniGamePromo.hidden = false;
+
+      const gaKunHost = (event.hosts || []).find((host) => /がーくん|ガーくん|ga[-\s]?kun/i.test(String(host?.name || '')));
+      const fallbackAvatar = typeof event.cta?.miniGameGimmick?.avatarUrl === 'string'
+        ? event.cta.miniGameGimmick.avatarUrl.trim()
+        : '';
+      const avatarUrl = gaKunHost?.avatarUrl || fallbackAvatar;
+
+      if (miniGameAvatar && avatarUrl) {
+        miniGameAvatar.src = avatarUrl;
+        miniGameAvatar.alt = `${gaKunHost?.name || 'がーくん'}のアイコン`;
+        miniGameAvatar.hidden = false;
+      } else if (miniGameAvatar) {
+        miniGameAvatar.removeAttribute('src');
+        miniGameAvatar.hidden = true;
+      }
+    } else {
+      ctaMiniGame.hidden = true;
+      if (miniGamePromo) miniGamePromo.hidden = true;
+      if (miniGameAvatar) {
+        miniGameAvatar.removeAttribute('src');
+        miniGameAvatar.hidden = true;
+      }
+    }
   }
 
   if (mainFlyer && event.assets?.mainFlyer) {
@@ -794,6 +1011,7 @@ function applyEvent(event) {
   initReminderActions(event, ctx);
   refreshMarqueeMotion();
   initTalentCardEffects();
+  initMiniGameGimmick(event);
 }
 
 function initRevealAnimation() {
@@ -1114,6 +1332,8 @@ function cleanupEffects() {
     window.clearInterval(countdownTimer);
     countdownTimer = null;
   }
+
+  cleanupMiniGameGimmick();
 }
 
 function initConfetti() {

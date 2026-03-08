@@ -186,6 +186,76 @@ body {
   outline-offset: 3px;
 }
 
+.mini-game-gimmick-trigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 90;
+  width: 72px;
+  height: 72px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 28%, #ffffff 0%, #f4ecff 56%, #d8e7ff 100%);
+  box-shadow: 0 8px 20px #00000036, 0 0 0 3px #ffffff80;
+  cursor: pointer;
+  touch-action: manipulation;
+  transform: translate3d(var(--mini-game-gimmick-start-x, 110vw), var(--mini-game-gimmick-y, 40vh), 0) scale(0.86);
+  opacity: 0;
+  animation: mini-game-gimmick-drift var(--mini-game-gimmick-duration, 6s) linear forwards;
+}
+
+.mini-game-gimmick-trigger:hover {
+  filter: saturate(1.08);
+}
+
+.mini-game-gimmick-trigger:focus-visible {
+  outline: 3px solid #1c62e5;
+  outline-offset: 4px;
+}
+
+.mini-game-gimmick-trigger.is-static {
+  left: 50%;
+  top: 42%;
+  transform: translate3d(-50%, -50%, 0) scale(0.95);
+  animation: mini-game-gimmick-static var(--mini-game-gimmick-duration, 6s) ease-out forwards;
+}
+
+.mini-game-gimmick-trigger.is-hit {
+  opacity: 0 !important;
+  transition: opacity 120ms ease-out !important;
+}
+
+.mini-game-gimmick-face {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 120ms ease-out;
+}
+
+.mini-game-gimmick-trigger.is-hit .mini-game-gimmick-face {
+  transform: scale(1.16);
+}
+
+.mini-game-gimmick-trigger.is-fallback {
+  background: radial-gradient(circle at 32% 30%, #ffeeb8 0%, #ffd6b1 54%, #ff9ad2 100%);
+}
+
+.mini-game-gimmick-trigger.is-fallback::before {
+  content: "GO";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.92rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #402238;
+}
+
 .hero,
 .layout,
 .site-footer {
@@ -441,6 +511,38 @@ h1 {
   flex-wrap: wrap;
 }
 
+.cta-row .btn {
+  width: 100%;
+}
+
+.mini-game-promo {
+  margin-top: 14px;
+  padding: 10px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(125deg, #fff9ce 0%, #e9f9ff 100%);
+  box-shadow: 4px 4px 0 #00000016;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mini-game-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  border: 2px solid var(--line);
+  background: #fff;
+  object-fit: cover;
+  flex: 0 0 auto;
+  box-shadow: 3px 3px 0 #0000001c;
+}
+
+.mini-game-promo .btn-minigame {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
 .action-block {
   margin-top: 10px;
   border: 2px solid var(--line);
@@ -522,9 +624,15 @@ button.btn {
 }
 
 #cta-primary {
-  width: 100%;
   line-height: 1.45;
   padding-bottom: 14px;
+}
+
+.btn-minigame {
+  background: linear-gradient(135deg, #ffec77 0%, #9ff2ff 100%);
+  color: var(--ink);
+  min-height: 48px;
+  box-shadow: 4px 4px 0 #426b85, 0 0 12px #9ce6ff85;
 }
 
 .btn-sub {
@@ -1248,6 +1356,40 @@ h2 {
   50% { filter: brightness(1.35); }
 }
 
+@keyframes mini-game-gimmick-drift {
+  0% {
+    transform: translate3d(var(--mini-game-gimmick-start-x, 110vw), var(--mini-game-gimmick-y, 40vh), 0) scale(0.82);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.95;
+  }
+  76% {
+    opacity: 0.96;
+  }
+  100% {
+    transform: translate3d(var(--mini-game-gimmick-end-x, -94px), var(--mini-game-gimmick-y, 40vh), 0) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes mini-game-gimmick-static {
+  0% {
+    transform: translate3d(-50%, -50%, 0) scale(0.9);
+    opacity: 0;
+  }
+  16% {
+    opacity: 0.95;
+  }
+  84% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate3d(-50%, -50%, 0) scale(1);
+    opacity: 0;
+  }
+}
+
 @media (max-width: 920px) {
   .layout { grid-template-columns: 1fr; }
   .meta { grid-template-columns: 1fr; }
@@ -1272,6 +1414,11 @@ h2 {
     left: calc(10px + env(safe-area-inset-left));
   }
 
+  .mini-game-gimmick-trigger {
+    width: 64px;
+    height: 64px;
+  }
+
   .hero {
     padding: 20px;
     padding-top: 74px;
@@ -1294,6 +1441,16 @@ h2 {
 
   .meta-item {
     padding: 9px 10px;
+  }
+
+  .mini-game-promo {
+    padding: 9px;
+    gap: 8px;
+  }
+
+  .mini-game-avatar {
+    width: 52px;
+    height: 52px;
   }
 
   .countdown-text {
@@ -1380,4 +1537,9 @@ h2 {
   .confetti-piece { display: none; }
   .talent-card::after { display: none; }
   .bgm-hint { animation: none; }
+
+  .mini-game-gimmick-trigger {
+    animation: mini-game-gimmick-static var(--mini-game-gimmick-duration, 6s) ease-out forwards !important;
+    transition: opacity 120ms ease !important;
+  }
 }
