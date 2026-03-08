@@ -1,3 +1,5 @@
+const ONI_COUNTER_KEY = 'oni_clear_count_v2';
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -15,8 +17,9 @@ async function ensureSchema(db) {
 async function nextOniClearRank(db) {
   const row = await db
     .prepare(
-      "INSERT INTO counters (key, value) VALUES ('oni_clear_count', 1) ON CONFLICT(key) DO UPDATE SET value = counters.value + 1 RETURNING value;"
+      'INSERT INTO counters (key, value) VALUES (?, 1) ON CONFLICT(key) DO UPDATE SET value = counters.value + 1 RETURNING value;'
     )
+    .bind(ONI_COUNTER_KEY)
     .first();
 
   const rank = Number(row?.value || 0);
@@ -27,7 +30,7 @@ async function nextOniClearRank(db) {
 }
 
 async function getCurrentRank(db) {
-  const row = await db.prepare("SELECT value FROM counters WHERE key = 'oni_clear_count';").first();
+  const row = await db.prepare('SELECT value FROM counters WHERE key = ?;').bind(ONI_COUNTER_KEY).first();
   const rank = Number(row?.value || 0);
   return Number.isFinite(rank) && rank > 0 ? rank : 0;
 }
