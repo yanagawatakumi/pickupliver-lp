@@ -143,6 +143,7 @@
       "label": "鬼",
       "theme": "宴会",
       "unlockBy": "hard",
+      "bgmUrl": "/public/assets/games/ga-kun-fullness-shooter/bgm/oni-stage.mp3",
       "bossAtFullness": 80,
       "foodSpawnMs": 1240,
       "hazardSpawnMs": 730,

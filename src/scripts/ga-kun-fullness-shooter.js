@@ -10,6 +10,7 @@ const CENTER_CALLOUT_MS = 1000;
 const CENTER_IN_MS = 120;
 const CENTER_OUT_MS = 120;
 const ONI_CLEAR_API_PATH = '/api/oni-clear';
+const STAGE_BGM_VOLUME = 0.34;
 const STAGE_BG = ['#19142b', '#111e37', '#1d2f3a', '#2a1629'];
 const SFX_MASTER_GAIN = 0.45;
 const SFX_COOLDOWN_MS = {
@@ -86,6 +87,8 @@ const state = {
   clearFlashTimer: null,
   images: new Map(),
   skillDockCanvasHeight: 68,
+  stageBgmAudio: null,
+  stageBgmUrl: '',
   audio: {
     ctx: null,
     master: null,
@@ -260,6 +263,46 @@ function setStageNote(message) {
   if (refs.stageNote) refs.stageNote.textContent = message;
 }
 
+function stopStageBgm({ reset = true } = {}) {
+  const audio = state.stageBgmAudio;
+  if (!audio) return;
+  audio.pause();
+  if (reset) audio.currentTime = 0;
+}
+
+function ensureStageBgm(stage) {
+  const bgmUrl = String(stage?.bgmUrl || '').trim();
+  if (!bgmUrl) {
+    stopStageBgm();
+    state.stageBgmAudio = null;
+    state.stageBgmUrl = '';
+    return null;
+  }
+
+  if (!state.stageBgmAudio || state.stageBgmUrl !== bgmUrl) {
+    stopStageBgm();
+    const audio = new Audio(bgmUrl);
+    audio.loop = true;
+    audio.preload = 'auto';
+    audio.volume = STAGE_BGM_VOLUME;
+    state.stageBgmAudio = audio;
+    state.stageBgmUrl = bgmUrl;
+  }
+  return state.stageBgmAudio;
+}
+
+function playStageBgm(stage) {
+  const audio = ensureStageBgm(stage);
+  if (!audio) return;
+  audio.currentTime = 0;
+  const promise = audio.play();
+  if (promise && typeof promise.catch === 'function') {
+    promise.catch((error) => {
+      console.warn('stage bgm playback blocked', error);
+    });
+  }
+}
+
 function setOverlay(message, options = {}) {
   const {
     visible = true,
@@ -292,6 +335,7 @@ function setClearFlashAction(visible, label = 'ステージセレクトに戻る
 }
 
 function returnToStageSelect() {
+  stopStageBgm();
   setClearFlash(false);
   setClearFlashContent('満腹', '');
   setClearFlashAction(false);
@@ -1027,6 +1071,7 @@ function startStage(index) {
 
   state.stage = stage;
   unlockAudio();
+  playStageBgm(stage);
   state.selectedStageIndex = index;
   state.running = true;
   state.ended = false;
@@ -1090,6 +1135,7 @@ function startStage(index) {
 function endStage(win) {
   state.running = false;
   state.ended = true;
+  stopStageBgm();
   clearCenterSkillCallout();
 
   if (win) {
@@ -1629,6 +1675,9 @@ async function bootstrap() {
       showStageButtons: true
     });
     setStageNote('まずは「簡単」から始めよう。');
+    window.addEventListener('pagehide', () => {
+      stopStageBgm();
+    });
     window.requestAnimationFrame(frameLoop);
   } catch (error) {
     console.error(error);
