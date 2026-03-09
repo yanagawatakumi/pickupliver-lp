@@ -302,7 +302,21 @@ function returnToStageSelect() {
 }
 
 function syncHud() {
-  if (refs.hpValue) refs.hpValue.textContent = `${Math.max(0, state.hp)} / ${state.config?.player?.maxHp || 3}`;
+  if (refs.hpValue) {
+    const maxHp = Math.max(1, Math.round(Number(state.config?.player?.maxHp || 3)));
+    const currentHp = Math.round(clamp(0, Number(state.hp || 0), maxHp));
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < maxHp; i += 1) {
+      const heart = document.createElement('span');
+      heart.className = `hp-heart ${i < currentHp ? 'is-full' : 'is-empty'}`;
+      heart.setAttribute('aria-hidden', 'true');
+      heart.textContent = '❤';
+      fragment.appendChild(heart);
+    }
+    refs.hpValue.classList.add('hp-hearts');
+    refs.hpValue.setAttribute('aria-label', `HP ${currentHp}/${maxHp}`);
+    refs.hpValue.replaceChildren(fragment);
+  }
   if (refs.fullnessValue) refs.fullnessValue.textContent = `${Math.round(state.fullness)}%`;
   if (refs.fullnessFill) refs.fullnessFill.style.width = `${clamp(0, state.fullness, 100)}%`;
   if (refs.scoreValue) refs.scoreValue.textContent = `${Math.round(state.score)}`;

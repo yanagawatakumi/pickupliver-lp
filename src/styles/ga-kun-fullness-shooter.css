@@ -212,6 +212,29 @@ h2 {
   font-weight: 900;
 }
 
+.hud-value.hp-hearts {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.hp-heart {
+  font-size: 1.02rem;
+  transform: translateY(1px);
+}
+
+.hp-heart.is-full {
+  color: #ff4f8d;
+  text-shadow: 0 1px 0 #5c1b37;
+}
+
+.hp-heart.is-empty {
+  color: #d1c4cc;
+  opacity: 0.6;
+}
+
 .hud-sub {
   margin-top: 4px;
   display: block;
