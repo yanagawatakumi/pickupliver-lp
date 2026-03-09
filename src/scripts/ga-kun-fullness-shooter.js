@@ -10,7 +10,7 @@ const CENTER_CALLOUT_MS = 1000;
 const CENTER_IN_MS = 120;
 const CENTER_OUT_MS = 120;
 const ONI_CLEAR_API_PATH = '/api/oni-clear';
-const STAGE_BGM_VOLUME = 0.5;
+const STAGE_BGM_VOLUME = 1;
 const STAGE_BG = ['#19142b', '#111e37', '#1d2f3a', '#2a1629'];
 const SFX_MASTER_GAIN = 0.45;
 const SFX_COOLDOWN_MS = {
@@ -92,6 +92,9 @@ const state = {
   audio: {
     ctx: null,
     master: null,
+    stageBgmGain: null,
+    stageBgmSource: null,
+    stageBgmSourceAudio: null,
     unlocked: false,
     warmupDone: false,
     unlockHooksInstalled: false,
@@ -263,6 +266,46 @@ function setStageNote(message) {
   if (refs.stageNote) refs.stageNote.textContent = message;
 }
 
+function detachStageBgmSource() {
+  if (!state.audio.stageBgmSource) return;
+  try {
+    state.audio.stageBgmSource.disconnect();
+  } catch {
+    // ignore disconnect errors
+  }
+  state.audio.stageBgmSource = null;
+  state.audio.stageBgmSourceAudio = null;
+}
+
+function connectStageBgmToGain(audio) {
+  const audioCtx = state.audio.ctx;
+  if (!audioCtx) return false;
+
+  if (!state.audio.stageBgmGain) {
+    const gain = audioCtx.createGain();
+    gain.connect(audioCtx.destination);
+    state.audio.stageBgmGain = gain;
+  }
+  state.audio.stageBgmGain.gain.value = STAGE_BGM_VOLUME;
+
+  if (state.audio.stageBgmSourceAudio === audio && state.audio.stageBgmSource) {
+    return true;
+  }
+
+  detachStageBgmSource();
+  try {
+    const source = audioCtx.createMediaElementSource(audio);
+    source.connect(state.audio.stageBgmGain);
+    state.audio.stageBgmSource = source;
+    state.audio.stageBgmSourceAudio = audio;
+    return true;
+  } catch (error) {
+    console.warn('stage bgm webaudio routing unavailable', error);
+    detachStageBgmSource();
+    return false;
+  }
+}
+
 function stopStageBgm({ reset = true } = {}) {
   const audio = state.stageBgmAudio;
   if (!audio) return;
@@ -274,6 +317,7 @@ function ensureStageBgm(stage) {
   const bgmUrl = String(stage?.bgmUrl || '').trim();
   if (!bgmUrl) {
     stopStageBgm();
+    detachStageBgmSource();
     state.stageBgmAudio = null;
     state.stageBgmUrl = '';
     return null;
@@ -281,6 +325,7 @@ function ensureStageBgm(stage) {
 
   if (!state.stageBgmAudio || state.stageBgmUrl !== bgmUrl) {
     stopStageBgm();
+    detachStageBgmSource();
     const audio = new Audio(bgmUrl);
     audio.loop = true;
     audio.preload = 'auto';
@@ -294,13 +339,24 @@ function ensureStageBgm(stage) {
 function playStageBgm(stage) {
   const audio = ensureStageBgm(stage);
   if (!audio) return;
+  unlockAudio();
+  const routedByWebAudio = connectStageBgmToGain(audio);
+  audio.volume = routedByWebAudio ? 1 : STAGE_BGM_VOLUME;
   audio.currentTime = 0;
-  const promise = audio.play();
-  if (promise && typeof promise.catch === 'function') {
-    promise.catch((error) => {
-      console.warn('stage bgm playback blocked', error);
-    });
+  const playAudio = () => {
+    const promise = audio.play();
+    if (promise && typeof promise.catch === 'function') {
+      promise.catch((error) => {
+        console.warn('stage bgm playback blocked', error);
+      });
+    }
+  };
+
+  if (routedByWebAudio && state.audio.ctx && state.audio.ctx.state !== 'running') {
+    state.audio.ctx.resume().then(playAudio).catch(playAudio);
+    return;
   }
+  playAudio();
 }
 
 function setOverlay(message, options = {}) {
