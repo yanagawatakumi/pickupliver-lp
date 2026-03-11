@@ -55,6 +55,9 @@
   "cta": {
     "primaryLabel": "配信を視聴する",
     "primaryUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+    "recommendFormLabel": "推薦Lシンガーを応募する",
+    "recommendFormUrl": "https://forms.gle/VTS9Vd5CpTUa1dNAA",
+    "recommendFormLead": "今後のPICK UP LIVERのゲストとして推薦したい、素敵なLシンガーさんを教えてください。",
     "secondaryLabel": "出演者情報を見る",
     "secondaryUrl": "#guests",
     "preCtaMessage": "今すぐ予定追加して、見逃しを防ごう。"
@@ -72,7 +75,7 @@
   },
   "eventNotice": {
     "noArchiveText": "アーカイブ無し。お見逃しなく！",
-    "nextPickupTeaser": "次のPICK UP LIVERに呼ばれるのはあなたかも…？"
+    "nextPickupTeaser": "次のPICK UP LIVERに呼ばれるのはあなたや、あなたの推しかも…？"
   },
   "assets": {
     "mainFlyer": "/public/assets/events/vol-1/flyer-main.jpg",

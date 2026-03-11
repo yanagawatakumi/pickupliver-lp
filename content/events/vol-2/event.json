@@ -54,7 +54,7 @@
       "avatarUrl": "/public/assets/events/vol-2/avatars/しぇるな.png"
     },
     {
-      "name": "junok",
+      "name": "jun ok",
       "profileUrl": "https://web.colorsing.com/share/user?user_id=8e8294b9-79c7-4e75-9a27-bbe2c4d1c3e7",
       "avatarUrl": "/public/assets/events/vol-2/avatars/junok.JPG"
     },
@@ -72,6 +72,9 @@
     "primaryUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
     "miniGameLabel": "がーくん満腹シューティングで遊ぶ",
     "miniGameUrl": "/games/ga-kun-fullness-shooter/",
+    "recommendFormLabel": "推薦Lシンガーを応募する",
+    "recommendFormUrl": "https://forms.gle/VTS9Vd5CpTUa1dNAA",
+    "recommendFormLead": "今後のPICK UP LIVERのゲストとして推薦したい、素敵なLシンガーさんを教えてください。",
     "miniGameGimmick": {
       "enabled": true,
       "type": "floating_face",
@@ -99,7 +102,7 @@
   },
   "eventNotice": {
     "noArchiveText": "アーカイブ無し。お見逃しなく！",
-    "nextPickupTeaser": "次のPICK UP LIVERに呼ばれるのはあなたかも…？"
+    "nextPickupTeaser": "次のPICK UP LIVERに呼ばれるのはあなたや、あなたの推しかも…？"
   },
   "assets": {
     "mainFlyer": "/public/assets/events/vol-2/flyer-main.jpg",

@@ -10,6 +10,9 @@ const BGM_HINT_DISMISSED_KEY = 'bgmHintDismissed';
 const MINI_GAME_GIMMICK_SESSION_KEY_PREFIX = 'miniGameGimmickSeen';
 const DEFAULT_EVENT_DATA_PATH = '/content/events/vol-1/event.json';
 const DEFAULT_SHELL_TEMPLATE_PATH = '/src/templates/event-shell.html';
+const DEFAULT_RECOMMEND_FORM_URL = 'https://forms.gle/VTS9Vd5CpTUa1dNAA';
+const DEFAULT_RECOMMEND_FORM_LABEL = '推薦Lシンガーを応募する';
+const DEFAULT_RECOMMEND_FORM_LEAD = '今後のPICK UP LIVERのゲストとして推薦したい、素敵なLシンガーさんを教えてください。';
 
 const effectConfig = {
   mode: 'normal',
@@ -822,8 +825,11 @@ function applyEvent(event) {
   const venue = document.getElementById('event-venue');
   const ctaPrimary = document.getElementById('cta-primary');
   const ctaMiniGame = document.getElementById('cta-minigame');
+  const ctaRecommendForm = document.getElementById('cta-recommend-form');
   const miniGamePromo = document.getElementById('mini-game-promo');
   const miniGameAvatar = document.getElementById('mini-game-avatar');
+  const recommendLiverSection = document.getElementById('recommend-liver');
+  const recommendLiverLead = document.getElementById('recommend-liver-lead');
   const mainFlyer = document.getElementById('main-flyer');
   const hostList = document.getElementById('host-list');
   const guestList = document.getElementById('guest-list');
@@ -931,6 +937,28 @@ function applyEvent(event) {
     }
   }
 
+  if (ctaRecommendForm && recommendLiverSection) {
+    const recommendFormUrl = typeof event.cta?.recommendFormUrl === 'string'
+      ? event.cta.recommendFormUrl.trim()
+      : '';
+    const resolvedRecommendFormUrl = recommendFormUrl || DEFAULT_RECOMMEND_FORM_URL;
+
+    if (resolvedRecommendFormUrl) {
+      recommendLiverSection.hidden = false;
+      ctaRecommendForm.href = resolvedRecommendFormUrl;
+      ctaRecommendForm.textContent = event.cta?.recommendFormLabel || DEFAULT_RECOMMEND_FORM_LABEL;
+      if (recommendLiverLead) {
+        recommendLiverLead.textContent = event.cta?.recommendFormLead || DEFAULT_RECOMMEND_FORM_LEAD;
+      }
+    } else {
+      recommendLiverSection.hidden = true;
+      ctaRecommendForm.href = '#';
+      if (recommendLiverLead) {
+        recommendLiverLead.textContent = DEFAULT_RECOMMEND_FORM_LEAD;
+      }
+    }
+  }
+
   if (mainFlyer && event.assets?.mainFlyer) {
     mainFlyer.src = event.assets.mainFlyer;
     mainFlyer.alt = `${event.title || 'PICK UP LIVER'} フライヤー`;
@@ -984,7 +1012,7 @@ function applyEvent(event) {
   }
 
   if (nextPickupTeaser) {
-    nextPickupTeaser.textContent = event.eventNotice?.nextPickupTeaser || '次のPICK UP LIVERに呼ばれるのはあなたかも…？';
+    nextPickupTeaser.textContent = event.eventNotice?.nextPickupTeaser || '次のPICK UP LIVERに呼ばれるのはあなたや、あなたの推しかも…？';
   }
 
   if (marqueeTrackB) {

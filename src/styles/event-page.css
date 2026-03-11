@@ -995,6 +995,20 @@ h2 {
   text-align: center;
 }
 
+.recommend-liver-section {
+  text-align: center;
+}
+
+.recommend-liver-lead {
+  margin: 2px 0 10px;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.btn-recommend-form {
+  min-width: min(100%, 420px);
+}
+
 .chips li:hover {
   animation: mini-bounce 360ms ease;
 }
