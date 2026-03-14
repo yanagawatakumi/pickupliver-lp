@@ -13,6 +13,8 @@ const DEFAULT_SHELL_TEMPLATE_PATH = '/src/templates/event-shell.html';
 const DEFAULT_RECOMMEND_FORM_URL = 'https://forms.gle/VTS9Vd5CpTUa1dNAA';
 const DEFAULT_RECOMMEND_FORM_LABEL = '推薦Lシンガーを応募する';
 const DEFAULT_RECOMMEND_FORM_LEAD = '今後のPICK UP LIVERのゲストとして推薦したい、素敵なLシンガーさんを教えてください。';
+const DEFAULT_ENTRY_FORM_LABEL = '応募フォームに進む';
+const DEFAULT_ENTRY_FORM_LEAD = 'ポーカーフェイスの回答はこちら';
 
 const effectConfig = {
   mode: 'normal',
@@ -825,9 +827,12 @@ function applyEvent(event) {
   const venue = document.getElementById('event-venue');
   const ctaPrimary = document.getElementById('cta-primary');
   const ctaMiniGame = document.getElementById('cta-minigame');
+  const ctaEntryForm = document.getElementById('cta-entry-form');
   const ctaRecommendForm = document.getElementById('cta-recommend-form');
   const miniGamePromo = document.getElementById('mini-game-promo');
   const miniGameAvatar = document.getElementById('mini-game-avatar');
+  const entryFormSection = document.getElementById('entry-l-singer');
+  const entryFormLead = document.getElementById('entry-l-singer-lead');
   const recommendLiverSection = document.getElementById('recommend-liver');
   const recommendLiverLead = document.getElementById('recommend-liver-lead');
   const mainFlyer = document.getElementById('main-flyer');
@@ -955,6 +960,27 @@ function applyEvent(event) {
       ctaRecommendForm.href = '#';
       if (recommendLiverLead) {
         recommendLiverLead.textContent = DEFAULT_RECOMMEND_FORM_LEAD;
+      }
+    }
+  }
+
+  if (ctaEntryForm && entryFormSection) {
+    const entryFormUrl = typeof event.cta?.entryFormUrl === 'string'
+      ? event.cta.entryFormUrl.trim()
+      : '';
+
+    if (entryFormUrl) {
+      entryFormSection.hidden = false;
+      ctaEntryForm.href = entryFormUrl;
+      ctaEntryForm.textContent = event.cta?.entryFormLabel || DEFAULT_ENTRY_FORM_LABEL;
+      if (entryFormLead) {
+        entryFormLead.textContent = event.cta?.entryFormLead || DEFAULT_ENTRY_FORM_LEAD;
+      }
+    } else {
+      entryFormSection.hidden = true;
+      ctaEntryForm.href = '#';
+      if (entryFormLead) {
+        entryFormLead.textContent = DEFAULT_ENTRY_FORM_LEAD;
       }
     }
   }
