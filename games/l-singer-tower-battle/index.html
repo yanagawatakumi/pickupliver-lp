@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Lシンガータワーバトル。図形を落として積み上げ、落下を回避しながらハイスコアを狙うタワーゲーム。" />
+    <meta name="vt:game-config" content="/content/games/l-singer-tower-battle/config.json" />
+    <title>Lシンガータワーバトル</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800;900&family=Yusei+Magic&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/styles/l-singer-tower-battle.css" />
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <header class="game-header">
+      <div class="header-links">
+        <a class="nav-pill" href="/events/">過去回一覧へ</a>
+      </div>
+      <p class="kicker">PICK UP LIVER ミニゲーム</p>
+      <h1>Lシンガータワーバトル</h1>
+      <p class="lead">上から図形を落としてタワーを作ろう。場外落下が3回でゲーム終了。</p>
+    </header>
+
+    <main class="game-layout">
+      <section class="play-panel card">
+        <div class="canvas-shell">
+          <canvas id="game-canvas" width="420" height="720" aria-label="ゲーム画面"></canvas>
+          <div class="hud" role="status" aria-live="polite">
+            <div class="hud-item hud-item-score">
+              <span class="hud-label">スコア</span>
+              <span id="score-value" class="hud-value">0</span>
+            </div>
+            <div class="hud-item hud-item-current">
+              <div class="hud-current-wrap">
+                <canvas id="current-shape-canvas" width="64" height="30" aria-hidden="true"></canvas>
+                <span id="current-shape-name" class="hud-current-name">-</span>
+              </div>
+            </div>
+            <div class="hud-item hud-item-danger">
+              <span class="hud-label">ライフ</span>
+              <span id="life-value" class="hud-value">❤❤❤</span>
+            </div>
+          </div>
+
+          <div class="rotate-control" aria-label="回転操作">
+            <button id="rotate-button" class="sub-button rotate-button" type="button">回転</button>
+          </div>
+
+          <div id="overlay-screen" class="overlay-screen">
+            <p id="overlay-message" class="overlay-message">画面上部をドラッグして、離すと図形を落とせます。</p>
+            <button id="start-button" class="action-button" type="button">スタート</button>
+          </div>
+
+          <div id="result-modal" class="result-modal" hidden>
+            <div class="result-card">
+              <h2>ゲームオーバー</h2>
+              <p id="final-score" class="result-score">スコア: 0</p>
+              <form id="score-form" class="score-form" novalidate>
+                <label for="player-name">ランキング名（2-10文字）</label>
+                <input id="player-name" name="playerName" type="text" minlength="2" maxlength="10" required autocomplete="nickname" />
+                <button id="submit-score" type="submit" class="action-button">スコア送信</button>
+              </form>
+              <p id="submit-message" class="submit-message" role="status" aria-live="polite"></p>
+              <button id="retry-button" class="sub-button" type="button">もう一度遊ぶ</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="ranking card">
+        <h2>ランキング TOP 10</h2>
+        <p id="ranking-status" class="ranking-status">読み込み中...</p>
+        <ol id="ranking-list" class="ranking-list"></ol>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/poly-decomp@0.3.0/build/decomp.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="/src/scripts/l-singer-tower-battle.js"></script>
+  </body>
+</html>

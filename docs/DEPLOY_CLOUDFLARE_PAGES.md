@@ -32,8 +32,39 @@
 ## 更新方法
 - ファイルを更新してGitHubにpushすると自動で再デプロイされる
 
+## L Singer Tower Battle（ランキングAPI）設定
+`/api/l-singer-tower-scores` は D1 バインド `DB` を使用します。  
+`/api/oni-clear` と同じ D1 でも別 D1 でも動作します（同じ `DB` に複数テーブルを作成可能）。
+
+- エンドポイント:
+  - `GET /api/l-singer-tower-scores` : 全期間 TOP10 を返す
+  - `POST /api/l-singer-tower-scores` : `name, score, survivalSec, placedCount, runId` を保存
+- `runId` は一意制約があり、同一プレイの二重投稿は `409` になる
+
+## ローカル開発（静的確認）
+APIを使わない画面確認は、プロジェクト直下で静的サーバー起動でOKです。
+
+```bash
+cd /Users/yana/Desktop/VoiceTree/40_web/projects/260221_PICKUPLIVER
+python3 -m http.server 4173
+```
+
+- 確認URL: `http://localhost:4173/games/l-singer-tower-battle/`
+- この方法ではランキングAPIは基本的に利用できません（`/api/*` がないため）
+
+## ローカル開発（API込み確認）
+Cloudflare Pages Functions + D1 を含めて確認する場合:
+
+```bash
+cd /Users/yana/Desktop/VoiceTree/40_web/projects/260221_PICKUPLIVER
+npx wrangler pages dev . --d1 DB=<YOUR_D1_DATABASE_ID>
+```
+
+- `<YOUR_D1_DATABASE_ID>` は Cloudflare D1 の Database ID
+- 上記起動で `/api/oni-clear` と `/api/l-singer-tower-scores` の両方をローカル確認できます
+
 ## 新しい回を追加する時
-1. `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/content/events/vol-<n>/event.json` を追加
-2. `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/public/assets/events/vol-<n>/` に画像を追加
-3. `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/events/vol-<n>/index.html` を作成
-4. `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/content/events/index.json` の `latest` と `episodes` を更新
+1. `/Users/yana/Desktop/VoiceTree/40_web/projects/260221_PICKUPLIVER/content/events/vol-<n>/event.json` を追加
+2. `/Users/yana/Desktop/VoiceTree/40_web/projects/260221_PICKUPLIVER/public/assets/events/vol-<n>/` に画像を追加
+3. `/Users/yana/Desktop/VoiceTree/40_web/projects/260221_PICKUPLIVER/events/vol-<n>/index.html` を作成
+4. `/Users/yana/Desktop/VoiceTree/40_web/projects/260221_PICKUPLIVER/content/events/index.json` の `latest` と `episodes` を更新
