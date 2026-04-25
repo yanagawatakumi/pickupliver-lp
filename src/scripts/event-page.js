@@ -818,6 +818,7 @@ function initTalentCardEffects() {
 }
 
 function applyEvent(event) {
+  const episodeSlug = getMetaContent('vt:episode-slug').toLowerCase();
   const title = document.getElementById('event-title');
   const summary = document.getElementById('event-summary');
   const storyImagesWrap = document.getElementById('event-story-images');
@@ -910,7 +911,8 @@ function applyEvent(event) {
 
   if (ctaMiniGame) {
     const miniGameUrl = typeof event.cta?.miniGameUrl === 'string' ? event.cta.miniGameUrl.trim() : '';
-    if (miniGameUrl) {
+    const allowMiniGame = episodeSlug === 'vol-2';
+    if (allowMiniGame && miniGameUrl) {
       ctaMiniGame.hidden = false;
       ctaMiniGame.href = miniGameUrl;
       ctaMiniGame.textContent = event.cta?.miniGameLabel || 'がーくん満腹シューティングで遊ぶ';

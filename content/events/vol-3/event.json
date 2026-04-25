@@ -1,0 +1,95 @@
+{
+  "eventId": "2026-05-09-pick-up-liver-vol3",
+  "title": "PICK UP LIVER VOL.3",
+  "date": "2026-05-09",
+  "startTime": "15:00",
+  "timezone": "Asia/Tokyo",
+  "venue": "ColorSing 大魔神とーま枠",
+  "highlights": [
+    "視聴者参加型企画あり",
+    "MC×ゲストのコラボ",
+    "ここだけのトーク"
+  ],
+  "hosts": [
+    {
+      "name": "とーま",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/thoma.jpg"
+    },
+    {
+      "name": "がーくん88",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=91910bec-747b-4b6d-9882-8cf363242c7e",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/ga-kun88.jpg"
+    }
+  ],
+  "guestLivers": [
+    {
+      "name": "yU-Ka。",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=63c8acda-3720-49bd-8137-3881d0848985",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/yu-ka.jpg"
+    },
+    {
+      "name": "四ノ宮",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=d42f2e26-12b8-4f87-80b7-bf2b71e2ed20",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/四宮.jpg"
+    },
+    {
+      "name": "T-BEAR",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=5c8e41ef-849f-472d-80f7-14afe0442292",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/T-BEAR.jpg",
+      "introducedBy": "しぇるな",
+      "introducerAvatarUrl": "/public/assets/events/vol-2/avatars/しぇるな.png"
+    },
+    {
+      "name": "まらかす",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=076962b3-a654-47af-b8f0-2530d971ad99",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/まらかす.jpg",
+      "introducedBy": "団長です。",
+      "introducerAvatarUrl": "/public/assets/events/vol-2/avatars/danchou.JPG"
+    },
+    {
+      "name": "KATE.",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=aca27f9b-0114-455f-98e3-bf81702d7b58",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/KATE.jpg"
+    },
+    {
+      "name": "らいむ",
+      "profileUrl": "https://web.colorsing.com/share/live?live_id=deeb30e9-4163-4f35-bb19-17769e3f3b84",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/らいむ.jpg",
+      "introducedBy": "なち",
+      "introducerAvatarUrl": "/public/assets/events/vol-2/avatars/momoko&なち.JPG"
+    }
+  ],
+  "description": "PICK UP LIVER VOL.3 の詳細は順次公開します。",
+  "cta": {
+    "primaryLabel": "配信を視聴する",
+    "primaryUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+    "recommendFormLabel": "推薦Lシンガーを応募する",
+    "recommendFormUrl": "https://forms.gle/VTS9Vd5CpTUa1dNAA",
+    "recommendFormLead": "今後のPICK UP LIVERのゲストとして推薦したい、素敵なLシンガーさんを教えてください。",
+    "secondaryLabel": "出演者情報を見る",
+    "secondaryUrl": "#guests",
+    "preCtaMessage": "今すぐ予定追加して、見逃しを防ごう。"
+  },
+  "share": {
+    "messageTemplate": "PICK UP LIVER VOL.3 開催！\n2026.05.09(土) 15:00 START\nColorSing 大魔神とーま枠で配信します。"
+  },
+  "reminder": {
+    "startAtIso": "2026-05-09T15:00:00+09:00",
+    "endAtIso": "2026-05-09T18:00:00+09:00",
+    "title": "PICK UP LIVER VOL.3",
+    "description": "歌やトークなど盛り沢山。視聴者参加型企画あり。",
+    "location": "ColorSing 大魔神とーま枠",
+    "detailsUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b"
+  },
+  "eventNotice": {
+    "noArchiveText": "アーカイブ無し。お見逃しなく！",
+    "nextPickupTeaser": "次のPICK UP LIVERに呼ばれるのはあなたや、あなたの推しかも…？"
+  },
+  "assets": {
+    "mainFlyer": "/public/assets/events/vol-3/flyer-main.jpg",
+    "storyCaption": "準備中"
+  }
+}
