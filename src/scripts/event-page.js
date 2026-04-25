@@ -847,8 +847,16 @@ function applyEvent(event) {
   const volumeSticker = document.getElementById('event-volume-sticker');
   const ctx = getEventContext(event);
 
+  if (episodeSlug !== 'vol-2' && miniGamePromo) {
+    miniGamePromo.remove();
+  }
+
   if (title) title.textContent = event.title;
-  if (summary) summary.textContent = event.description;
+  if (summary) {
+    const description = typeof event.description === 'string' ? event.description.trim() : '';
+    summary.textContent = description;
+    summary.hidden = description.length === 0;
+  }
 
   if (storyImagesWrap) {
     storyImagesWrap.innerHTML = '';

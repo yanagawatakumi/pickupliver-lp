@@ -52,7 +52,7 @@
     {
       "name": "KATE.",
       "profileUrl": "https://web.colorsing.com/share/user?user_id=aca27f9b-0114-455f-98e3-bf81702d7b58",
-      "avatarUrl": "/public/assets/events/vol-3/avatars/KATE.jpg"
+      "avatarUrl": "/public/assets/events/vol-3/avatars/kate.jpg"
     },
     {
       "name": "らいむ",
@@ -62,7 +62,7 @@
       "introducerAvatarUrl": "/public/assets/events/vol-2/avatars/momoko&なち.JPG"
     }
   ],
-  "description": "PICK UP LIVER VOL.3 の詳細は順次公開します。",
+  "description": "",
   "cta": {
     "primaryLabel": "配信を視聴する",
     "primaryUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
@@ -90,6 +90,20 @@
   },
   "assets": {
     "mainFlyer": "/public/assets/events/vol-3/flyer-main.jpg",
-    "storyCaption": "準備中"
+    "storyImages": [
+      "/public/assets/events/vol-3/2-1.png",
+      "/public/assets/events/vol-3/2-2.png",
+      "/public/assets/events/vol-3/2-3.png",
+      "/public/assets/events/vol-3/2-4.png",
+      "/public/assets/events/vol-3/2-5.png",
+      "/public/assets/events/vol-3/2-6.png",
+      "/public/assets/events/vol-3/2-7.png",
+      "/public/assets/events/vol-3/2-8.png",
+      "/public/assets/events/vol-3/2-9.png",
+      "/public/assets/events/vol-3/2-10.png",
+      "/public/assets/events/vol-3/2-11.png",
+      "/public/assets/events/vol-3/2-12.png"
+    ],
+    "storyCaption": "vol.2 の様子"
   }
 }
