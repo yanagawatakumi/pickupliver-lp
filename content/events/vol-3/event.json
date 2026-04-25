@@ -4,7 +4,7 @@
   "date": "2026-05-09",
   "startTime": "15:00",
   "timezone": "Asia/Tokyo",
-  "venue": "ColorSing 大魔神とーま枠",
+  "venue": "ColorSing とーま枠",
   "highlights": [
     "視聴者参加型企画あり",
     "MC×ゲストのコラボ",
@@ -74,14 +74,14 @@
     "preCtaMessage": "今すぐ予定追加して、見逃しを防ごう。"
   },
   "share": {
-    "messageTemplate": "PICK UP LIVER VOL.3 開催！\n2026.05.09(土) 15:00 START\nColorSing 大魔神とーま枠で配信します。"
+    "messageTemplate": "PICK UP LIVER VOL.3 開催！\n2026.05.09(土) 15:00 START\nColorSing とーま枠で配信します。"
   },
   "reminder": {
     "startAtIso": "2026-05-09T15:00:00+09:00",
     "endAtIso": "2026-05-09T18:00:00+09:00",
     "title": "PICK UP LIVER VOL.3",
     "description": "歌やトークなど盛り沢山。視聴者参加型企画あり。",
-    "location": "ColorSing 大魔神とーま枠",
+    "location": "ColorSing とーま枠",
     "detailsUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b"
   },
   "eventNotice": {

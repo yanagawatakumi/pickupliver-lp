@@ -17,8 +17,9 @@ function chunkBy(items, size) {
 
 function normalizeEpisodes(payload) {
   const list = Array.isArray(payload?.episodes) ? payload.episodes : [];
+  const latest = String(payload?.latest || '').trim();
 
-  return list
+  const episodes = list
     .map((item) => ({
       slug: String(item?.slug || '').trim(),
       title: String(item?.title || '').trim() || 'PICK UP LIVER',
@@ -27,6 +28,8 @@ function normalizeEpisodes(payload) {
       status: String(item?.status || '').trim() || 'published'
     }))
     .filter((item) => item.slug && item.path);
+
+  return { episodes, latest };
 }
 
 async function fetchEpisodeGuests(slug) {
@@ -109,8 +112,8 @@ function renderEpisodes(target, episodes) {
     const response = await fetch('/content/events/index.json', { cache: 'no-store' });
     if (!response.ok) throw new Error('Failed to load events index data');
     const payload = await response.json();
-    const episodes = normalizeEpisodes(payload);
-    const pastEpisodes = episodes.filter((episode) => episode.status === 'ended');
+    const { episodes, latest } = normalizeEpisodes(payload);
+    const pastEpisodes = episodes.filter((episode) => episode.slug !== latest);
     const enrichedEpisodes = await Promise.all(
       pastEpisodes.map(async (episode) => ({
         ...episode,

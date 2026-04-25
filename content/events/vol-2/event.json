@@ -4,7 +4,7 @@
   "date": "2026-03-14",
   "startTime": "16:00",
   "timezone": "Asia/Tokyo",
-  "venue": "ColorSing 大魔神とーま枠",
+  "venue": "ColorSing とーま枠",
   "highlights": [
     "視聴者参加型企画あり",
     "MC×ゲストのコラボ",
@@ -93,14 +93,14 @@
     "preCtaMessage": "今すぐ予定追加して、見逃しを防ごう。"
   },
   "share": {
-    "messageTemplate": "PICK UP LIVER VOL.2 開催！\n2026.03.14(土) 16:00 START\nColorSing 大魔神とーま枠で配信します。"
+    "messageTemplate": "PICK UP LIVER VOL.2 開催！\n2026.03.14(土) 16:00 START\nColorSing とーま枠で配信します。"
   },
   "reminder": {
     "startAtIso": "2026-03-14T16:00:00+09:00",
     "endAtIso": "2026-03-14T19:00:00+09:00",
     "title": "PICK UP LIVER VOL.2",
     "description": "歌やトークなど盛り沢山。視聴者参加型企画あり。",
-    "location": "ColorSing 大魔神とーま枠",
+    "location": "ColorSing とーま枠",
     "detailsUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b"
   },
   "eventNotice": {
@@ -110,11 +110,19 @@
   "assets": {
     "mainFlyer": "/public/assets/events/vol-2/flyer-main.jpg",
     "storyImages": [
-      "/public/assets/events/vol-2/story-01.png",
-      "/public/assets/events/vol-2/story-02.png",
-      "/public/assets/events/vol-2/story-03.png",
-      "/public/assets/events/vol-2/story-04.png"
+      "/public/assets/events/vol-2/2-1.png",
+      "/public/assets/events/vol-2/2-2.png",
+      "/public/assets/events/vol-2/2-3.png",
+      "/public/assets/events/vol-2/2-4.png",
+      "/public/assets/events/vol-2/2-5.png",
+      "/public/assets/events/vol-2/2-6.png",
+      "/public/assets/events/vol-2/2-7.png",
+      "/public/assets/events/vol-2/2-8.png",
+      "/public/assets/events/vol-2/2-9.png",
+      "/public/assets/events/vol-2/2-10.png",
+      "/public/assets/events/vol-2/2-11.png",
+      "/public/assets/events/vol-2/2-12.png"
     ],
-    "storyCaption": "vol.1 の様子"
+    "storyCaption": "vol.2 の様子"
   }
 }
