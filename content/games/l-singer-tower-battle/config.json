@@ -1,20 +1,26 @@
 {
   "physics": {
     "gravityY": 0.96,
-    "substeps": 3,
+    "substeps": 4,
     "iterations": {
       "position": 18,
       "velocity": 12,
       "constraint": 4
     },
-    "restitution": 0.04,
+    "restitution": 0.0,
     "friction": 0.68,
     "frictionStatic": 2.2,
-    "frictionAir": 0.03,
+    "frictionAir": 0.04,
     "density": 0.00075,
-    "groundRestitution": 0.02,
+    "slop": 0.01,
+    "groundRestitution": 0.0,
     "groundFriction": 1.25,
-    "groundFrictionStatic": 4.2
+    "groundFrictionStatic": 4.2,
+    "colliderBuild": {
+      "removeCollinear": 0.02,
+      "minimumArea": 4,
+      "removeDuplicatePoints": 0.02
+    }
   },
   "colliderQa": {
     "minEdgeWorld": 1.0,
@@ -85,11 +91,44 @@
       "weight": 1.0
     },
     {
+      "id": "がーくん2",
+      "label": "がーくん2",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/がーくん2.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/がーくん2.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.24,
+      "weight": 1.0
+    },
+    {
       "id": "とーま",
       "label": "とーま",
       "kind": "character",
       "imagePath": "/public/assets/games/l-singer-tower-battle/characters/とーま.png",
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/とーま.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.24,
+      "weight": 1.0
+    },
+    {
+      "id": "とーま2",
+      "label": "とーま2",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/とーま2.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/とーま2.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.24,
+      "weight": 1.0
+    },
+    {
+      "id": "とーま3",
+      "label": "とーま3",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/とーま3.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/とーま3.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.24,

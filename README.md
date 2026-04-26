@@ -14,11 +14,11 @@
 - `/events/vol-2/` : VOL.2
 
 ## Key Files
-- `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/src/templates/event-shell.html` : 共通ページDOMテンプレート
-- `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/src/styles/event-page.css` : 共通スタイル
-- `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/src/scripts/event-page.js` : 共通演出・描画ロジック
-- `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/content/events/index.json` : 最新回と回一覧レジストリ
-- `/Users/yana/Desktop/VoiceTree/30_web/projects/260221_PICKUPLIVER/content/events/<slug>/event.json` : 回別データ
+- `/Users/yana/Desktop/VoiceTree/40_web/projects/260221_PICKUPLIVER/src/templates/event-shell.html` : 共通ページDOMテンプレート
+- `/Users/yana/Desktop/VoiceTree/40_web/projects/260221_PICKUPLIVER/src/styles/event-page.css` : 共通スタイル
+- `/Users/yana/Desktop/VoiceTree/40_web/projects/260221_PICKUPLIVER/src/scripts/event-page.js` : 共通演出・描画ロジック
+- `/Users/yana/Desktop/VoiceTree/40_web/projects/260221_PICKUPLIVER/content/events/index.json` : 最新回と回一覧レジストリ
+- `/Users/yana/Desktop/VoiceTree/40_web/projects/260221_PICKUPLIVER/content/events/<slug>/event.json` : 回別データ
 
 ## Episode Add Flow
 1. `content/events/vol-<n>/event.json` を追加

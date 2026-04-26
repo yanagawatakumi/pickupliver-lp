@@ -261,6 +261,9 @@ h1 {
   width: 100%;
   padding: 8px 0;
   font-size: 0.72rem;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .overlay-screen,

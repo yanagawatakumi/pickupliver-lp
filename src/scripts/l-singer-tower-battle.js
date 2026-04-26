@@ -60,6 +60,7 @@ const state = {
   cameraZoom: 1,
   submitted: false,
   runId: '',
+  lastDroppedShapeId: null,
   frameReq: 0,
   lastFrameMs: 0,
   pendingRankingFetch: false,
@@ -458,12 +459,17 @@ function getShapeBounds(shape) {
 
 function createBodyFromShape(shape, x, y) {
   const { Bodies, Body } = window.Matter;
+  const colliderBuild = state.config?.physics?.colliderBuild || {};
+  const removeCollinear = Math.max(0.0001, Number(colliderBuild.removeCollinear || 0.02));
+  const minimumArea = Math.max(0.1, Number(colliderBuild.minimumArea || 4));
+  const removeDuplicatePoints = Math.max(0.0001, Number(colliderBuild.removeDuplicatePoints || 0.02));
   const options = {
     restitution: Number(state.config.physics.restitution || 0.1),
     friction: Number(state.config.physics.friction || 0.7),
     frictionStatic: Number(state.config.physics.frictionStatic || 2.2),
     frictionAir: Number(state.config.physics.frictionAir || 0.016),
-    density: Number(state.config.physics.density || 0.0012)
+    density: Number(state.config.physics.density || 0.0012),
+    slop: Math.max(0.001, Number(state.config.physics.slop || 0.01))
   };
 
   let body;
@@ -471,7 +477,16 @@ function createBodyFromShape(shape, x, y) {
     case 'character': {
       const asset = state.characterAssets?.[shape.id];
       if (asset?.vertices?.length >= 3) {
-        body = Bodies.fromVertices(x, y, [asset.vertices], options, true);
+        body = Bodies.fromVertices(
+          x,
+          y,
+          [asset.vertices],
+          options,
+          true,
+          removeCollinear,
+          minimumArea,
+          removeDuplicatePoints
+        );
         if (Array.isArray(body)) {
           body = Body.create({ ...options, parts: body });
         }
@@ -498,7 +513,16 @@ function createBodyFromShape(shape, x, y) {
       break;
     case 'star': {
       const vertices = buildStarVertices(Number(shape.outerRadius || 32), Number(shape.innerRadius || 14), Number(shape.points || 5));
-      body = Bodies.fromVertices(x, y, [vertices], options, true);
+      body = Bodies.fromVertices(
+        x,
+        y,
+        [vertices],
+        options,
+        true,
+        removeCollinear,
+        minimumArea,
+        removeDuplicatePoints
+      );
       break;
     }
     default:
@@ -670,12 +694,24 @@ function drawWorld() {
   ctx.restore();
 }
 
-function pickNextShape() {
-  return weightedPick(state.config.shapes);
+function pickNextShape(excludedShapeId = null) {
+  const shapes = Array.isArray(state.config?.shapes) ? state.config.shapes : [];
+  if (!shapes.length) return null;
+
+  const excludedId = String(excludedShapeId || '').trim();
+  if (!excludedId) {
+    return weightedPick(shapes);
+  }
+
+  const candidates = shapes.filter((shape) => String(shape?.id || '').trim() !== excludedId);
+  if (!candidates.length) {
+    return weightedPick(shapes);
+  }
+  return weightedPick(candidates);
 }
 
 function prepareQueue() {
-  state.currentShape = pickNextShape();
+  state.currentShape = pickNextShape(state.lastDroppedShapeId);
 }
 
 function buildWorld() {
@@ -728,6 +764,7 @@ function resetRunState() {
   state.cameraZoom = 1;
   state.submitted = false;
   state.runId = createRunId();
+  state.lastDroppedShapeId = null;
   state.lastFrameMs = 0;
 
   resetSubmitMessage();
@@ -810,7 +847,8 @@ function dropCurrentShape() {
   state.droppedCount += 1;
   state.totalScore = state.droppedCount;
 
-  state.currentShape = pickNextShape();
+  state.lastDroppedShapeId = String(state.currentShape.id || '').trim() || null;
+  state.currentShape = pickNextShape(state.lastDroppedShapeId);
   setPendingRotationStep(0);
 }
 
@@ -1045,6 +1083,15 @@ function retryGame() {
   refs.overlayScreen.hidden = false;
 }
 
+function handleRotateButtonPress(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (!state.running) return;
+  setPendingRotationStep(state.pendingRotationStep + 1);
+}
+
 function bindInput() {
   refs.canvas.addEventListener('pointerdown', (event) => {
     refs.canvas.setPointerCapture(event.pointerId);
@@ -1078,10 +1125,10 @@ function bindInput() {
   });
 
   if (refs.rotateButton) {
-    refs.rotateButton.addEventListener('click', () => {
-      if (!state.running) return;
-      setPendingRotationStep(state.pendingRotationStep + 1);
+    refs.rotateButton.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
     });
+    refs.rotateButton.addEventListener('pointerup', handleRotateButtonPress);
   }
 
   window.addEventListener('keydown', (event) => {

@@ -55,3 +55,4 @@ python3 scripts/check_character_colliders.py
 ## Runtime stability tuning (detail-friendly)
 - `content/games/l-singer-tower-battle/config.json` の `physics.substeps` を `3` 以上に設定する。
 - `physics.iterations.position / velocity / constraint` を高めに設定し、細かい輪郭でも接触解決の破綻を抑える。
+- `physics.colliderBuild` で `removeCollinear / minimumArea / removeDuplicatePoints` を設定し、分解時の微小パーツ生成を抑える。
