@@ -16,6 +16,8 @@
     "groundRestitution": 0.0,
     "groundFriction": 1.25,
     "groundFrictionStatic": 4.2,
+    "groundScale": 1.5,
+    "groundTopY": 580,
     "colliderBuild": {
       "removeCollinear": 0.02,
       "minimumArea": 4,
@@ -29,7 +31,7 @@
     "maxConsecutiveSharp": 6
   },
   "drop": {
-    "spawnY": 92,
+    "spawnY": 132,
     "spawnClearancePx": 192,
     "minX": 56,
     "maxX": 364,
@@ -41,7 +43,9 @@
   },
   "camera": {
     "focusTopPx": 104,
-    "focusBottomPx": 684,
+    "focusBottomPx": 630,
+    "preDropTopPx": 128,
+    "preDropBottomPx": 610,
     "maxOffsetPx": 920,
     "lerp": 0.12
   },
@@ -54,7 +58,7 @@
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/KATE.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
-      "scale": 0.24,
+      "scale": 0.36,
       "weight": 1.0
     },
     {
@@ -65,7 +69,7 @@
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/T-BEAR.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
-      "scale": 0.24,
+      "scale": 0.36,
       "weight": 1.0
     },
     {
@@ -76,7 +80,7 @@
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/yU-Ka.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
-      "scale": 0.24,
+      "scale": 0.36,
       "weight": 1.0
     },
     {
@@ -87,7 +91,7 @@
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/がーくん.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
-      "scale": 0.24,
+      "scale": 0.36,
       "weight": 1.0
     },
     {
@@ -98,7 +102,7 @@
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/がーくん2.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
-      "scale": 0.24,
+      "scale": 0.36,
       "weight": 1.0
     },
     {
@@ -109,7 +113,7 @@
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/とーま.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
-      "scale": 0.24,
+      "scale": 0.36,
       "weight": 1.0
     },
     {
@@ -120,7 +124,7 @@
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/とーま2.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
-      "scale": 0.24,
+      "scale": 0.36,
       "weight": 1.0
     },
     {
@@ -131,7 +135,7 @@
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/とーま3.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
-      "scale": 0.24,
+      "scale": 0.36,
       "weight": 1.0
     },
     {
@@ -142,7 +146,7 @@
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/まらかす.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
-      "scale": 0.24,
+      "scale": 0.36,
       "weight": 1.0
     },
     {
@@ -153,7 +157,7 @@
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/らいむ.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
-      "scale": 0.24,
+      "scale": 0.36,
       "weight": 1.0
     },
     {
@@ -164,7 +168,7 @@
       "colliderPath": "/content/games/l-singer-tower-battle/colliders/四ノ宮.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
-      "scale": 0.24,
+      "scale": 0.36,
       "weight": 1.0
     }
   ]

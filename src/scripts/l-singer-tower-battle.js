@@ -27,6 +27,10 @@ const refs = {
   playerName: document.getElementById('player-name'),
   submitScore: document.getElementById('submit-score'),
   submitMessage: document.getElementById('submit-message'),
+  captureButton: document.getElementById('capture-button'),
+  captureMessage: document.getElementById('capture-message'),
+  shareXButton: document.getElementById('share-x-button'),
+  shareMessage: document.getElementById('share-message'),
   retryButton: document.getElementById('retry-button'),
   rotateButton: document.getElementById('rotate-button'),
   rankingStatus: document.getElementById('ranking-status'),
@@ -118,6 +122,32 @@ function setSubmitMessage(text, tone = '') {
   if (tone) refs.submitMessage.classList.add(tone);
 }
 
+function resetCaptureMessage() {
+  if (!refs.captureMessage) return;
+  refs.captureMessage.textContent = '';
+  refs.captureMessage.classList.remove('error', 'success');
+}
+
+function setCaptureMessage(text, tone = '') {
+  if (!refs.captureMessage) return;
+  refs.captureMessage.textContent = text;
+  refs.captureMessage.classList.remove('error', 'success');
+  if (tone) refs.captureMessage.classList.add(tone);
+}
+
+function resetShareMessage() {
+  if (!refs.shareMessage) return;
+  refs.shareMessage.textContent = '';
+  refs.shareMessage.classList.remove('error', 'success');
+}
+
+function setShareMessage(text, tone = '') {
+  if (!refs.shareMessage) return;
+  refs.shareMessage.textContent = text;
+  refs.shareMessage.classList.remove('error', 'success');
+  if (tone) refs.shareMessage.classList.add(tone);
+}
+
 function normalizeRotationStep(step) {
   return ((step % 8) + 8) % 8;
 }
@@ -179,18 +209,33 @@ function getShapeDisplayName(shape) {
   return '-';
 }
 
+function isGameOverHudMode() {
+  return !state.running && Boolean(refs.resultModal && refs.resultModal.hidden === false);
+}
+
 function updateCurrentShapeHud() {
+  const gameOverHudMode = isGameOverHudMode();
+  const currentWrap = refs.currentShapeCanvas?.parentElement || null;
+  const rawName = String(refs.playerName?.value || '').trim();
+  const gameOverName = rawName.length >= 2 ? rawName.slice(0, 10) : '';
+
   if (refs.currentShapeName) {
-    refs.currentShapeName.textContent = getShapeDisplayName(state.currentShape);
+    refs.currentShapeName.textContent = gameOverHudMode ? gameOverName : getShapeDisplayName(state.currentShape);
+  }
+  if (refs.currentShapeCanvas) {
+    refs.currentShapeCanvas.hidden = gameOverHudMode;
+  }
+  if (currentWrap) {
+    currentWrap.classList.toggle('is-name-only', gameOverHudMode);
   }
 
   if (!currentShapeCtx || !refs.currentShapeCanvas) return;
   currentShapeCtx.clearRect(0, 0, refs.currentShapeCanvas.width, refs.currentShapeCanvas.height);
+  if (gameOverHudMode) return;
   if (!state.currentShape) return;
 
   currentShapeCtx.save();
   currentShapeCtx.translate(refs.currentShapeCanvas.width * 0.5, refs.currentShapeCanvas.height * 0.5);
-  currentShapeCtx.rotate(getPendingRotationRad());
   if (state.currentShape.kind === 'character') {
     const asset = state.characterAssets?.[state.currentShape.id];
     if (asset?.image) {
@@ -413,6 +458,11 @@ async function loadCharacterAssets(shapes) {
 function updateHud() {
   refs.scoreValue.textContent = String(state.totalScore);
   refs.lifeValue.textContent = renderLives();
+  if (refs.rotateButton) {
+    const showRotateButton = Boolean(state.running);
+    refs.rotateButton.hidden = !showRotateButton;
+    refs.rotateButton.disabled = !showRotateButton;
+  }
   updateCurrentShapeHud();
 }
 
@@ -445,7 +495,12 @@ function getShapeBounds(shape) {
     case 'character': {
       const asset = state.characterAssets?.[shape.id];
       if (asset) {
-        return { halfWidth: asset.renderWidth * 0.5, halfHeight: asset.renderHeight * 0.5 };
+        const offsetX = Math.abs(Number(asset.imageOffsetX || 0));
+        const offsetY = Math.abs(Number(asset.imageOffsetY || 0));
+        return {
+          halfWidth: asset.renderWidth * 0.5 + offsetX,
+          halfHeight: asset.renderHeight * 0.5 + offsetY
+        };
       }
       const sourceW = Number(shape.sourceWidth || 96);
       const sourceH = Number(shape.sourceHeight || 96);
@@ -637,6 +692,7 @@ function drawBody(body) {
 }
 
 function drawSpawner() {
+  if (isGameOverHudMode()) return;
   const shape = state.currentShape;
   if (!shape) return;
 
@@ -715,7 +771,7 @@ function prepareQueue() {
 }
 
 function buildWorld() {
-  const { Engine, Bodies, World } = window.Matter;
+  const { Engine, Bodies, Body, World } = window.Matter;
 
   state.engine = Engine.create({
     enableSleeping: true,
@@ -729,13 +785,23 @@ function buildWorld() {
   state.engine.velocityIterations = toSafeInt(state.config.physics.iterations?.velocity, 6);
   state.engine.constraintIterations = toSafeInt(state.config.physics.iterations?.constraint, 2);
 
-  const pedestal = Bodies.rectangle(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 34, Math.round(CANVAS_WIDTH * 0.6), 24, {
+  const groundScale = Math.max(0.5, Number(state.config.physics.groundScale || 1));
+  const pedestalWidth = Math.round(CANVAS_WIDTH * 0.6 * groundScale);
+  const pedestalHeight = Math.round(12 * groundScale);
+  // Keep ground top flat: oversized chamfer on thin ground can behave like a slope.
+  const pedestalChamfer = Math.max(0, Math.min(Math.round(10 * groundScale), Math.floor(pedestalHeight * 0.2)));
+  const defaultGroundTopY = CANVAS_HEIGHT - 100;
+  const pedestalTopY = clamp(80, Number(state.config.physics.groundTopY || defaultGroundTopY), CANVAS_HEIGHT - pedestalHeight - 10);
+  const pedestalCenterY = pedestalTopY + pedestalHeight * 0.5;
+
+  const pedestal = Bodies.rectangle(CANVAS_WIDTH / 2, pedestalCenterY, pedestalWidth, pedestalHeight, {
     isStatic: true,
-    chamfer: { radius: 10 },
+    chamfer: pedestalChamfer > 0 ? { radius: pedestalChamfer } : undefined,
     restitution: Number(state.config.physics.groundRestitution || 0.02),
     friction: Number(state.config.physics.groundFriction || 1.2),
     frictionStatic: Number(state.config.physics.groundFrictionStatic || 4.2)
   });
+  Body.setAngle(pedestal, 0);
 
   pedestal.plugin.game = {
     fill: '#ffe0af',
@@ -768,8 +834,12 @@ function resetRunState() {
   state.lastFrameMs = 0;
 
   resetSubmitMessage();
+  resetCaptureMessage();
+  resetShareMessage();
   refs.scoreForm.reset();
   refs.submitScore.disabled = false;
+  if (refs.captureButton) refs.captureButton.disabled = false;
+  if (refs.shareXButton) refs.shareXButton.disabled = false;
   refs.resultModal.hidden = true;
   refs.overlayScreen.hidden = false;
   refs.startButton.disabled = false;
@@ -801,10 +871,12 @@ function finishGame() {
   if (!state.running) return;
   state.running = false;
   state.totalScore = state.droppedCount;
-  updateHud();
+  resetCaptureMessage();
+  resetShareMessage();
 
   refs.finalScore.textContent = `スコア: ${state.totalScore}`;
   refs.resultModal.hidden = false;
+  updateHud();
   refs.playerName.focus();
 }
 
@@ -924,30 +996,238 @@ function updateMaxHeight() {
 }
 
 function updateCamera() {
+  if (!state.running) return;
   const cameraConfig = state.config.camera || {};
   const lerp = clamp(0.04, Number(cameraConfig.lerp || 0.12), 0.35);
   const focusTopPx = clamp(0, Number(cameraConfig.focusTopPx || 104), CANVAS_HEIGHT - 80);
-  const focusBottomPx = clamp(focusTopPx + 80, Number(cameraConfig.focusBottomPx || 684), CANVAS_HEIGHT);
+  const focusBottomPx = clamp(focusTopPx + 80, Number(cameraConfig.focusBottomPx || 630), CANVAS_HEIGHT);
+  const preDropTopPx = clamp(0, Number(cameraConfig.preDropTopPx || (focusTopPx + 24)), CANVAS_HEIGHT - 120);
+  const preDropBottomPx = clamp(preDropTopPx + 100, Number(cameraConfig.preDropBottomPx || (focusBottomPx - 20)), CANVAS_HEIGHT);
   const maxOffsetPx = Math.max(120, Number(cameraConfig.maxOffsetPx || 760));
 
   let targetZoom = 1;
   let targetOffset = 0;
 
-  const worldBounds = getCameraWorldBounds();
-  if (worldBounds) {
-    const contentHeight = Math.max(1, worldBounds.bottomY - worldBounds.topY);
-    const fitHeight = Math.max(80, focusBottomPx - focusTopPx);
-    targetZoom = Math.min(1, fitHeight / contentHeight);
-    if (!Number.isFinite(targetZoom) || targetZoom <= 0) targetZoom = 0.00001;
+  const isPreDropView = state.running && state.dynamicBodies.length === 0 && Boolean(state.currentShape);
+  const activeTopPx = isPreDropView ? preDropTopPx : focusTopPx;
+  const activeBottomPx = isPreDropView ? preDropBottomPx : focusBottomPx;
+  const shouldFitCamera = state.dynamicBodies.length > 0 || (state.running && state.currentShape);
+  if (shouldFitCamera) {
+    const worldBounds = getCameraWorldBounds();
+    if (worldBounds) {
+      const contentHeight = Math.max(1, worldBounds.bottomY - worldBounds.topY);
+      const fitHeight = Math.max(80, activeBottomPx - activeTopPx);
+      targetZoom = Math.min(1, fitHeight / contentHeight);
+      if (!Number.isFinite(targetZoom) || targetZoom <= 0) targetZoom = 0.00001;
 
-    const offsetForBottomFit = focusBottomPx - worldBounds.bottomY * targetZoom;
-    const offsetForTopFit = focusTopPx - worldBounds.topY * targetZoom;
-    targetOffset = offsetForBottomFit <= offsetForTopFit ? offsetForBottomFit : (offsetForBottomFit + offsetForTopFit) * 0.5;
-    targetOffset = clamp(-maxOffsetPx, targetOffset, maxOffsetPx);
+      const offsetForBottomFit = activeBottomPx - worldBounds.bottomY * targetZoom;
+      const offsetForTopFit = activeTopPx - worldBounds.topY * targetZoom;
+      targetOffset = offsetForBottomFit <= offsetForTopFit ? offsetForBottomFit : (offsetForBottomFit + offsetForTopFit) * 0.5;
+      targetOffset = clamp(-maxOffsetPx, targetOffset, maxOffsetPx);
+    }
   }
 
   state.cameraZoom += (targetZoom - state.cameraZoom) * lerp;
   state.cameraOffsetY += (targetOffset - state.cameraOffsetY) * lerp;
+}
+
+function createCaptureFileName() {
+  const now = new Date();
+  const pad = (value) => String(value).padStart(2, '0');
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  return `l-singer-tower-battle_${stamp}.png`;
+}
+
+function getGameShareUrl() {
+  try {
+    return new URL('/games/l-singer-tower-battle/', window.location.origin).toString();
+  } catch (_) {
+    return '/games/l-singer-tower-battle/';
+  }
+}
+
+function buildShareText() {
+  const score = toSafeInt(state.totalScore, 0);
+  const link = getGameShareUrl();
+  return `スコア${score}点達成！\n次はあなたの番。どこまで積めるか挑戦してみて👇\n${link}\n#PICKUPLIVER #LSINGERTOWERBATTLE`;
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function blobToFile(blob, fileName) {
+  try {
+    return new File([blob], fileName, { type: 'image/png' });
+  } catch (_) {
+    return null;
+  }
+}
+
+function drawRoundedRect(targetCtx, x, y, w, h, radius) {
+  targetCtx.beginPath();
+  targetCtx.roundRect(x, y, w, h, radius);
+  targetCtx.closePath();
+}
+
+function drawHudOnCapture(targetCtx) {
+  if (!targetCtx || !refs.scoreValue || !refs.currentShapeName || !refs.lifeValue) return;
+
+  const hudX = 10;
+  const hudY = 10;
+  const hudW = CANVAS_WIDTH - 20;
+  const hudH = 50;
+  const leftW = Math.round(hudW * 0.25);
+  const centerW = Math.round(hudW * 0.5);
+  const rightW = hudW - leftW - centerW;
+  const lineColor = '#190f22';
+
+  const drawSegment = (x, y, w, h, fill, roundLeft = false, roundRight = false) => {
+    const r = 12;
+    const radii = [roundLeft ? r : 0, roundRight ? r : 0, roundRight ? r : 0, roundLeft ? r : 0];
+    drawRoundedRect(targetCtx, x, y, w, h, radii);
+    targetCtx.fillStyle = fill;
+    targetCtx.fill();
+    targetCtx.lineWidth = 2;
+    targetCtx.strokeStyle = lineColor;
+    targetCtx.stroke();
+  };
+
+  drawSegment(hudX, hudY, leftW, hudH, '#ffffffeb', true, false);
+  drawSegment(hudX + leftW - 2, hudY, centerW + 4, hudH, '#ffffffeb', false, false);
+  drawSegment(hudX + leftW + centerW, hudY, rightW, hudH, '#ffeef2', false, true);
+
+  targetCtx.fillStyle = '#241621';
+  targetCtx.textAlign = 'center';
+  targetCtx.textBaseline = 'middle';
+
+  targetCtx.font = '900 9px "M PLUS Rounded 1c", sans-serif';
+  targetCtx.fillText('スコア', hudX + leftW * 0.5, hudY + 15);
+  targetCtx.font = '900 18px "M PLUS Rounded 1c", sans-serif';
+  targetCtx.fillText(String(refs.scoreValue.textContent || '0'), hudX + leftW * 0.5, hudY + 33);
+
+  targetCtx.font = '900 9px "M PLUS Rounded 1c", sans-serif';
+  targetCtx.fillText('ライフ', hudX + leftW + centerW + rightW * 0.5, hudY + 15);
+  targetCtx.font = '900 16px "M PLUS Rounded 1c", sans-serif';
+  targetCtx.fillStyle = '#d93a52';
+  targetCtx.fillText(String(refs.lifeValue.textContent || ''), hudX + leftW + centerW + rightW * 0.5, hudY + 33);
+
+  targetCtx.fillStyle = '#241621';
+  targetCtx.font = '900 16px "M PLUS Rounded 1c", sans-serif';
+  targetCtx.textAlign = 'left';
+  targetCtx.textBaseline = 'middle';
+  const iconW = refs.currentShapeCanvas ? refs.currentShapeCanvas.width : 0;
+  const iconH = refs.currentShapeCanvas ? refs.currentShapeCanvas.height : 0;
+  const iconDrawW = 56;
+  const iconDrawH = 40;
+  const centerX = hudX + leftW;
+  const iconX = centerX + 8;
+  const iconY = hudY + (hudH - iconDrawH) * 0.5;
+  if (refs.currentShapeCanvas && iconW > 0 && iconH > 0) {
+    targetCtx.drawImage(refs.currentShapeCanvas, 0, 0, iconW, iconH, iconX, iconY, iconDrawW, iconDrawH);
+  }
+  const nameText = String(refs.currentShapeName.textContent || '-');
+  targetCtx.fillText(nameText, iconX + iconDrawW + 8, hudY + hudH * 0.56);
+}
+
+function buildCaptureCanvas() {
+  if (!refs.canvas) return null;
+  const exportScale = Math.max(2, Number(window.devicePixelRatio || 1));
+  const captureCanvas = document.createElement('canvas');
+  captureCanvas.width = Math.round(refs.canvas.width * exportScale);
+  captureCanvas.height = Math.round(refs.canvas.height * exportScale);
+  const captureCtx = captureCanvas.getContext('2d');
+  if (!captureCtx) return null;
+  captureCtx.setTransform(exportScale, 0, 0, exportScale, 0, 0);
+  captureCtx.imageSmoothingEnabled = true;
+  captureCtx.imageSmoothingQuality = 'high';
+  captureCtx.drawImage(refs.canvas, 0, 0);
+  drawHudOnCapture(captureCtx);
+  return captureCanvas;
+}
+
+async function saveCurrentScreen() {
+  if (!refs.canvas || !refs.captureButton) return;
+  refs.captureButton.disabled = true;
+  resetCaptureMessage();
+  try {
+    const fileName = createCaptureFileName();
+    const captureCanvas = buildCaptureCanvas();
+    if (!captureCanvas) throw new Error('failed to create capture canvas');
+    if (typeof captureCanvas.toBlob === 'function') {
+      const blob = await new Promise((resolve) => captureCanvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('failed to generate screenshot blob');
+      downloadBlob(blob, fileName);
+    } else {
+      const dataUrl = captureCanvas.toDataURL('image/png');
+      const anchor = document.createElement('a');
+      anchor.href = dataUrl;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+    }
+    setCaptureMessage('スクショを保存しました。', 'success');
+  } catch (error) {
+    console.error(error);
+    setCaptureMessage('スクショ保存に失敗しました。', 'error');
+  } finally {
+    refs.captureButton.disabled = false;
+  }
+}
+
+function openXIntent(text) {
+  const intentUrl = new URL('https://twitter.com/intent/tweet');
+  intentUrl.searchParams.set('text', text);
+  window.open(intentUrl.toString(), '_blank', 'noopener,noreferrer');
+}
+
+async function shareOnX() {
+  if (!refs.shareXButton) return;
+  refs.shareXButton.disabled = true;
+  resetShareMessage();
+  try {
+    const captureCanvas = buildCaptureCanvas();
+    if (!captureCanvas) throw new Error('failed to create capture canvas');
+    const text = buildShareText();
+    const fileName = createCaptureFileName();
+    let sharedWithImage = false;
+
+    if (typeof captureCanvas.toBlob === 'function') {
+      const blob = await new Promise((resolve) => captureCanvas.toBlob(resolve, 'image/png'));
+      if (blob) {
+        const file = blobToFile(blob, fileName);
+        if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            text,
+            files: [file]
+          });
+          sharedWithImage = true;
+        } else {
+          downloadBlob(blob, fileName);
+        }
+      }
+    }
+
+    if (!sharedWithImage) {
+      openXIntent(text);
+      setShareMessage('投稿画面を開きました。保存画像を添付して投稿してください。', 'success');
+    } else {
+      setShareMessage('共有シートを開きました。Xを選んで投稿してください。', 'success');
+    }
+  } catch (error) {
+    console.error(error);
+    setShareMessage('シェアに失敗しました。時間をおいて再試行してください。', 'error');
+  } finally {
+    refs.shareXButton.disabled = false;
+  }
 }
 
 function updateScore() {
@@ -1081,6 +1361,8 @@ function retryGame() {
   refs.resultModal.hidden = true;
   refs.overlayMessage.textContent = '準備OK。STARTを押して次のチャレンジ！';
   refs.overlayScreen.hidden = false;
+  resetCaptureMessage();
+  resetShareMessage();
 }
 
 function handleRotateButtonPress(event) {
@@ -1147,6 +1429,16 @@ function bindInput() {
   });
 
   refs.scoreForm.addEventListener('submit', submitScore);
+  refs.playerName.addEventListener('input', () => {
+    if (!isGameOverHudMode()) return;
+    updateHud();
+  });
+  if (refs.captureButton) {
+    refs.captureButton.addEventListener('click', saveCurrentScreen);
+  }
+  if (refs.shareXButton) {
+    refs.shareXButton.addEventListener('click', shareOnX);
+  }
 }
 
 async function loadConfig() {

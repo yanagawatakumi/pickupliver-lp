@@ -216,31 +216,40 @@ h1 {
 
 .hud-item-current {
   justify-content: center;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .hud-current-wrap {
-  display: flex;
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 8px;
   flex: 1;
   min-height: 0;
   min-width: 0;
 }
 
+.hud-current-wrap.is-name-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 #current-shape-canvas {
-  width: 64px;
-  height: 30px;
+  width: 74px;
+  height: 52px;
   flex: 0 0 auto;
 }
 
 .hud-current-name {
-  font-size: 0.72rem;
+  font-size: 1rem;
   font-weight: 900;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 6ch;
+  line-height: 1.1;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  text-align: left;
+  min-width: 0;
 }
 
 #life-value {
@@ -251,15 +260,16 @@ h1 {
 
 .rotate-control {
   position: absolute;
-  right: 10px;
+  left: 50%;
   bottom: 10px;
-  width: 86px;
+  width: 148px;
+  transform: translateX(-50%);
   z-index: 4;
 }
 
 .rotate-button {
   width: 100%;
-  padding: 8px 0;
+  padding: 10px 0;
   font-size: 0.72rem;
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -386,6 +396,14 @@ h1 {
 
 #retry-button {
   margin-top: 10px;
+}
+
+#capture-button {
+  margin-top: 8px;
+}
+
+#share-x-button {
+  margin-top: 8px;
 }
 
 .ranking {
