@@ -1061,10 +1061,7 @@ function collectFallenBodies() {
 
   const survivors = [];
   for (const body of state.dynamicBodies) {
-    const out =
-      body.position.y > CANVAS_HEIGHT + margin ||
-      body.position.x < -margin ||
-      body.position.x > CANVAS_WIDTH + margin;
+    const out = body.position.y > CANVAS_HEIGHT + margin;
 
     if (out) {
       World.remove(state.engine.world, body);
