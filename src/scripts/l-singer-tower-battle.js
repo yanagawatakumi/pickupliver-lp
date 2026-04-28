@@ -65,6 +65,7 @@ const state = {
   submitted: false,
   runId: '',
   lastDroppedShapeId: null,
+  recentDroppedShapeIds: [],
   frameReq: 0,
   lastFrameMs: 0,
   pendingRankingFetch: false,
@@ -102,6 +103,11 @@ function toSafeInt(value, fallback) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.round(parsed);
+}
+
+function toSafeNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function createRunId() {
@@ -515,17 +521,19 @@ function getShapeBounds(shape) {
 function createBodyFromShape(shape, x, y) {
   const { Bodies, Body } = window.Matter;
   const colliderBuild = state.config?.physics?.colliderBuild || {};
-  const removeCollinear = Math.max(0.0001, Number(colliderBuild.removeCollinear || 0.02));
-  const minimumArea = Math.max(0.1, Number(colliderBuild.minimumArea || 4));
-  const removeDuplicatePoints = Math.max(0.0001, Number(colliderBuild.removeDuplicatePoints || 0.02));
+  const removeCollinear = Math.max(0.0001, toSafeNumber(colliderBuild.removeCollinear, 0.02));
+  const minimumArea = Math.max(0.1, toSafeNumber(colliderBuild.minimumArea, 4));
+  const removeDuplicatePoints = Math.max(0.0001, toSafeNumber(colliderBuild.removeDuplicatePoints, 0.02));
   const options = {
-    restitution: Number(state.config.physics.restitution || 0.1),
-    friction: Number(state.config.physics.friction || 0.7),
-    frictionStatic: Number(state.config.physics.frictionStatic || 2.2),
-    frictionAir: Number(state.config.physics.frictionAir || 0.016),
-    density: Number(state.config.physics.density || 0.0012),
-    slop: Math.max(0.001, Number(state.config.physics.slop || 0.01))
+    restitution: toSafeNumber(state.config.physics?.restitution, 0.1),
+    friction: toSafeNumber(state.config.physics?.friction, 0.7),
+    frictionStatic: toSafeNumber(state.config.physics?.frictionStatic, 2.2),
+    frictionAir: toSafeNumber(state.config.physics?.frictionAir, 0.016),
+    density: toSafeNumber(state.config.physics?.density, 0.0012),
+    slop: Math.max(0.001, toSafeNumber(state.config.physics?.slop, 0.01))
   };
+
+  const shapeId = String(shape?.id || '');
 
   let body;
   switch (shape.kind) {
@@ -590,7 +598,7 @@ function createBodyFromShape(shape, x, y) {
   const fallbackWidth = Number(shape.sourceWidth || 80) * Number(shape.scale || 1);
   const fallbackHeight = Number(shape.sourceHeight || 80) * Number(shape.scale || 1);
   body.plugin.game = {
-    shapeId: shape.id,
+    shapeId: shapeId,
     kind: shape.kind,
     label: String(shape.label || shape.id || ''),
     fill: String(shape.fill || '#ffffff'),
@@ -750,16 +758,20 @@ function drawWorld() {
   ctx.restore();
 }
 
-function pickNextShape(excludedShapeId = null) {
+function pickNextShape(excludedShapeIds = []) {
   const shapes = Array.isArray(state.config?.shapes) ? state.config.shapes : [];
   if (!shapes.length) return null;
 
-  const excludedId = String(excludedShapeId || '').trim();
-  if (!excludedId) {
+  const excludedSet = new Set(
+    (Array.isArray(excludedShapeIds) ? excludedShapeIds : [])
+      .map((id) => String(id || '').trim())
+      .filter(Boolean)
+  );
+  if (!excludedSet.size) {
     return weightedPick(shapes);
   }
 
-  const candidates = shapes.filter((shape) => String(shape?.id || '').trim() !== excludedId);
+  const candidates = shapes.filter((shape) => !excludedSet.has(String(shape?.id || '').trim()));
   if (!candidates.length) {
     return weightedPick(shapes);
   }
@@ -767,7 +779,7 @@ function pickNextShape(excludedShapeId = null) {
 }
 
 function prepareQueue() {
-  state.currentShape = pickNextShape(state.lastDroppedShapeId);
+  state.currentShape = pickNextShape(state.recentDroppedShapeIds);
 }
 
 function buildWorld() {
@@ -788,8 +800,8 @@ function buildWorld() {
   const groundScale = Math.max(0.5, Number(state.config.physics.groundScale || 1));
   const pedestalWidth = Math.round(CANVAS_WIDTH * 0.6 * groundScale);
   const pedestalHeight = Math.round(12 * groundScale);
-  // Keep ground top flat: oversized chamfer on thin ground can behave like a slope.
-  const pedestalChamfer = Math.max(0, Math.min(Math.round(10 * groundScale), Math.floor(pedestalHeight * 0.2)));
+  // Keep ground top flat to minimize unintended ground bounce.
+  const pedestalChamfer = 0;
   const defaultGroundTopY = CANVAS_HEIGHT - 100;
   const pedestalTopY = clamp(80, Number(state.config.physics.groundTopY || defaultGroundTopY), CANVAS_HEIGHT - pedestalHeight - 10);
   const pedestalCenterY = pedestalTopY + pedestalHeight * 0.5;
@@ -797,9 +809,9 @@ function buildWorld() {
   const pedestal = Bodies.rectangle(CANVAS_WIDTH / 2, pedestalCenterY, pedestalWidth, pedestalHeight, {
     isStatic: true,
     chamfer: pedestalChamfer > 0 ? { radius: pedestalChamfer } : undefined,
-    restitution: Number(state.config.physics.groundRestitution || 0.02),
-    friction: Number(state.config.physics.groundFriction || 1.2),
-    frictionStatic: Number(state.config.physics.groundFrictionStatic || 4.2)
+    restitution: toSafeNumber(state.config.physics?.groundRestitution, 0.02),
+    friction: toSafeNumber(state.config.physics?.groundFriction, 1.2),
+    frictionStatic: toSafeNumber(state.config.physics?.groundFrictionStatic, 4.2)
   });
   Body.setAngle(pedestal, 0);
 
@@ -831,6 +843,7 @@ function resetRunState() {
   state.submitted = false;
   state.runId = createRunId();
   state.lastDroppedShapeId = null;
+  state.recentDroppedShapeIds = [];
   state.lastFrameMs = 0;
 
   resetSubmitMessage();
@@ -920,7 +933,13 @@ function dropCurrentShape() {
   state.totalScore = state.droppedCount;
 
   state.lastDroppedShapeId = String(state.currentShape.id || '').trim() || null;
-  state.currentShape = pickNextShape(state.lastDroppedShapeId);
+  if (state.lastDroppedShapeId) {
+    state.recentDroppedShapeIds.push(state.lastDroppedShapeId);
+    if (state.recentDroppedShapeIds.length > 3) {
+      state.recentDroppedShapeIds = state.recentDroppedShapeIds.slice(-3);
+    }
+  }
+  state.currentShape = pickNextShape(state.recentDroppedShapeIds);
   setPendingRotationStep(0);
 }
 
@@ -1156,7 +1175,17 @@ async function saveCurrentScreen() {
     if (typeof captureCanvas.toBlob === 'function') {
       const blob = await new Promise((resolve) => captureCanvas.toBlob(resolve, 'image/png'));
       if (!blob) throw new Error('failed to generate screenshot blob');
-      downloadBlob(blob, fileName);
+      const file = new File([blob], fileName, { type: 'image/png' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: 'Lシンガータワーバトル 結果画像',
+          files: [file]
+        });
+        setCaptureMessage('共有メニューを開きました。「画像を保存」でカメラロールに保存できます。', 'success');
+      } else {
+        downloadBlob(blob, fileName);
+        setCaptureMessage('端末仕様によりダウンロード保存しました。', 'success');
+      }
     } else {
       const dataUrl = captureCanvas.toDataURL('image/png');
       const anchor = document.createElement('a');
@@ -1165,8 +1194,8 @@ async function saveCurrentScreen() {
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
+      setCaptureMessage('端末仕様によりダウンロード保存しました。', 'success');
     }
-    setCaptureMessage('スクショを保存しました。', 'success');
   } catch (error) {
     console.error(error);
     setCaptureMessage('スクショ保存に失敗しました。', 'error');

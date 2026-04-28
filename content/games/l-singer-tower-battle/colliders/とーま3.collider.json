@@ -165,7 +165,7 @@
   ],
   "qa": {
     "vertexCount": 40,
-    "minEdgeWorld": 3.2342,
+    "minEdgeWorld": 4.8513,
     "reflexRatio": 0.4,
     "selfIntersection": 0,
     "bbox": {

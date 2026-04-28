@@ -269,7 +269,7 @@ h1 {
 
 .rotate-button {
   width: 100%;
-  padding: 40px 0;
+  padding: 20px 0;
   font-size: 0.72rem;
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -344,6 +344,11 @@ h1 {
   box-shadow: 4px 4px 0 #55717a;
 }
 
+.sub-button.rotate-button {
+  width: 100%;
+  padding: 20px 0;
+}
+
 .result-card {
   width: min(360px, 100%);
   padding: 14px;
@@ -396,17 +401,6 @@ h1 {
 
 #retry-button {
   margin-top: 10px;
-}
-
-#capture-button {
-  margin-top: 8px;
-}
-
-.capture-help {
-  margin: 6px 2px 0;
-  font-size: 0.66rem;
-  line-height: 1.35;
-  color: #4d4058;
 }
 
 #share-x-button {

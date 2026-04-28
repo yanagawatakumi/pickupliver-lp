@@ -15,10 +15,6 @@
       "y": 86.0
     },
     {
-      "x": 334.0,
-      "y": 82.0
-    },
-    {
       "x": 341.0,
       "y": 78.0
     },
@@ -109,10 +105,6 @@
     {
       "x": 255.0,
       "y": 148.0
-    },
-    {
-      "x": 262.0,
-      "y": 150.0
     },
     {
       "x": 281.0,
@@ -284,9 +276,9 @@
     }
   ],
   "qa": {
-    "vertexCount": 70,
-    "minEdgeWorld": 1.7307,
-    "reflexRatio": 0.414286,
+    "vertexCount": 68,
+    "minEdgeWorld": 2.9024,
+    "reflexRatio": 0.397059,
     "selfIntersection": 0,
     "bbox": {
       "minX": 58.0,
@@ -294,7 +286,7 @@
       "maxX": 455.0,
       "maxY": 505.0
     },
-    "area": 60346.0,
+    "area": 60433.5,
     "maxConsecutiveSharp": 3,
     "thresholds": {
       "minEdgeWorld": 1.0,

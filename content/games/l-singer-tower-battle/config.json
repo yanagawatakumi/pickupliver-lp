@@ -8,14 +8,14 @@
       "constraint": 4
     },
     "restitution": 0.0,
-    "friction": 0.68,
-    "frictionStatic": 2.2,
+    "friction": 0.92,
+    "frictionStatic": 3.6,
     "frictionAir": 0.04,
     "density": 0.00075,
     "slop": 0.01,
     "groundRestitution": 0.0,
-    "groundFriction": 1.25,
-    "groundFrictionStatic": 4.2,
+    "groundFriction": 1.8,
+    "groundFrictionStatic": 6.8,
     "groundScale": 1.5,
     "groundTopY": 580,
     "colliderBuild": {
