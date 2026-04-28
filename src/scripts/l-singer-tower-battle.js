@@ -1049,7 +1049,7 @@ function getGameShareUrl() {
 function buildShareText() {
   const score = toSafeInt(state.totalScore, 0);
   const link = getGameShareUrl();
-  return `スコア${score}点達成！\n次はあなたの番。どこまで積めるか挑戦してみて👇\n${link}\n#PICKUPLIVER #LSINGERTOWERBATTLE`;
+  return `スコア${score}点達成！\n次はあなたの番。どこまで積めるか挑戦してみて👇\n${link}\n\n#PICKUPLIVER #LSINGERTOWERBATTLE`;
 }
 
 function downloadBlob(blob, fileName) {
@@ -1175,28 +1175,34 @@ async function saveCurrentScreen() {
   }
 }
 
-function openXIntent(text) {
-  const intentUrl = new URL('https://twitter.com/intent/tweet');
-  intentUrl.searchParams.set('text', text);
-  window.open(intentUrl.toString(), '_blank', 'noopener,noreferrer');
-}
-
 async function shareOnX() {
   if (!refs.shareXButton) return;
   refs.shareXButton.disabled = true;
   resetShareMessage();
   try {
     const text = buildShareText();
-    openXIntent(text);
-
     const captureCanvas = buildCaptureCanvas();
     if (!captureCanvas) throw new Error('failed to create capture canvas');
     const fileName = createCaptureFileName();
+    let shared = false;
 
     if (typeof captureCanvas.toBlob === 'function') {
       const blob = await new Promise((resolve) => captureCanvas.toBlob(resolve, 'image/png'));
       if (blob) {
-        downloadBlob(blob, fileName);
+        const file = new File([blob], fileName, { type: 'image/png' });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            text,
+            files: [file]
+          });
+          shared = true;
+        } else if (navigator.share) {
+          await navigator.share({ text });
+          downloadBlob(blob, fileName);
+          shared = true;
+        } else {
+          downloadBlob(blob, fileName);
+        }
       }
     } else {
       const dataUrl = captureCanvas.toDataURL('image/png');
@@ -1207,7 +1213,11 @@ async function shareOnX() {
       anchor.click();
       anchor.remove();
     }
-    setShareMessage('X投稿画面を開きました。保存画像を1枚添付して投稿してください。', 'success');
+    if (shared) {
+      setShareMessage('共有メニューを開きました。投稿先を選んでシェアしてください。', 'success');
+    } else {
+      setShareMessage('画像を保存しました。共有先アプリから投稿してください。', 'success');
+    }
   } catch (error) {
     console.error(error);
     setShareMessage('シェアに失敗しました。時間をおいて再試行してください。', 'error');
