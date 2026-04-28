@@ -1,27 +1,29 @@
 {
   "physics": {
     "gravityY": 0.96,
-    "substeps": 4,
+    "substeps": 5,
     "iterations": {
-      "position": 18,
-      "velocity": 12,
+      "position": 22,
+      "velocity": 14,
       "constraint": 4
     },
     "restitution": 0.0,
-    "friction": 0.92,
-    "frictionStatic": 3.6,
-    "frictionAir": 0.04,
+    "friction": 0.88,
+    "frictionStatic": 1.9,
+    "frictionAir": 0.05,
     "density": 0.00075,
-    "slop": 0.01,
-    "groundRestitution": 0.0,
-    "groundFriction": 1.8,
-    "groundFrictionStatic": 6.8,
+    "slop": 0.05,
+    "stability": {
+      "angularDamping": 0.94,
+      "maxAngularSpeed": 2.2,
+      "maxLinearSpeed": 22
+    },
     "groundScale": 1.5,
     "groundTopY": 580,
     "colliderBuild": {
-      "removeCollinear": 0.02,
-      "minimumArea": 4,
-      "removeDuplicatePoints": 0.02
+      "removeCollinear": 0.08,
+      "minimumArea": 12,
+      "removeDuplicatePoints": 0.08
     }
   },
   "colliderQa": {

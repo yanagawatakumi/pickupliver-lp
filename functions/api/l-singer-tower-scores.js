@@ -97,6 +97,35 @@ async function listTop(db) {
   }));
 }
 
+async function getScoreStats(db, score) {
+  const totalRow = await db.prepare('SELECT COUNT(*) AS total_count FROM animal_tower_scores').first();
+  const higherRow = await db
+    .prepare('SELECT COUNT(*) AS higher_count FROM animal_tower_scores WHERE score > ?')
+    .bind(score)
+    .first();
+
+  const totalCount = Math.max(0, Number(totalRow?.total_count || 0));
+  const higherCount = Math.max(0, Number(higherRow?.higher_count || 0));
+  const rank = higherCount + 1;
+  const topPercent = totalCount > 0 ? (rank / totalCount) * 100 : 100;
+
+  return {
+    totalCount,
+    rank,
+    topPercent
+  };
+}
+
+function parseScoreFromUrl(url) {
+  const raw = url.searchParams.get('score');
+  if (raw === null || raw === '') return null;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error('score query must be a non-negative number');
+  }
+  return Math.round(parsed);
+}
+
 function isUniqueViolation(error) {
   const message = String(error?.message || '');
   return message.toLowerCase().includes('unique') || message.includes('SQLITE_CONSTRAINT');
@@ -106,11 +135,21 @@ export async function onRequestGet(context) {
   try {
     const db = requireDb(context.env);
     await ensureSchema(db);
+    const requestUrl = new URL(context.request.url);
+    const score = parseScoreFromUrl(requestUrl);
     const top = await listTop(db);
-    return json({ ok: true, top });
+    const payload = { ok: true, top };
+    if (score !== null) {
+      payload.stats = await getScoreStats(db, score);
+    }
+    return json(payload);
   } catch (error) {
     console.error('l-singer-tower-scores GET failed', error);
-    return json({ ok: false, error: String(error?.message || 'failed to list scores') }, 500);
+    const message = String(error?.message || 'failed to list scores');
+    if (message.includes('non-negative')) {
+      return json({ ok: false, error: message }, 400);
+    }
+    return json({ ok: false, error: message }, 500);
   }
 }
 
@@ -129,9 +168,9 @@ export async function onRequestPost(context) {
     };
 
     await insertScore(db, input);
-    const top = await listTop(db);
+    const [top, stats] = await Promise.all([listTop(db), getScoreStats(db, input.score)]);
 
-    return json({ ok: true, top }, 201);
+    return json({ ok: true, top, stats }, 201);
   } catch (error) {
     if (isUniqueViolation(error)) {
       return json({ ok: false, error: 'runId already submitted' }, 409);

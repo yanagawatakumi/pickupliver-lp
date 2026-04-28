@@ -1,5 +1,6 @@
 const CONFIG_PATH_DEFAULT = '/content/games/l-singer-tower-battle/config.json';
 const SCORE_API_PATH = '/api/l-singer-tower-scores';
+const PLAY_API_PATH = '/api/l-singer-tower-plays';
 const CANVAS_WIDTH = 420;
 const CANVAS_HEIGHT = 720;
 const SETTLE_SPEED_LIMIT = 0.2;
@@ -23,6 +24,7 @@ const refs = {
   lifeValue: document.getElementById('life-value'),
   resultModal: document.getElementById('result-modal'),
   finalScore: document.getElementById('final-score'),
+  resultStats: document.getElementById('result-stats'),
   scoreForm: document.getElementById('score-form'),
   playerName: document.getElementById('player-name'),
   submitScore: document.getElementById('submit-score'),
@@ -63,12 +65,14 @@ const state = {
   cameraOffsetY: 0,
   cameraZoom: 1,
   submitted: false,
+  playReported: false,
   runId: '',
   lastDroppedShapeId: null,
   recentDroppedShapeIds: [],
   frameReq: 0,
   lastFrameMs: 0,
   pendingRankingFetch: false,
+  rankingTop: [],
   qaRejectedShapeIds: []
 };
 
@@ -120,12 +124,83 @@ function createRunId() {
 function resetSubmitMessage() {
   refs.submitMessage.textContent = '';
   refs.submitMessage.classList.remove('error', 'success');
+  if (refs.resultStats) refs.resultStats.textContent = '';
 }
 
 function setSubmitMessage(text, tone = '') {
   refs.submitMessage.textContent = text;
   refs.submitMessage.classList.remove('error', 'success');
   if (tone) refs.submitMessage.classList.add(tone);
+}
+
+function canRegisterRanking(score) {
+  const top = Array.isArray(state.rankingTop) ? state.rankingTop : [];
+  if (top.length < 10) return true;
+  const border = Number(top[top.length - 1]?.score || 0);
+  return Number(score || 0) >= border;
+}
+
+function updateRankingRegisterUI() {
+  if (!refs.submitScore) return;
+  const canRegister = canRegisterRanking(state.totalScore);
+  refs.submitScore.hidden = !canRegister;
+  refs.submitScore.disabled = !canRegister || state.submitted;
+}
+
+function formatTopPercent(rank, totalCount) {
+  const total = Math.max(1, toSafeInt(totalCount, 1));
+  const r = clamp(1, toSafeInt(rank, 1), total);
+  const pct = Math.max(0.1, (r / total) * 100);
+  if (pct < 1) return `${pct.toFixed(1)}%`;
+  return `${Math.round(pct)}%`;
+}
+
+function renderResultStats(stats) {
+  if (!refs.resultStats) return;
+  if (!stats || !Number.isFinite(Number(stats.totalCount)) || !Number.isFinite(Number(stats.rank))) {
+    refs.resultStats.textContent = '';
+    return;
+  }
+  const rank = toSafeInt(stats.rank, 1);
+  const totalCount = Math.max(1, toSafeInt(stats.totalCount, 1));
+  refs.resultStats.textContent = `上位${formatTopPercent(rank, totalCount)}`;
+}
+
+async function fetchAndRenderResultStats(score) {
+  if (!refs.resultStats) return;
+  refs.resultStats.textContent = '上位%を計算中...';
+  try {
+    const queryScore = Math.max(0, toSafeInt(score, 0));
+    const response = await fetch(`${PLAY_API_PATH}?score=${encodeURIComponent(String(queryScore))}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`stats fetch failed: ${response.status}`);
+    const payload = await response.json();
+    renderResultStats(payload?.stats);
+  } catch (error) {
+    console.error(error);
+    refs.resultStats.textContent = '上位%の取得に失敗しました';
+  }
+}
+
+async function reportPlayResult() {
+  if (state.playReported || !state.runId) return null;
+  state.playReported = true;
+  const payload = {
+    runId: state.runId,
+    score: state.totalScore,
+    placedCount: state.droppedCount,
+    fallenCount: state.fallenCount
+  };
+  const response = await fetch(PLAY_API_PATH, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    throw new Error(`play report failed: ${response.status}`);
+  }
+  return response.json().catch(() => ({}));
 }
 
 function resetCaptureMessage() {
@@ -784,34 +859,39 @@ function prepareQueue() {
 
 function buildWorld() {
   const { Engine, Bodies, Body, World } = window.Matter;
+  const physics = state.config?.physics || {};
 
   state.engine = Engine.create({
     enableSleeping: true,
     gravity: {
       x: 0,
-      y: Number(state.config.physics.gravityY || 1)
+      y: Number(physics.gravityY || 1)
     }
   });
 
-  state.engine.positionIterations = toSafeInt(state.config.physics.iterations?.position, 8);
-  state.engine.velocityIterations = toSafeInt(state.config.physics.iterations?.velocity, 6);
-  state.engine.constraintIterations = toSafeInt(state.config.physics.iterations?.constraint, 2);
+  state.engine.positionIterations = toSafeInt(physics.iterations?.position, 8);
+  state.engine.velocityIterations = toSafeInt(physics.iterations?.velocity, 6);
+  state.engine.constraintIterations = toSafeInt(physics.iterations?.constraint, 2);
 
-  const groundScale = Math.max(0.5, Number(state.config.physics.groundScale || 1));
+  const groundScale = Math.max(0.5, Number(physics.groundScale || 1));
   const pedestalWidth = Math.round(CANVAS_WIDTH * 0.6 * groundScale);
-  const pedestalHeight = Math.round(12 * groundScale);
-  // Keep ground top flat to minimize unintended ground bounce.
+  const pedestalHeight = Math.round(20 * groundScale);
   const pedestalChamfer = 0;
   const defaultGroundTopY = CANVAS_HEIGHT - 100;
-  const pedestalTopY = clamp(80, Number(state.config.physics.groundTopY || defaultGroundTopY), CANVAS_HEIGHT - pedestalHeight - 10);
+  const pedestalTopY = clamp(80, Number(physics.groundTopY || defaultGroundTopY), CANVAS_HEIGHT - pedestalHeight - 10);
   const pedestalCenterY = pedestalTopY + pedestalHeight * 0.5;
+  const sharedRestitution = toSafeNumber(physics.restitution, 0.1);
+  const sharedFriction = toSafeNumber(physics.friction, 0.7);
+  const sharedFrictionStatic = toSafeNumber(physics.frictionStatic, 2.2);
+  const sharedSlop = Math.max(0.001, toSafeNumber(physics.slop, 0.01));
 
   const pedestal = Bodies.rectangle(CANVAS_WIDTH / 2, pedestalCenterY, pedestalWidth, pedestalHeight, {
     isStatic: true,
     chamfer: pedestalChamfer > 0 ? { radius: pedestalChamfer } : undefined,
-    restitution: toSafeNumber(state.config.physics?.groundRestitution, 0.02),
-    friction: toSafeNumber(state.config.physics?.groundFriction, 1.2),
-    frictionStatic: toSafeNumber(state.config.physics?.groundFrictionStatic, 4.2)
+    restitution: sharedRestitution,
+    friction: sharedFriction,
+    frictionStatic: sharedFrictionStatic,
+    slop: sharedSlop
   });
   Body.setAngle(pedestal, 0);
 
@@ -841,6 +921,7 @@ function resetRunState() {
   state.cameraOffsetY = 0;
   state.cameraZoom = 1;
   state.submitted = false;
+  state.playReported = false;
   state.runId = createRunId();
   state.lastDroppedShapeId = null;
   state.recentDroppedShapeIds = [];
@@ -851,6 +932,7 @@ function resetRunState() {
   resetShareMessage();
   refs.scoreForm.reset();
   refs.submitScore.disabled = false;
+  refs.submitScore.hidden = false;
   if (refs.captureButton) refs.captureButton.disabled = false;
   if (refs.shareXButton) refs.shareXButton.disabled = false;
   refs.resultModal.hidden = true;
@@ -888,7 +970,21 @@ function finishGame() {
   resetShareMessage();
 
   refs.finalScore.textContent = `スコア: ${state.totalScore}`;
+  if (refs.resultStats) refs.resultStats.textContent = '';
   refs.resultModal.hidden = false;
+  updateRankingRegisterUI();
+  reportPlayResult()
+    .then((payload) => {
+      if (payload?.stats) {
+        renderResultStats(payload.stats);
+      } else {
+        fetchAndRenderResultStats(state.totalScore);
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      fetchAndRenderResultStats(state.totalScore);
+    });
   updateHud();
   refs.playerName.focus();
 }
@@ -985,6 +1081,32 @@ function collectFallenBodies() {
   }
 
   state.dynamicBodies = survivors;
+}
+
+function applyGlobalStability() {
+  const { Body } = window.Matter;
+  const stability = state.config?.physics?.stability || {};
+  const angularDamping = clamp(0.85, toSafeNumber(stability.angularDamping, 0.94), 0.999);
+  const maxAngularSpeed = Math.max(0.4, toSafeNumber(stability.maxAngularSpeed, 2.2));
+  const maxLinearSpeed = Math.max(4, toSafeNumber(stability.maxLinearSpeed, 22));
+
+  for (const body of state.dynamicBodies) {
+    if (!body || body.isSleeping) continue;
+
+    const nextAngular = clamp(-maxAngularSpeed, body.angularVelocity * angularDamping, maxAngularSpeed);
+    if (Math.abs(nextAngular - body.angularVelocity) > 0.0001) {
+      Body.setAngularVelocity(body, nextAngular);
+    }
+
+    const speed = body.speed;
+    if (speed > maxLinearSpeed) {
+      const ratio = maxLinearSpeed / Math.max(0.0001, speed);
+      Body.setVelocity(body, {
+        x: body.velocity.x * ratio,
+        y: body.velocity.y * ratio
+      });
+    }
+  }
 }
 
 function updateDropGate(nowMs) {
@@ -1273,6 +1395,7 @@ function frame(timestamp) {
   }
 
   if (state.running) {
+    applyGlobalStability();
     updateDropGate(timestamp);
     collectFallenBodies();
     updateScore();
@@ -1289,9 +1412,11 @@ function frame(timestamp) {
 
 function renderRanking(topList) {
   refs.rankingList.innerHTML = '';
+  state.rankingTop = Array.isArray(topList) ? topList : [];
 
   if (!Array.isArray(topList) || !topList.length) {
     refs.rankingStatus.textContent = 'まだスコアがありません。';
+    if (isGameOverHudMode()) updateRankingRegisterUI();
     return;
   }
 
@@ -1304,6 +1429,7 @@ function renderRanking(topList) {
     li.textContent = `${index + 1}. ${name} - ${score}点`;
     refs.rankingList.appendChild(li);
   });
+  if (isGameOverHudMode()) updateRankingRegisterUI();
 }
 
 async function loadRanking() {
@@ -1372,7 +1498,8 @@ async function submitScore(event) {
     }
 
     state.submitted = true;
-    setSubmitMessage('スコアを送信しました。', 'success');
+    renderResultStats(body?.stats);
+    setSubmitMessage('ランキングに登録しました。', 'success');
     await loadRanking();
   } catch (error) {
     console.error(error);
