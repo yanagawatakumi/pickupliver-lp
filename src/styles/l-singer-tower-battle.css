@@ -262,14 +262,14 @@ h1 {
   position: absolute;
   left: 50%;
   bottom: 10px;
-  width: 148px;
+  width: 222px;
   transform: translateX(-50%);
   z-index: 4;
 }
 
 .rotate-button {
   width: 100%;
-  padding: 20px 0;
+  padding: 40px 0;
   font-size: 0.72rem;
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -400,6 +400,13 @@ h1 {
 
 #capture-button {
   margin-top: 8px;
+}
+
+.capture-help {
+  margin: 6px 2px 0;
+  font-size: 0.66rem;
+  line-height: 1.35;
+  color: #4d4058;
 }
 
 #share-x-button {
