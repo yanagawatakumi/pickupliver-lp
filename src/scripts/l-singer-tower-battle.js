@@ -1063,14 +1063,6 @@ function downloadBlob(blob, fileName) {
   URL.revokeObjectURL(url);
 }
 
-function blobToFile(blob, fileName) {
-  try {
-    return new File([blob], fileName, { type: 'image/png' });
-  } catch (_) {
-    return null;
-  }
-}
-
 function drawRoundedRect(targetCtx, x, y, w, h, radius) {
   targetCtx.beginPath();
   targetCtx.roundRect(x, y, w, h, radius);
@@ -1194,34 +1186,28 @@ async function shareOnX() {
   refs.shareXButton.disabled = true;
   resetShareMessage();
   try {
+    const text = buildShareText();
+    openXIntent(text);
+
     const captureCanvas = buildCaptureCanvas();
     if (!captureCanvas) throw new Error('failed to create capture canvas');
-    const text = buildShareText();
     const fileName = createCaptureFileName();
-    let sharedWithImage = false;
 
     if (typeof captureCanvas.toBlob === 'function') {
       const blob = await new Promise((resolve) => captureCanvas.toBlob(resolve, 'image/png'));
       if (blob) {
-        const file = blobToFile(blob, fileName);
-        if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            text,
-            files: [file]
-          });
-          sharedWithImage = true;
-        } else {
-          downloadBlob(blob, fileName);
-        }
+        downloadBlob(blob, fileName);
       }
-    }
-
-    if (!sharedWithImage) {
-      openXIntent(text);
-      setShareMessage('投稿画面を開きました。保存画像を添付して投稿してください。', 'success');
     } else {
-      setShareMessage('共有シートを開きました。Xを選んで投稿してください。', 'success');
+      const dataUrl = captureCanvas.toDataURL('image/png');
+      const anchor = document.createElement('a');
+      anchor.href = dataUrl;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
     }
+    setShareMessage('X投稿画面を開きました。保存画像を1枚添付して投稿してください。', 'success');
   } catch (error) {
     console.error(error);
     setShareMessage('シェアに失敗しました。時間をおいて再試行してください。', 'error');
