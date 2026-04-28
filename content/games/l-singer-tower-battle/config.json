@@ -2,6 +2,7 @@
   "physics": {
     "gravityY": 0.96,
     "substeps": 5,
+    "maxStepsPerFrame": 5,
     "iterations": {
       "position": 22,
       "velocity": 14,

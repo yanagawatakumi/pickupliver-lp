@@ -3,6 +3,7 @@ const SCORE_API_PATH = '/api/l-singer-tower-scores';
 const PLAY_API_PATH = '/api/l-singer-tower-plays';
 const CANVAS_WIDTH = 420;
 const CANVAS_HEIGHT = 720;
+const FIXED_STEP_MS = 1000 / 60;
 const SETTLE_SPEED_LIMIT = 0.2;
 const SETTLE_ANGULAR_LIMIT = 0.02;
 const SETTLE_FRAMES_REQUIRED = 16;
@@ -71,6 +72,7 @@ const state = {
   recentDroppedShapeIds: [],
   frameReq: 0,
   lastFrameMs: 0,
+  accumulatorMs: 0,
   pendingRankingFetch: false,
   rankingTop: [],
   qaRejectedShapeIds: []
@@ -926,6 +928,7 @@ function resetRunState() {
   state.lastDroppedShapeId = null;
   state.recentDroppedShapeIds = [];
   state.lastFrameMs = 0;
+  state.accumulatorMs = 0;
 
   resetSubmitMessage();
   resetCaptureMessage();
@@ -992,13 +995,10 @@ function finishGame() {
 function updateSpawnerPosition(clientX) {
   const rect = refs.canvas.getBoundingClientRect();
   const ratio = CANVAS_WIDTH / rect.width;
-  const minX = Number(state.config.drop.minX || 50);
-  const maxX = Number(state.config.drop.maxX || CANVAS_WIDTH - 50);
   const screenX = (clientX - rect.left) * ratio;
   const centerX = CANVAS_WIDTH * 0.5;
   const zoom = state.cameraZoom || 1;
-  const x = centerX + (screenX - centerX) / zoom;
-  state.spawnerX = clamp(minX, x, maxX);
+  state.spawnerX = centerX + (screenX - centerX) / zoom;
 }
 
 function dropCurrentShape() {
@@ -1383,22 +1383,37 @@ function frame(timestamp) {
   if (!state.engine) return;
 
   if (!state.lastFrameMs) state.lastFrameMs = timestamp;
-  const delta = clamp(8, timestamp - state.lastFrameMs, 32);
+  const frameDelta = clamp(0, timestamp - state.lastFrameMs, 100);
   state.lastFrameMs = timestamp;
-  const substeps = clamp(1, toSafeInt(state.config.physics?.substeps, 3), 5);
-  const substepDelta = delta / substeps;
-  for (let i = 0; i < substeps; i += 1) {
-    window.Matter.Engine.update(state.engine, substepDelta);
+  state.accumulatorMs += frameDelta;
+
+  const substeps = clamp(1, toSafeInt(state.config.physics?.substeps, 5), 6);
+  const maxStepsPerFrame = clamp(1, toSafeInt(state.config.physics?.maxStepsPerFrame, 5), 10);
+  let stepCount = 0;
+
+  while (state.accumulatorMs >= FIXED_STEP_MS && stepCount < maxStepsPerFrame) {
+    const substepDelta = FIXED_STEP_MS / substeps;
+    for (let i = 0; i < substeps; i += 1) {
+      window.Matter.Engine.update(state.engine, substepDelta);
+    }
+
+    if (state.running) {
+      applyGlobalStability();
+      updateDropGate(performance.now());
+      collectFallenBodies();
+      updateScore();
+      if (state.fallenCount >= Number(state.config.rules.fallenLimit || 3)) {
+        finishGame();
+      }
+    }
+
+    state.accumulatorMs -= FIXED_STEP_MS;
+    stepCount += 1;
   }
 
-  if (state.running) {
-    applyGlobalStability();
-    updateDropGate(timestamp);
-    collectFallenBodies();
-    updateScore();
-    if (state.fallenCount >= Number(state.config.rules.fallenLimit || 3)) {
-      finishGame();
-    }
+  // Drop excessive backlog to avoid "spiral of death" on slow mobile frames.
+  if (state.accumulatorMs > FIXED_STEP_MS * 3) {
+    state.accumulatorMs = FIXED_STEP_MS * 3;
   }
   updateCamera();
 
