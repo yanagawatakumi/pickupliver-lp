@@ -103,6 +103,24 @@ const audioState = {
   unlocked: false
 };
 
+function getRenderPixelRatio() {
+  const dpr = Number(window.devicePixelRatio || 1);
+  if (!Number.isFinite(dpr)) return 1;
+  return clamp(1, dpr, 3);
+}
+
+function applyCanvasResolution() {
+  if (!refs.canvas) return;
+  const ratio = getRenderPixelRatio();
+  const nextWidth = Math.round(CANVAS_WIDTH * ratio);
+  const nextHeight = Math.round(CANVAS_HEIGHT * ratio);
+  if (refs.canvas.width !== nextWidth) refs.canvas.width = nextWidth;
+  if (refs.canvas.height !== nextHeight) refs.canvas.height = nextHeight;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+}
+
 function metaContent(name) {
   const node = document.querySelector(`meta[name="${name}"]`);
   return node ? String(node.getAttribute('content') || '').trim() : '';
@@ -958,6 +976,7 @@ function drawStageBackground() {
 }
 
 function drawWorld() {
+  applyCanvasResolution();
   drawStageBackground();
   ctx.save();
   ctx.translate(0, state.cameraOffsetY);
@@ -1491,16 +1510,26 @@ function drawHudOnCapture(targetCtx) {
 
 function buildCaptureCanvas() {
   if (!refs.canvas) return null;
-  const exportScale = Math.max(2, Number(window.devicePixelRatio || 1));
+  const exportScale = Math.max(3, Number(window.devicePixelRatio || 1));
   const captureCanvas = document.createElement('canvas');
-  captureCanvas.width = Math.round(refs.canvas.width * exportScale);
-  captureCanvas.height = Math.round(refs.canvas.height * exportScale);
+  captureCanvas.width = Math.round(CANVAS_WIDTH * exportScale);
+  captureCanvas.height = Math.round(CANVAS_HEIGHT * exportScale);
   const captureCtx = captureCanvas.getContext('2d');
   if (!captureCtx) return null;
   captureCtx.setTransform(exportScale, 0, 0, exportScale, 0, 0);
   captureCtx.imageSmoothingEnabled = true;
   captureCtx.imageSmoothingQuality = 'high';
-  captureCtx.drawImage(refs.canvas, 0, 0);
+  captureCtx.drawImage(
+    refs.canvas,
+    0,
+    0,
+    refs.canvas.width,
+    refs.canvas.height,
+    0,
+    0,
+    CANVAS_WIDTH,
+    CANVAS_HEIGHT
+  );
   drawHudOnCapture(captureCtx);
   return captureCanvas;
 }
@@ -1867,6 +1896,8 @@ async function init() {
   }
 
   try {
+    applyCanvasResolution();
+    window.addEventListener('resize', applyCanvasResolution, { passive: true });
     if (window.decomp && window.Matter?.Common?.setDecomp) {
       window.Matter.Common.setDecomp(window.decomp);
     }
