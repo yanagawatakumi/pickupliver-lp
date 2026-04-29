@@ -10,6 +10,7 @@ const STAGE_FLOATING_IMAGE_PATHS = [
   '/public/assets/games/l-singer-tower-battle/bg-がーくん.png',
   '/public/assets/games/l-singer-tower-battle/bg-とーま.png'
 ];
+const LEADERBOARD_LIMIT = 50;
 const CANVAS_WIDTH = 420;
 const CANVAS_HEIGHT = 720;
 const FIXED_STEP_MS = 1000 / 60;
@@ -180,7 +181,7 @@ function setSubmitMessage(text, tone = '') {
 
 function canRegisterRanking(score) {
   const top = Array.isArray(state.rankingTop) ? state.rankingTop : [];
-  if (top.length < 50) return true;
+  if (top.length < LEADERBOARD_LIMIT) return true;
   const border = Number(top[top.length - 1]?.score || 0);
   return Number(score || 0) >= border;
 }
@@ -192,37 +193,49 @@ function updateRankingRegisterUI() {
   refs.submitScore.disabled = !canRegister || state.submitted;
 }
 
-function formatTopPercent(rank, totalCount) {
-  const total = Math.max(1, toSafeInt(totalCount, 1));
-  const r = clamp(1, toSafeInt(rank, 1), total);
-  const pct = Math.max(0.1, (r / total) * 100);
-  if (pct < 1) return `${pct.toFixed(1)}%`;
-  return `${Math.round(pct)}%`;
+function getTopBorderScore() {
+  const top = Array.isArray(state.rankingTop) ? state.rankingTop : [];
+  if (top.length < LEADERBOARD_LIMIT) return null;
+  return toSafeInt(top[LEADERBOARD_LIMIT - 1]?.score, 0);
 }
 
-function renderResultStats(stats) {
+function renderResultGoalMessage(stats) {
   if (!refs.resultStats) return;
-  if (!stats || !Number.isFinite(Number(stats.totalCount)) || !Number.isFinite(Number(stats.rank))) {
-    refs.resultStats.textContent = '';
+  const score = toSafeInt(state.totalScore, 0);
+  const rank = Number.isFinite(Number(stats?.rank)) ? toSafeInt(stats.rank, LEADERBOARD_LIMIT + 1) : null;
+
+  if (rank === 1) {
+    refs.resultStats.textContent = '現在1位！記録更新を狙おう';
     return;
   }
-  const rank = toSafeInt(stats.rank, 1);
-  const totalCount = Math.max(1, toSafeInt(stats.totalCount, 1));
-  refs.resultStats.textContent = `上位${formatTopPercent(rank, totalCount)}`;
+
+  if (rank !== null && rank <= LEADERBOARD_LIMIT) {
+    refs.resultStats.textContent = `TOP${LEADERBOARD_LIMIT}入り達成！さらに上位を目指そう`;
+    return;
+  }
+
+  const border = getTopBorderScore();
+  if (border === null) {
+    refs.resultStats.textContent = `TOP${LEADERBOARD_LIMIT}を目指そう！`;
+    return;
+  }
+
+  const needed = Math.max(1, border - score + 1);
+  refs.resultStats.textContent = `あと${needed}点でTOP${LEADERBOARD_LIMIT}入り！`;
 }
 
 async function fetchAndRenderResultStats(score) {
   if (!refs.resultStats) return;
-  refs.resultStats.textContent = '上位%を計算中...';
+  refs.resultStats.textContent = '結果を計算中...';
   try {
     const queryScore = Math.max(0, toSafeInt(score, 0));
     const response = await fetch(`${PLAY_API_PATH}?score=${encodeURIComponent(String(queryScore))}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`stats fetch failed: ${response.status}`);
     const payload = await response.json();
-    renderResultStats(payload?.stats);
+    renderResultGoalMessage(payload?.stats);
   } catch (error) {
     console.error(error);
-    refs.resultStats.textContent = '上位%の取得に失敗しました';
+    renderResultGoalMessage(null);
   }
 }
 
@@ -1182,7 +1195,7 @@ function finishGame() {
   reportPlayResult()
     .then((payload) => {
       if (payload?.stats) {
-        renderResultStats(payload.stats);
+        renderResultGoalMessage(payload.stats);
       } else {
         fetchAndRenderResultStats(state.totalScore);
       }
