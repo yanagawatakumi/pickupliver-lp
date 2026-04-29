@@ -318,8 +318,8 @@ function spawnMiniGameGimmick(config) {
   } else {
     button.style.setProperty('--mini-game-gimmick-duration', `${config.visibleSec}s`);
     button.style.setProperty('--mini-game-gimmick-y', `${Math.round(getMiniGameGimmickTopPx())}px`);
-    button.style.setProperty('--mini-game-gimmick-start-x', `${window.innerWidth + 94}px`);
-    button.style.setProperty('--mini-game-gimmick-end-x', '-94px');
+    button.style.setProperty('--mini-game-gimmick-start-x', `${window.innerWidth + 128}px`);
+    button.style.setProperty('--mini-game-gimmick-end-x', '-128px');
   }
 
   const goToMiniGame = () => {
@@ -386,15 +386,10 @@ async function renderShell() {
   document.body.innerHTML = html;
 }
 
-async function loadEvent() {
-  try {
-    const response = await fetch(resolveEventDataPath(), { cache: 'no-store' });
-    if (!response.ok) throw new Error('Failed to load event data');
-    const event = await response.json();
-    applyEvent(event);
-  } catch (error) {
-    console.error(error);
-  }
+async function loadEventData() {
+  const response = await fetch(resolveEventDataPath(), { cache: 'no-store' });
+  if (!response.ok) throw new Error('Failed to load event data');
+  return response.json();
 }
 
 function formatDateJP(isoDate) {
@@ -1555,6 +1550,7 @@ if (window.location.search.includes('fx=debug')) {
 
 async function bootEventPage() {
   initPerfProfile();
+  const eventPromise = loadEventData();
 
   try {
     await renderShell();
@@ -1564,7 +1560,12 @@ async function bootEventPage() {
     return;
   }
 
-  await loadEvent();
+  try {
+    const event = await eventPromise;
+    applyEvent(event);
+  } catch (error) {
+    console.error(error);
+  }
   initMarqueeMotion();
   initRevealAnimation();
   initParallaxOrbs();
