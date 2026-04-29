@@ -2,6 +2,7 @@ const CONFIG_PATH_DEFAULT = '/content/games/l-singer-tower-battle/config.json';
 const SCORE_API_PATH = '/api/l-singer-tower-scores';
 const PLAY_API_PATH = '/api/l-singer-tower-plays';
 const STAGE_BACKGROUND_PATH = '/public/assets/games/l-singer-tower-battle/tower-battle-bg.JPG';
+const DROP_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/drop.mp3';
 const STAGE_FLOATING_IMAGE_PATHS = [
   '/public/assets/games/l-singer-tower-battle/bg-がーくん.png',
   '/public/assets/games/l-singer-tower-battle/bg-とーま.png'
@@ -89,6 +90,11 @@ const state = {
   pendingRankingFetch: false,
   rankingTop: [],
   qaRejectedShapeIds: []
+};
+
+const audioState = {
+  drop: null,
+  unlocked: false
 };
 
 function metaContent(name) {
@@ -254,6 +260,39 @@ function getPendingRotationRad() {
 
 function setPendingRotationStep(step) {
   state.pendingRotationStep = normalizeRotationStep(step);
+}
+
+function unlockAudioIfNeeded() {
+  if (audioState.unlocked) return;
+  const audio = audioState.drop;
+  if (!audio) return;
+  try {
+    const p = audio.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+        audioState.unlocked = true;
+      }).catch(() => {});
+      return;
+    }
+    audio.pause();
+    audio.currentTime = 0;
+    audioState.unlocked = true;
+  } catch (_) {
+    // noop
+  }
+}
+
+function playDropSfx() {
+  const audio = audioState.drop;
+  if (!audio) return;
+  try {
+    audio.currentTime = 0;
+    void audio.play().catch(() => {});
+  } catch (_) {
+    // noop
+  }
 }
 
 function isStoppedBody(body) {
@@ -1104,6 +1143,7 @@ function dropCurrentShape() {
   Body.setAngle(body, getPendingRotationRad());
   Body.setAngularVelocity(body, 0);
   World.add(state.engine.world, body);
+  playDropSfx();
   state.dynamicBodies.push(body);
   state.dropGateBodyId = body.id;
   state.droppedCount += 1;
@@ -1656,6 +1696,7 @@ function handleRotateButtonPress(event) {
 
 function bindInput() {
   refs.canvas.addEventListener('pointerdown', (event) => {
+    unlockAudioIfNeeded();
     refs.canvas.setPointerCapture(event.pointerId);
     state.pointerActive = true;
     updateSpawnerPosition(event.clientX);
@@ -1679,6 +1720,7 @@ function bindInput() {
   });
 
   refs.startButton.addEventListener('click', () => {
+    unlockAudioIfNeeded();
     startGame();
   });
 
@@ -1758,6 +1800,9 @@ async function init() {
     if (window.decomp && window.Matter?.Common?.setDecomp) {
       window.Matter.Common.setDecomp(window.decomp);
     }
+    audioState.drop = new Audio(DROP_SFX_PATH);
+    audioState.drop.preload = 'auto';
+    audioState.drop.volume = 0.9;
     state.config = await loadConfig();
     const [_, stageBackground, floatingImages] = await Promise.all([
       loadCharacterAssets(state.config.shapes),
