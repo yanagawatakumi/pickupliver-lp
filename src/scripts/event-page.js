@@ -2,6 +2,7 @@ let lastConfettiAt = 0;
 let welcomeBurstPlayed = false;
 let burstTimer = null;
 let marqueeResizeRaf = null;
+let lastMarqueeViewportWidth = 0;
 let countdownTimer = null;
 let copyToastTimer = null;
 let bgmHintTimer = null;
@@ -146,7 +147,25 @@ function refreshMarqueeMotion() {
   });
 }
 
+function shouldRefreshMarqueeForResize() {
+  const currentWidth = Math.round(window.innerWidth || 0);
+  if (lastMarqueeViewportWidth <= 0) {
+    lastMarqueeViewportWidth = currentWidth;
+    return true;
+  }
+
+  const delta = Math.abs(currentWidth - lastMarqueeViewportWidth);
+  // Ignore mobile address-bar height resize noise; rebuild only when width actually changes.
+  if (delta < 2) {
+    return false;
+  }
+
+  lastMarqueeViewportWidth = currentWidth;
+  return true;
+}
+
 function initMarqueeMotion() {
+  lastMarqueeViewportWidth = Math.round(window.innerWidth || 0);
   refreshMarqueeMotion();
 
   window.addEventListener(
@@ -154,6 +173,10 @@ function initMarqueeMotion() {
     () => {
       if (marqueeResizeRaf) window.cancelAnimationFrame(marqueeResizeRaf);
       marqueeResizeRaf = window.requestAnimationFrame(() => {
+        if (!shouldRefreshMarqueeForResize()) {
+          marqueeResizeRaf = null;
+          return;
+        }
         refreshMarqueeMotion();
         marqueeResizeRaf = null;
       });
