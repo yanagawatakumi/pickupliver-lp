@@ -1,6 +1,11 @@
 const CONFIG_PATH_DEFAULT = '/content/games/l-singer-tower-battle/config.json';
 const SCORE_API_PATH = '/api/l-singer-tower-scores';
 const PLAY_API_PATH = '/api/l-singer-tower-plays';
+const STAGE_BACKGROUND_PATH = '/public/assets/games/l-singer-tower-battle/tower-battle-bg.JPG';
+const STAGE_FLOATING_IMAGE_PATHS = [
+  '/public/assets/games/l-singer-tower-battle/bg-がーくん.png',
+  '/public/assets/games/l-singer-tower-battle/bg-とーま.png'
+];
 const CANVAS_WIDTH = 420;
 const CANVAS_HEIGHT = 720;
 const FIXED_STEP_MS = 1000 / 60;
@@ -50,10 +55,18 @@ const state = {
   groundBody: null,
   dynamicBodies: [],
   characterAssets: {},
+  stageBackgroundImage: null,
+  stageFloatingImages: [],
+  floatingBgImageIndex: 0,
+  floatingBgObject: null,
+  floatingBgNextSpawnAtMs: 0,
   running: false,
   dropGateBodyId: null,
   nextDropAllowedAtMs: 0,
   currentShape: null,
+  pendingNextShape: null,
+  waitingForSettle: false,
+  settleFrames: 0,
   currentSpawnY: CANVAS_HEIGHT * 0.13,
   pendingRotationStep: 0,
   spawnerX: CANVAS_WIDTH / 2,
@@ -253,17 +266,18 @@ function getMeasuredBodies() {
 }
 
 function getDynamicSpawnY() {
-  const baseSpawnY = Number(state.config?.drop?.spawnY || 92);
   const spawnClearancePx = Number(state.config?.drop?.spawnClearancePx || 192);
+  const { halfHeight } = getShapeBounds(state.currentShape);
+  const shapeHalfHeight = Math.max(0, Number(halfHeight || 0));
 
   if (!Number.isFinite(state.currentSpawnY)) {
-    state.currentSpawnY = baseSpawnY;
+    state.currentSpawnY = Number(state.config?.drop?.spawnY || 92);
   }
 
   let highestBodyTopY = Infinity;
-  // Use only settled/placed bodies as the spawn reference.
-  // Including a just-dropped body makes spawnY jump upward and causes camera jerk.
-  for (const body of getMeasuredBodies()) {
+  // Use all in-world dynamic bodies as the spawn reference.
+  // This prevents early-game overlap when some bodies are not yet marked as placed.
+  for (const body of state.dynamicBodies) {
     if (!body?.bounds) continue;
     if (body.bounds.min.y < highestBodyTopY) {
       highestBodyTopY = body.bounds.min.y;
@@ -271,12 +285,14 @@ function getDynamicSpawnY() {
   }
 
   if (!Number.isFinite(highestBodyTopY)) {
+    const groundTopY = Number(state.groundBody?.bounds?.min?.y);
+    if (Number.isFinite(groundTopY)) {
+      state.currentSpawnY = groundTopY - shapeHalfHeight - spawnClearancePx;
+    }
     return state.currentSpawnY;
   }
-  const adaptedSpawnY = highestBodyTopY - spawnClearancePx;
-  const targetSpawnY = Math.min(baseSpawnY, adaptedSpawnY);
-  // Keep previous spawn reference to avoid snap-back to the initial position.
-  state.currentSpawnY = Math.min(state.currentSpawnY, targetSpawnY);
+  const targetSpawnY = highestBodyTopY - shapeHalfHeight - spawnClearancePx;
+  state.currentSpawnY = targetSpawnY;
   return state.currentSpawnY;
 }
 
@@ -364,7 +380,7 @@ function getCameraWorldBounds() {
   }
 
   if (state.running && state.currentShape) {
-    const spawnY = getDynamicSpawnY();
+    const spawnY = state.currentSpawnY;
     const { halfHeight } = getShapeBounds(state.currentShape);
     includeBounds(spawnY - halfHeight - 6, spawnY + halfHeight + 6);
   }
@@ -542,7 +558,7 @@ function updateHud() {
   refs.scoreValue.textContent = String(state.totalScore);
   refs.lifeValue.textContent = renderLives();
   if (refs.rotateButton) {
-    const showRotateButton = Boolean(state.running);
+    const showRotateButton = Boolean(state.running && state.currentShape);
     refs.rotateButton.hidden = !showRotateButton;
     refs.rotateButton.disabled = !showRotateButton;
   }
@@ -781,10 +797,10 @@ function drawSpawner() {
   const shape = state.currentShape;
   if (!shape) return;
 
-  const y = getDynamicSpawnY();
+  const y = state.currentSpawnY;
 
   ctx.save();
-  ctx.globalAlpha = 0.84;
+  ctx.globalAlpha = 1;
   ctx.translate(state.spawnerX, y);
   ctx.rotate(getPendingRotationRad());
   if (shape.kind === 'character') {
@@ -819,6 +835,26 @@ function drawStageBackground() {
   gradient.addColorStop(1, '#14172f');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  const bg = state.stageBackgroundImage;
+  if (!bg) return;
+
+  const srcW = Math.max(1, Number(bg.naturalWidth || bg.width || 1));
+  const srcH = Math.max(1, Number(bg.naturalHeight || bg.height || 1));
+  const scale = Math.max(CANVAS_WIDTH / srcW, CANVAS_HEIGHT / srcH);
+  const drawW = srcW * scale;
+  const drawH = srcH * scale;
+  const drawX = (CANVAS_WIDTH - drawW) * 0.5;
+  const drawY = (CANVAS_HEIGHT - drawH) * 0.5;
+  ctx.drawImage(bg, drawX, drawY, drawW, drawH);
+
+  const floater = state.floatingBgObject;
+  const floatImage = floater?.image || null;
+  if (!floater || !floatImage) return;
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+  ctx.drawImage(floatImage, floater.x, floater.y, floater.w, floater.h);
+  ctx.restore();
 }
 
 function drawWorld() {
@@ -829,10 +865,51 @@ function drawWorld() {
   ctx.scale(state.cameraZoom, state.cameraZoom);
   ctx.translate(-CANVAS_WIDTH * 0.5, 0);
 
-  drawSpawner();
   for (const body of state.staticBodies) drawBody(body);
   for (const body of state.dynamicBodies) drawBody(body);
+  drawSpawner();
   ctx.restore();
+}
+
+function spawnFloatingBackgroundObject(nowMs) {
+  if (!Array.isArray(state.stageFloatingImages) || state.stageFloatingImages.length === 0) return;
+  if (state.floatingBgObject) return;
+  if (nowMs < state.floatingBgNextSpawnAtMs) return;
+
+  const images = state.stageFloatingImages;
+  const idx = ((state.floatingBgImageIndex % images.length) + images.length) % images.length;
+  const img = images[idx];
+  state.floatingBgImageIndex = (idx + 1) % images.length;
+  const srcW = Math.max(1, Number(img.naturalWidth || img.width || 1));
+  const srcH = Math.max(1, Number(img.naturalHeight || img.height || 1));
+  const baseW = 150;
+  const aspect = srcH / srcW;
+  const baseH = baseW * aspect;
+  const y = randomIn(CANVAS_HEIGHT * 0.14, CANVAS_HEIGHT * 0.68 - baseH);
+  const xStart = CANVAS_WIDTH + baseW * 0.4;
+  const xEnd = -baseW * 1.4;
+  const durationSec = randomIn(14, 20);
+  const speed = (xStart - xEnd) / durationSec;
+
+  state.floatingBgObject = {
+    image: img,
+    x: xStart,
+    y,
+    w: baseW,
+    h: baseH,
+    speed
+  };
+  state.floatingBgNextSpawnAtMs = nowMs + 60000;
+}
+
+function updateFloatingBackgroundObject(deltaMs) {
+  const floater = state.floatingBgObject;
+  if (!floater) return;
+  const dtSec = Math.max(0, deltaMs) / 1000;
+  floater.x -= floater.speed * dtSec;
+  if (floater.x + floater.w < 0) {
+    state.floatingBgObject = null;
+  }
 }
 
 function pickNextShape(excludedShapeIds = []) {
@@ -857,6 +934,7 @@ function pickNextShape(excludedShapeIds = []) {
 
 function prepareQueue() {
   state.currentShape = pickNextShape(state.recentDroppedShapeIds);
+  state.currentSpawnY = getDynamicSpawnY();
 }
 
 function buildWorld() {
@@ -918,6 +996,9 @@ function resetRunState() {
   state.placedCount = 0;
   state.maxHeightPx = 0;
   state.totalScore = 0;
+  state.pendingNextShape = null;
+  state.waitingForSettle = false;
+  state.settleFrames = 0;
   state.currentSpawnY = Number(state.config?.drop?.spawnY || 92);
   setPendingRotationStep(0);
   state.cameraOffsetY = 0;
@@ -1009,7 +1090,7 @@ function dropCurrentShape() {
   if (state.dropGateBodyId !== null) return;
   if (now < state.nextDropAllowedAtMs) return;
 
-  const spawnY = getDynamicSpawnY();
+  const spawnY = state.currentSpawnY;
   let body;
   try {
     body = createBodyFromShape(state.currentShape, state.spawnerX, spawnY);
@@ -1027,6 +1108,8 @@ function dropCurrentShape() {
   state.dropGateBodyId = body.id;
   state.droppedCount += 1;
   state.totalScore = state.droppedCount;
+  state.waitingForSettle = true;
+  state.settleFrames = 0;
 
   state.lastDroppedShapeId = String(state.currentShape.id || '').trim() || null;
   if (state.lastDroppedShapeId) {
@@ -1035,7 +1118,8 @@ function dropCurrentShape() {
       state.recentDroppedShapeIds = state.recentDroppedShapeIds.slice(-3);
     }
   }
-  state.currentShape = pickNextShape(state.recentDroppedShapeIds);
+  state.pendingNextShape = pickNextShape(state.recentDroppedShapeIds);
+  state.currentShape = null;
   setPendingRotationStep(0);
 }
 
@@ -1122,6 +1206,35 @@ function updateDropGate(nowMs) {
 
   state.dropGateBodyId = null;
   state.nextDropAllowedAtMs = Math.max(state.nextDropAllowedAtMs, nowMs + getDropTouchDelayMs());
+}
+
+function isWorldSettled() {
+  if (!state.dynamicBodies.length) return true;
+  for (const body of state.dynamicBodies) {
+    if (!body) continue;
+    if (body.isSleeping) continue;
+    if (body.speed >= SETTLE_SPEED_LIMIT) return false;
+    if (Math.abs(body.angularSpeed) >= SETTLE_ANGULAR_LIMIT) return false;
+  }
+  return true;
+}
+
+function updateSettleGate() {
+  if (!state.waitingForSettle) return;
+  if (!isWorldSettled()) {
+    state.settleFrames = 0;
+    return;
+  }
+
+  const requiredFrames = Math.max(6, toSafeInt(state.config?.drop?.settleFrames, 14));
+  state.settleFrames += 1;
+  if (state.settleFrames < requiredFrames) return;
+
+  state.waitingForSettle = false;
+  state.settleFrames = 0;
+  state.currentShape = state.pendingNextShape || pickNextShape(state.recentDroppedShapeIds);
+  state.pendingNextShape = null;
+  state.currentSpawnY = getDynamicSpawnY();
 }
 
 function updateMaxHeight() {
@@ -1385,6 +1498,8 @@ function frame(timestamp) {
   if (!state.lastFrameMs) state.lastFrameMs = timestamp;
   const frameDelta = clamp(0, timestamp - state.lastFrameMs, 100);
   state.lastFrameMs = timestamp;
+  spawnFloatingBackgroundObject(timestamp);
+  updateFloatingBackgroundObject(frameDelta);
   state.accumulatorMs += frameDelta;
 
   const substeps = clamp(1, toSafeInt(state.config.physics?.substeps, 5), 6);
@@ -1401,6 +1516,7 @@ function frame(timestamp) {
       applyGlobalStability();
       updateDropGate(performance.now());
       collectFallenBodies();
+      updateSettleGate();
       updateScore();
       if (state.fallenCount >= Number(state.config.rules.fallenLimit || 3)) {
         finishGame();
@@ -1643,7 +1759,16 @@ async function init() {
       window.Matter.Common.setDecomp(window.decomp);
     }
     state.config = await loadConfig();
-    await loadCharacterAssets(state.config.shapes);
+    const [_, stageBackground, floatingImages] = await Promise.all([
+      loadCharacterAssets(state.config.shapes),
+      loadImage(STAGE_BACKGROUND_PATH).catch(() => null),
+      Promise.all(STAGE_FLOATING_IMAGE_PATHS.map((path) => loadImage(path).catch(() => null)))
+    ]);
+    state.stageBackgroundImage = stageBackground;
+    state.stageFloatingImages = floatingImages.filter(Boolean);
+    state.floatingBgImageIndex = 0;
+    state.floatingBgObject = null;
+    state.floatingBgNextSpawnAtMs = performance.now() + 12000;
     if (state.qaRejectedShapeIds.length) {
       console.warn(`collider QA rejected characters: ${state.qaRejectedShapeIds.join(', ')}`);
     }

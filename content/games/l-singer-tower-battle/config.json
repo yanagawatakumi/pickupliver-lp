@@ -35,10 +35,11 @@
   },
   "drop": {
     "spawnY": 132,
-    "spawnClearancePx": 192,
+    "spawnClearancePx": 25,
     "minX": 56,
     "maxX": 364,
-    "touchUnlockDelayMs": 1000
+    "touchUnlockDelayMs": 1000,
+    "settleFrames": 14
   },
   "rules": {
     "fallenLimit": 3,
