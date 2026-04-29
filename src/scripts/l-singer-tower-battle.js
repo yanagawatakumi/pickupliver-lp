@@ -418,9 +418,10 @@ function updateCurrentShapeHud() {
   const currentWrap = refs.currentShapeCanvas?.parentElement || null;
   const rawName = String(refs.playerName?.value || '').trim();
   const gameOverName = rawName.length >= 2 ? rawName.slice(0, 10) : '';
+  const waitingName = state.running && !state.currentShape ? 'ドキドキ…' : getShapeDisplayName(state.currentShape);
 
   if (refs.currentShapeName) {
-    refs.currentShapeName.textContent = gameOverHudMode ? gameOverName : getShapeDisplayName(state.currentShape);
+    refs.currentShapeName.textContent = gameOverHudMode ? gameOverName : waitingName;
   }
   if (refs.currentShapeCanvas) {
     refs.currentShapeCanvas.hidden = gameOverHudMode;
