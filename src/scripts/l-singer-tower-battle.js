@@ -180,7 +180,7 @@ function setSubmitMessage(text, tone = '') {
 
 function canRegisterRanking(score) {
   const top = Array.isArray(state.rankingTop) ? state.rankingTop : [];
-  if (top.length < 10) return true;
+  if (top.length < 100) return true;
   const border = Number(top[top.length - 1]?.score || 0);
   return Number(score || 0) >= border;
 }

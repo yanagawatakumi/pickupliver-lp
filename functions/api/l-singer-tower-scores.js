@@ -81,7 +81,7 @@ async function listTop(db) {
       `SELECT name, score, survival_sec, placed_count, created_at
        FROM animal_tower_scores
        ORDER BY score DESC, created_at DESC
-       LIMIT 10`
+       LIMIT 100`
     )
     .all();
 
