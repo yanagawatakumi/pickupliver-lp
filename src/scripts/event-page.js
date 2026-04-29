@@ -41,7 +41,8 @@ const miniGameGimmickState = {
   scheduleTimer: null,
   hideTimer: null,
   node: null,
-  navigating: false
+  navigating: false,
+  avatarIndex: 0
 };
 
 function setEffectsMode(mode = 'normal') {
@@ -206,6 +207,7 @@ function cleanupMiniGameGimmick() {
     miniGameGimmickState.hideTimer = null;
   }
   miniGameGimmickState.navigating = false;
+  miniGameGimmickState.avatarIndex = 0;
   clearMiniGameGimmickNode();
 }
 
@@ -234,6 +236,20 @@ function writeMiniGameGimmickCount(sessionKey, count) {
 
 function buildMiniGameGimmickConfig(event) {
   const slug = getMetaContent('vt:episode-slug').toLowerCase();
+  if (slug === 'vol-3') {
+    return {
+      targetUrl: '/games/l-singer-tower-battle/',
+      avatarUrls: [
+        '/public/assets/games/l-singer-tower-battle/bg-がーくん.png',
+        '/public/assets/games/l-singer-tower-battle/bg-とーま.png'
+      ],
+      intervalSecMin: 18,
+      intervalSecMax: 30,
+      visibleSec: 8,
+      maxAppearancesPerSession: 12,
+      sessionKey: getMiniGameGimmickSessionKey(event?.eventId, slug)
+    };
+  }
   if (slug !== 'vol-2') return null;
 
   const gimmick = event?.cta?.miniGameGimmick;
@@ -252,7 +268,7 @@ function buildMiniGameGimmickConfig(event) {
 
   return {
     targetUrl,
-    avatarUrl,
+    avatarUrls: [avatarUrl],
     intervalSecMin,
     intervalSecMax,
     visibleSec,
@@ -281,7 +297,12 @@ function spawnMiniGameGimmick(config) {
 
   const face = document.createElement('img');
   face.className = 'mini-game-gimmick-face';
-  face.src = config.avatarUrl;
+  const avatarList = Array.isArray(config.avatarUrls) ? config.avatarUrls.filter(Boolean) : [];
+  const selectedAvatarUrl = avatarList.length
+    ? avatarList[miniGameGimmickState.avatarIndex % avatarList.length]
+    : '';
+  miniGameGimmickState.avatarIndex += 1;
+  face.src = selectedAvatarUrl;
   face.alt = '';
   face.loading = 'eager';
   face.decoding = 'async';
@@ -332,7 +353,9 @@ function scheduleMiniGameGimmick(config) {
   const shownCount = readMiniGameGimmickCount(config.sessionKey);
   if (shownCount >= config.maxAppearancesPerSession) return;
 
-  const delayMs = randomIn(config.intervalSecMin * 1000, config.intervalSecMax * 1000);
+  const delayMs = shownCount === 0
+    ? 5000
+    : randomIn(config.intervalSecMin * 1000, config.intervalSecMax * 1000);
   if (miniGameGimmickState.scheduleTimer) window.clearTimeout(miniGameGimmickState.scheduleTimer);
   miniGameGimmickState.scheduleTimer = window.setTimeout(() => {
     miniGameGimmickState.scheduleTimer = null;

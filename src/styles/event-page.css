@@ -203,7 +203,7 @@ body {
   cursor: pointer;
   touch-action: manipulation;
   transform: translate3d(var(--mini-game-gimmick-start-x, 110vw), var(--mini-game-gimmick-y, 40vh), 0) scale(0.86);
-  opacity: 0;
+  opacity: 1;
   animation: mini-game-gimmick-drift var(--mini-game-gimmick-duration, 6s) linear forwards;
 }
 
