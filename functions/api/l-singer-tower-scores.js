@@ -28,7 +28,7 @@ async function ensureSchema(db) {
     )
     .run();
 
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_animal_tower_scores_score ON animal_tower_scores(score DESC, created_at ASC);').run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_animal_tower_scores_score_latest ON animal_tower_scores(score DESC, created_at DESC);').run();
 }
 
 function readJsonBody(request) {
@@ -80,7 +80,7 @@ async function listTop(db) {
     .prepare(
       `SELECT name, score, survival_sec, placed_count, created_at
        FROM animal_tower_scores
-       ORDER BY score DESC, created_at ASC
+       ORDER BY score DESC, created_at DESC
        LIMIT 10`
     )
     .all();
