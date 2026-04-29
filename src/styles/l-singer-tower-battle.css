@@ -426,7 +426,8 @@ h1 {
   margin: 10px auto 0;
   width: 60%;
   min-width: 240px;
-  padding: 0 8px 0 20px;
+  list-style: none;
+  padding: 0 8px 0 0;
   display: grid;
   gap: 6px;
   max-height: 70vh;
