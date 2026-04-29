@@ -1692,7 +1692,8 @@ function renderRanking(topList) {
     const li = document.createElement('li');
     const name = String(row?.name || '名無し').slice(0, 32);
     const score = toSafeInt(row?.score, 0);
-    li.textContent = `${index + 1}. ${name} - ${score}点`;
+    const medal = index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : '';
+    li.textContent = `${medal}${index + 1}. ${name} - ${score}点`;
     refs.rankingList.appendChild(li);
   });
   if (isGameOverHudMode()) updateRankingRegisterUI();
