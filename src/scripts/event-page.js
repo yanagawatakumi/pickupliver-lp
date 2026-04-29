@@ -1021,6 +1021,7 @@ function applyEvent(event) {
   if (mainFlyer && event.assets?.mainFlyer) {
     mainFlyer.src = event.assets.mainFlyer;
     mainFlyer.alt = `${event.title || 'PICK UP LIVER'} フライヤー`;
+    mainFlyer.hidden = false;
   }
 
   document.title = event.title || 'PICK UP LIVER';
