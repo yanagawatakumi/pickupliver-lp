@@ -3,6 +3,9 @@ const SCORE_API_PATH = '/api/l-singer-tower-scores';
 const PLAY_API_PATH = '/api/l-singer-tower-plays';
 const STAGE_BACKGROUND_PATH = '/public/assets/games/l-singer-tower-battle/tower-battle-bg.JPG';
 const DROP_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/drop.mp3';
+const BGM_PATH = '/public/assets/games/l-singer-tower-battle/sfx/BGM.mp3';
+const GAMEOVER_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/gameover.mp3';
+const LOST_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/lost.mp3';
 const STAGE_FLOATING_IMAGE_PATHS = [
   '/public/assets/games/l-singer-tower-battle/bg-がーくん.png',
   '/public/assets/games/l-singer-tower-battle/bg-とーま.png'
@@ -93,7 +96,10 @@ const state = {
 };
 
 const audioState = {
+  bgm: null,
   drop: null,
+  lost: null,
+  gameover: null,
   unlocked: false
 };
 
@@ -264,20 +270,26 @@ function setPendingRotationStep(step) {
 
 function unlockAudioIfNeeded() {
   if (audioState.unlocked) return;
-  const audio = audioState.drop;
+  // Use short SFX for unlock probe to avoid racing with BGM start/pause.
+  const audio = audioState.drop || audioState.lost || audioState.gameover || audioState.bgm;
   if (!audio) return;
   try {
     const p = audio.play();
     if (p && typeof p.then === 'function') {
       p.then(() => {
-        audio.pause();
-        audio.currentTime = 0;
+        // Never pause active BGM from unlock flow.
+        if (audio !== audioState.bgm) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
         audioState.unlocked = true;
       }).catch(() => {});
       return;
     }
-    audio.pause();
-    audio.currentTime = 0;
+    if (audio !== audioState.bgm) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
     audioState.unlocked = true;
   } catch (_) {
     // noop
@@ -285,11 +297,61 @@ function unlockAudioIfNeeded() {
 }
 
 function playDropSfx() {
-  const audio = audioState.drop;
-  if (!audio) return;
+  const template = audioState.drop;
+  if (!template) return;
   try {
+    const audio = template.cloneNode(true);
+    audio.volume = template.volume;
     audio.currentTime = 0;
     void audio.play().catch(() => {});
+  } catch (_) {
+    // noop
+  }
+}
+
+function playLostSfx() {
+  const template = audioState.lost;
+  if (!template) return;
+  try {
+    const audio = template.cloneNode(true);
+    audio.volume = template.volume;
+    audio.currentTime = 0;
+    void audio.play().catch(() => {});
+  } catch (_) {
+    // noop
+  }
+}
+
+function playGameoverSfx() {
+  const template = audioState.gameover;
+  if (!template) return;
+  try {
+    const audio = template.cloneNode(true);
+    audio.volume = template.volume;
+    audio.currentTime = 0;
+    void audio.play().catch(() => {});
+  } catch (_) {
+    // noop
+  }
+}
+
+function startBgm() {
+  const bgm = audioState.bgm;
+  if (!bgm) return;
+  try {
+    bgm.currentTime = 0;
+    void bgm.play().catch(() => {});
+  } catch (_) {
+    // noop
+  }
+}
+
+function stopBgm() {
+  const bgm = audioState.bgm;
+  if (!bgm) return;
+  try {
+    bgm.pause();
+    bgm.currentTime = 0;
   } catch (_) {
     // noop
   }
@@ -1078,6 +1140,7 @@ function startGame() {
   resetRunState();
 
   state.running = true;
+  startBgm();
   refs.overlayScreen.hidden = true;
   refs.resultModal.hidden = true;
 
@@ -1088,6 +1151,8 @@ function startGame() {
 function finishGame() {
   if (!state.running) return;
   state.running = false;
+  stopBgm();
+  playGameoverSfx();
   state.totalScore = state.droppedCount;
   resetCaptureMessage();
   resetShareMessage();
@@ -1128,6 +1193,7 @@ function dropCurrentShape() {
   const now = performance.now();
   if (state.dropGateBodyId !== null) return;
   if (now < state.nextDropAllowedAtMs) return;
+  playDropSfx();
 
   const spawnY = state.currentSpawnY;
   let body;
@@ -1143,7 +1209,6 @@ function dropCurrentShape() {
   Body.setAngle(body, getPendingRotationRad());
   Body.setAngularVelocity(body, 0);
   World.add(state.engine.world, body);
-  playDropSfx();
   state.dynamicBodies.push(body);
   state.dropGateBodyId = body.id;
   state.droppedCount += 1;
@@ -1182,6 +1247,7 @@ function collectPlacement(body) {
 function collectFallenBodies() {
   const { World } = window.Matter;
   const margin = Number(state.config.rules.outOfBoundsMargin || 120);
+  const fallenLimit = Number(state.config?.rules?.fallenLimit || 3);
 
   const survivors = [];
   for (const body of state.dynamicBodies) {
@@ -1189,6 +1255,10 @@ function collectFallenBodies() {
 
     if (out) {
       World.remove(state.engine.world, body);
+      const nextFallenCount = state.fallenCount + 1;
+      if (nextFallenCount < fallenLimit) {
+        playLostSfx();
+      }
       state.fallenCount += 1;
       if (state.dropGateBodyId === body.id) {
         state.dropGateBodyId = null;
@@ -1678,6 +1748,7 @@ async function submitScore(event) {
 }
 
 function retryGame() {
+  stopBgm();
   refs.resultModal.hidden = true;
   refs.overlayMessage.textContent = '準備OK。STARTを押して次のチャレンジ！';
   refs.overlayScreen.hidden = false;
@@ -1800,9 +1871,19 @@ async function init() {
     if (window.decomp && window.Matter?.Common?.setDecomp) {
       window.Matter.Common.setDecomp(window.decomp);
     }
+    audioState.bgm = new Audio(BGM_PATH);
+    audioState.bgm.preload = 'auto';
+    audioState.bgm.loop = true;
+    audioState.bgm.volume = 0.35;
     audioState.drop = new Audio(DROP_SFX_PATH);
     audioState.drop.preload = 'auto';
     audioState.drop.volume = 0.9;
+    audioState.lost = new Audio(LOST_SFX_PATH);
+    audioState.lost.preload = 'auto';
+    audioState.lost.volume = 0.8;
+    audioState.gameover = new Audio(GAMEOVER_SFX_PATH);
+    audioState.gameover.preload = 'auto';
+    audioState.gameover.volume = 0.9;
     state.config = await loadConfig();
     const [_, stageBackground, floatingImages] = await Promise.all([
       loadCharacterAssets(state.config.shapes),
