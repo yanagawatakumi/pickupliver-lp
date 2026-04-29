@@ -180,7 +180,7 @@ function setSubmitMessage(text, tone = '') {
 
 function canRegisterRanking(score) {
   const top = Array.isArray(state.rankingTop) ? state.rankingTop : [];
-  if (top.length < 100) return true;
+  if (top.length < 50) return true;
   const border = Number(top[top.length - 1]?.score || 0);
   return Number(score || 0) >= border;
 }
@@ -1686,7 +1686,7 @@ function renderRanking(topList) {
     return;
   }
 
-  refs.rankingStatus.textContent = '全期間トップ 100';
+  refs.rankingStatus.textContent = '全期間トップ 50';
 
   topList.forEach((row, index) => {
     const li = document.createElement('li');
