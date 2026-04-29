@@ -270,38 +270,38 @@ function setPendingRotationStep(step) {
 
 function unlockAudioIfNeeded() {
   if (audioState.unlocked) return;
-  // Use short SFX for unlock probe to avoid racing with BGM start/pause.
-  const audio = audioState.drop || audioState.lost || audioState.gameover || audioState.bgm;
-  if (!audio) return;
-  try {
-    const p = audio.play();
-    if (p && typeof p.then === 'function') {
-      p.then(() => {
-        // Never pause active BGM from unlock flow.
-        if (audio !== audioState.bgm) {
+  const candidates = [audioState.drop, audioState.lost, audioState.gameover, audioState.bgm].filter(Boolean);
+  if (!candidates.length) return;
+  let unlockedCount = 0;
+  candidates.forEach((audio) => {
+    try {
+      const p = audio.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
           audio.pause();
           audio.currentTime = 0;
-        }
-        audioState.unlocked = true;
-      }).catch(() => {});
-      return;
+          unlockedCount += 1;
+          if (unlockedCount >= 1) audioState.unlocked = true;
+        }).catch(() => {});
+      } else {
+        audio.pause();
+        audio.currentTime = 0;
+        unlockedCount += 1;
+      }
+    } catch (_) {
+      // noop
     }
-    if (audio !== audioState.bgm) {
-      audio.pause();
-      audio.currentTime = 0;
-    }
+  });
+  if (unlockedCount >= 1) {
     audioState.unlocked = true;
-  } catch (_) {
-    // noop
   }
 }
 
 function playDropSfx() {
-  const template = audioState.drop;
-  if (!template) return;
+  const audio = audioState.drop;
+  if (!audio) return;
   try {
-    const audio = template.cloneNode(true);
-    audio.volume = template.volume;
+    audio.pause();
     audio.currentTime = 0;
     void audio.play().catch(() => {});
   } catch (_) {
@@ -310,11 +310,10 @@ function playDropSfx() {
 }
 
 function playLostSfx() {
-  const template = audioState.lost;
-  if (!template) return;
+  const audio = audioState.lost;
+  if (!audio) return;
   try {
-    const audio = template.cloneNode(true);
-    audio.volume = template.volume;
+    audio.pause();
     audio.currentTime = 0;
     void audio.play().catch(() => {});
   } catch (_) {
@@ -323,11 +322,10 @@ function playLostSfx() {
 }
 
 function playGameoverSfx() {
-  const template = audioState.gameover;
-  if (!template) return;
+  const audio = audioState.gameover;
+  if (!audio) return;
   try {
-    const audio = template.cloneNode(true);
-    audio.volume = template.volume;
+    audio.pause();
     audio.currentTime = 0;
     void audio.play().catch(() => {});
   } catch (_) {
