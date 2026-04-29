@@ -1686,7 +1686,7 @@ function renderRanking(topList) {
     return;
   }
 
-  refs.rankingStatus.textContent = '全期間トップ 10';
+  refs.rankingStatus.textContent = '全期間トップ 100';
 
   topList.forEach((row, index) => {
     const li = document.createElement('li');

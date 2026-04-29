@@ -423,8 +423,10 @@ h1 {
 }
 
 .ranking-list {
-  margin: 10px 0 0;
-  padding: 0 0 0 22px;
+  margin: 10px auto 0;
+  width: 60%;
+  min-width: 240px;
+  padding: 0 8px 0 20px;
   display: grid;
   gap: 6px;
   max-height: 70vh;
