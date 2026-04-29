@@ -865,7 +865,7 @@ function applyEvent(event) {
   const volumeSticker = document.getElementById('event-volume-sticker');
   const ctx = getEventContext(event);
 
-  if (episodeSlug !== 'vol-2' && miniGamePromo) {
+  if (episodeSlug !== 'vol-2' && episodeSlug !== 'vol-3' && miniGamePromo) {
     miniGamePromo.remove();
   }
 
@@ -936,12 +936,18 @@ function applyEvent(event) {
   }
 
   if (ctaMiniGame) {
-    const miniGameUrl = typeof event.cta?.miniGameUrl === 'string' ? event.cta.miniGameUrl.trim() : '';
-    const allowMiniGame = episodeSlug === 'vol-2';
+    const configuredMiniGameUrl = typeof event.cta?.miniGameUrl === 'string' ? event.cta.miniGameUrl.trim() : '';
+    const fallbackMiniGameUrl = episodeSlug === 'vol-3' ? '/games/l-singer-tower-battle/' : '';
+    const miniGameUrl = configuredMiniGameUrl || fallbackMiniGameUrl;
+    const allowMiniGame = episodeSlug === 'vol-2' || episodeSlug === 'vol-3';
+    const defaultMiniGameLabel = episodeSlug === 'vol-3'
+      ? 'Lシンガータワーバトルを遊ぶ'
+      : 'がーくん満腹シューティングで遊ぶ';
+
     if (allowMiniGame && miniGameUrl) {
       ctaMiniGame.hidden = false;
       ctaMiniGame.href = miniGameUrl;
-      ctaMiniGame.textContent = event.cta?.miniGameLabel || 'がーくん満腹シューティングで遊ぶ';
+      ctaMiniGame.textContent = event.cta?.miniGameLabel || defaultMiniGameLabel;
       ctaMiniGame.target = '_self';
       ctaMiniGame.rel = '';
       if (miniGamePromo) miniGamePromo.hidden = false;
@@ -952,7 +958,10 @@ function applyEvent(event) {
         : '';
       const avatarUrl = gaKunHost?.avatarUrl || fallbackAvatar;
 
-      if (miniGameAvatar && avatarUrl) {
+      if (miniGameAvatar && episodeSlug === 'vol-3') {
+        miniGameAvatar.removeAttribute('src');
+        miniGameAvatar.hidden = true;
+      } else if (miniGameAvatar && avatarUrl) {
         miniGameAvatar.src = avatarUrl;
         miniGameAvatar.alt = `${gaKunHost?.name || 'がーくん'}のアイコン`;
         miniGameAvatar.hidden = false;
