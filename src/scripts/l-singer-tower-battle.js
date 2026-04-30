@@ -301,7 +301,9 @@ function setPendingRotationStep(step) {
 
 function unlockAudioIfNeeded() {
   if (audioState.unlocked) return;
-  const candidates = [audioState.drop, audioState.lost, audioState.gameover, audioState.bgm].filter(Boolean);
+  // Unlock only SFX on the first user gesture.
+  // Do not touch BGM here, otherwise pointerdown can pause currently playing music.
+  const candidates = [audioState.drop, audioState.lost, audioState.gameover].filter(Boolean);
   if (!candidates.length) return;
   let unlockedCount = 0;
   candidates.forEach((audio) => {
@@ -1778,7 +1780,7 @@ async function submitScore(event) {
     }
 
     state.submitted = true;
-    renderResultStats(body?.stats);
+    renderResultGoalMessage(body?.stats);
     setSubmitMessage('ランキングに登録しました。', 'success');
     await loadRanking();
   } catch (error) {
