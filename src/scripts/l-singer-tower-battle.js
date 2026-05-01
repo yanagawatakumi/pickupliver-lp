@@ -1173,6 +1173,9 @@ function startGame() {
   resetRunState();
 
   state.running = true;
+  reportPlayResult().catch((error) => {
+    console.error(error);
+  });
   startBgm();
   refs.overlayScreen.hidden = true;
   refs.resultModal.hidden = true;
@@ -1194,18 +1197,7 @@ function finishGame() {
   if (refs.resultStats) refs.resultStats.textContent = '';
   refs.resultModal.hidden = false;
   updateRankingRegisterUI();
-  reportPlayResult()
-    .then((payload) => {
-      if (payload?.stats) {
-        renderResultGoalMessage(payload.stats);
-      } else {
-        fetchAndRenderResultStats(state.totalScore);
-      }
-    })
-    .catch((error) => {
-      console.error(error);
-      fetchAndRenderResultStats(state.totalScore);
-    });
+  fetchAndRenderResultStats(state.totalScore);
   updateHud();
   refs.playerName.focus();
 }
