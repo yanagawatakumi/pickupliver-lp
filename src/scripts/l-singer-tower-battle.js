@@ -47,9 +47,7 @@ const refs = {
   retryButton: document.getElementById('retry-button'),
   rotateButton: document.getElementById('rotate-button'),
   rankingStatus: document.getElementById('ranking-status'),
-  rankingList: document.getElementById('ranking-list'),
-  playModeTabs: Array.from(document.querySelectorAll('[data-mode-tab="play"]')),
-  rankingModeTabs: Array.from(document.querySelectorAll('[data-mode-tab="ranking"]'))
+  rankingList: document.getElementById('ranking-list')
 };
 
 const ctx = refs.canvas.getContext('2d');
@@ -95,9 +93,6 @@ const state = {
   accumulatorMs: 0,
   pendingRankingFetch: false,
   rankingTop: [],
-  rankingByMode: {},
-  currentModeId: 'vol3',
-  rankingViewModeId: 'vol3',
   qaRejectedShapeIds: []
 };
 
@@ -185,7 +180,7 @@ function setSubmitMessage(text, tone = '') {
 }
 
 function canRegisterRanking(score) {
-  const top = Array.isArray(state.rankingByMode?.[state.currentModeId]) ? state.rankingByMode[state.currentModeId] : [];
+  const top = Array.isArray(state.rankingTop) ? state.rankingTop : [];
   if (top.length < LEADERBOARD_LIMIT) return true;
   const border = Number(top[top.length - 1]?.score || 0);
   return Number(score || 0) >= border;
@@ -199,7 +194,7 @@ function updateRankingRegisterUI() {
 }
 
 function getTopBorderScore() {
-  const top = Array.isArray(state.rankingByMode?.[state.currentModeId]) ? state.rankingByMode[state.currentModeId] : [];
+  const top = Array.isArray(state.rankingTop) ? state.rankingTop : [];
   if (top.length < LEADERBOARD_LIMIT) return null;
   return toSafeInt(top[LEADERBOARD_LIMIT - 1]?.score, 0);
 }
@@ -234,77 +229,14 @@ async function fetchAndRenderResultStats(score) {
   refs.resultStats.textContent = '結果を計算中...';
   try {
     const queryScore = Math.max(0, toSafeInt(score, 0));
-    const query = new URLSearchParams({
-      score: String(queryScore),
-      mode: state.currentModeId
-    });
-    const response = await fetch(`${SCORE_API_PATH}?${query.toString()}`, { cache: 'no-store' });
+    const response = await fetch(`${PLAY_API_PATH}?score=${encodeURIComponent(String(queryScore))}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`stats fetch failed: ${response.status}`);
     const payload = await response.json();
-    if (Array.isArray(payload?.top)) {
-      state.rankingByMode[state.currentModeId] = payload.top;
-      if (state.rankingViewModeId === state.currentModeId) {
-        state.rankingTop = payload.top;
-      }
-    }
     renderResultGoalMessage(payload?.stats);
   } catch (error) {
     console.error(error);
     renderResultGoalMessage(null);
   }
-}
-
-function getModeLabel(modeId) {
-  const mode = Array.isArray(state.config?.modes) ? state.config.modes.find((item) => String(item?.id || '') === String(modeId || '')) : null;
-  return String(mode?.label || modeId || '');
-}
-
-function getShapesForMode(modeId) {
-  const shapes = Array.isArray(state.config?.shapes) ? state.config.shapes : [];
-  const modes = Array.isArray(state.config?.modes) ? state.config.modes : [];
-  const mode = modes.find((item) => String(item?.id || '') === String(modeId || ''));
-  if (!mode || !Array.isArray(mode.shapeIds) || !mode.shapeIds.length) return shapes;
-  const idSet = new Set(mode.shapeIds.map((id) => String(id || '').trim()).filter(Boolean));
-  const filtered = shapes.filter((shape) => idSet.has(String(shape?.id || '').trim()));
-  return filtered.length ? filtered : shapes;
-}
-
-function setModeTabUI(kind, modeId) {
-  const tabs = kind === 'play' ? refs.playModeTabs : refs.rankingModeTabs;
-  tabs.forEach((tab) => {
-    const active = String(tab.dataset.modeId || '') === String(modeId || '');
-    tab.classList.toggle('is-active', active);
-    tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-  });
-}
-
-function syncRankingHeading() {
-  const heading = document.querySelector('.ranking h2');
-  if (!heading) return;
-  heading.textContent = `ランキング TOP ${LEADERBOARD_LIMIT}（${getModeLabel(state.rankingViewModeId)}）`;
-}
-
-function setCurrentMode(modeId) {
-  const modes = Array.isArray(state.config?.modes) ? state.config.modes : [];
-  if (!modes.length) return;
-  const fallbackId = String(modes[0]?.id || 'vol3');
-  const nextModeId = modes.some((item) => String(item?.id || '') === String(modeId || '')) ? String(modeId) : fallbackId;
-  state.currentModeId = nextModeId;
-  setModeTabUI('play', nextModeId);
-  state.rankingViewModeId = nextModeId;
-  setModeTabUI('ranking', nextModeId);
-  syncRankingHeading();
-}
-
-function setRankingViewMode(modeId) {
-  const modes = Array.isArray(state.config?.modes) ? state.config.modes : [];
-  if (!modes.length) return;
-  const fallbackId = String(modes[0]?.id || 'vol3');
-  const nextModeId = modes.some((item) => String(item?.id || '') === String(modeId || '')) ? String(modeId) : fallbackId;
-  state.rankingViewModeId = nextModeId;
-  setModeTabUI('ranking', nextModeId);
-  syncRankingHeading();
-  loadRanking(nextModeId);
 }
 
 async function reportPlayResult() {
@@ -1115,7 +1047,7 @@ function updateFloatingBackgroundObject(deltaMs) {
 }
 
 function pickNextShape(excludedShapeIds = []) {
-  const shapes = getShapesForMode(state.currentModeId);
+  const shapes = Array.isArray(state.config?.shapes) ? state.config.shapes : [];
   if (!shapes.length) return null;
 
   const excludedSet = new Set(
@@ -1754,7 +1686,6 @@ function frame(timestamp) {
 function renderRanking(topList) {
   refs.rankingList.innerHTML = '';
   state.rankingTop = Array.isArray(topList) ? topList : [];
-  state.rankingByMode[state.rankingViewModeId] = state.rankingTop;
 
   if (!Array.isArray(topList) || !topList.length) {
     refs.rankingStatus.textContent = 'まだスコアがありません。';
@@ -1762,7 +1693,7 @@ function renderRanking(topList) {
     return;
   }
 
-  refs.rankingStatus.textContent = `全期間トップ ${LEADERBOARD_LIMIT}`;
+  refs.rankingStatus.textContent = '全期間トップ 50';
 
   topList.forEach((row, index) => {
     const li = document.createElement('li');
@@ -1775,19 +1706,15 @@ function renderRanking(topList) {
   if (isGameOverHudMode()) updateRankingRegisterUI();
 }
 
-async function loadRanking(modeId = state.rankingViewModeId) {
+async function loadRanking() {
   if (state.pendingRankingFetch) return;
   state.pendingRankingFetch = true;
 
   try {
     refs.rankingStatus.textContent = '読み込み中...';
-    const query = new URLSearchParams({ mode: String(modeId || state.rankingViewModeId || 'vol3') });
-    const response = await fetch(`${SCORE_API_PATH}?${query.toString()}`, { cache: 'no-store' });
+    const response = await fetch(SCORE_API_PATH, { cache: 'no-store' });
     if (!response.ok) throw new Error(`ranking fetch failed: ${response.status}`);
     const payload = await response.json();
-    state.rankingViewModeId = String(modeId || state.rankingViewModeId || 'vol3');
-    setModeTabUI('ranking', state.rankingViewModeId);
-    syncRankingHeading();
     renderRanking(payload?.top || []);
   } catch (error) {
     console.error(error);
@@ -1822,8 +1749,7 @@ async function submitScore(event) {
       score: state.totalScore,
       survivalSec: 0,
       placedCount: state.droppedCount,
-      runId: state.runId,
-      mode: state.currentModeId
+      runId: state.runId
     };
 
     const response = await fetch(SCORE_API_PATH, {
@@ -1848,7 +1774,7 @@ async function submitScore(event) {
     state.submitted = true;
     renderResultGoalMessage(body?.stats);
     setSubmitMessage('ランキングに登録しました。', 'success');
-    await loadRanking(state.rankingViewModeId);
+    await loadRanking();
   } catch (error) {
     console.error(error);
     setSubmitMessage('送信に失敗しました。時間をおいて再試行してください。', 'error');
@@ -1903,26 +1829,6 @@ function bindInput() {
   refs.startButton.addEventListener('click', () => {
     unlockAudioIfNeeded();
     startGame();
-  });
-
-  refs.playModeTabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const modeId = String(tab.dataset.modeId || '').trim();
-      setCurrentMode(modeId);
-      loadRanking(state.rankingViewModeId);
-      if (!state.running) {
-        prepareQueue();
-        updateHud();
-        drawWorld();
-      }
-    });
-  });
-
-  refs.rankingModeTabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const modeId = String(tab.dataset.modeId || '').trim();
-      setRankingViewMode(modeId);
-    });
   });
 
   refs.retryButton.addEventListener('click', () => {
@@ -1980,26 +1886,12 @@ async function loadConfig() {
     }
   }
 
-  const modesRaw = Array.isArray(payload?.modes) ? payload.modes : [];
-  const normalizedModes = modesRaw
-    .map((mode) => ({
-      id: String(mode?.id || '').trim(),
-      label: String(mode?.label || mode?.id || '').trim(),
-      shapeIds: Array.isArray(mode?.shapeIds) ? mode.shapeIds.map((id) => String(id || '').trim()).filter(Boolean) : []
-    }))
-    .filter((mode) => mode.id && mode.shapeIds.length > 0);
-  const fallbackShapeIds = shapes.map((shape) => String(shape?.id || '').trim()).filter(Boolean);
-  const modes = normalizedModes.length
-    ? normalizedModes
-    : [{ id: 'vol3', label: 'VOL.3', shapeIds: fallbackShapeIds }];
-
   return {
     physics: payload.physics || {},
     drop: payload.drop || {},
     rules: payload.rules || { fallenLimit: 3 },
     colliderQa: payload.colliderQa || {},
     camera: payload.camera || {},
-    modes,
     shapes
   };
 }
@@ -2051,28 +1943,12 @@ async function init() {
     if (!state.config.shapes.length) {
       throw new Error('no valid shapes available after collider QA');
     }
-    const validShapeIds = new Set(state.config.shapes.map((shape) => String(shape?.id || '').trim()).filter(Boolean));
-    state.config.modes = (state.config.modes || [])
-      .map((mode) => ({
-        id: String(mode.id || '').trim(),
-        label: String(mode.label || mode.id || '').trim(),
-        shapeIds: Array.isArray(mode.shapeIds) ? mode.shapeIds.filter((id) => validShapeIds.has(String(id || '').trim())) : []
-      }))
-      .filter((mode) => mode.id && mode.shapeIds.length > 0);
-    if (!state.config.modes.length) {
-      state.config.modes = [{
-        id: 'vol3',
-        label: 'VOL.3',
-        shapeIds: Array.from(validShapeIds)
-      }];
-    }
-    setCurrentMode(state.config.modes[0].id);
     buildWorld();
     resetRunState();
     prepareQueue();
     drawWorld();
     bindInput();
-    loadRanking(state.rankingViewModeId);
+    loadRanking();
     state.frameReq = window.requestAnimationFrame(frame);
   } catch (error) {
     console.error(error);

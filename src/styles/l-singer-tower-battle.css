@@ -314,42 +314,6 @@ h1 {
   flex-direction: column;
 }
 
-.mode-tabs {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px;
-  border: 2px solid var(--line);
-  border-radius: 999px;
-  background: #ffffffea;
-  box-shadow: 3px 3px 0 #0000001f;
-}
-
-.mode-tabs-overlay {
-  margin-bottom: 10px;
-}
-
-.mode-tabs-ranking {
-  margin: 8px 0 0;
-}
-
-.mode-tab {
-  border: 2px solid var(--line);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 0.74rem;
-  font-weight: 900;
-  line-height: 1;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-.mode-tab.is-active {
-  background: linear-gradient(135deg, #ffe55f 0%, #ffc78e 100%);
-}
-
 .action-button,
 .sub-button {
   border: 2px solid var(--line);
