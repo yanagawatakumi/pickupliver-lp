@@ -300,7 +300,7 @@ async function fetchAndRenderResultStats(score, modeId = state.currentRunModeId)
     const queryScore = Math.max(0, toSafeInt(score, 0));
     const id = normalizeModeId(modeId);
     const response = await fetch(
-      `${PLAY_API_PATH}?score=${encodeURIComponent(String(queryScore))}&mode=${encodeURIComponent(id)}`,
+      `${SCORE_API_PATH}?score=${encodeURIComponent(String(queryScore))}&mode=${encodeURIComponent(id)}`,
       { cache: 'no-store' }
     );
     if (!response.ok) throw new Error(`stats fetch failed: ${response.status}`);
