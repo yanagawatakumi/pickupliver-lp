@@ -22,6 +22,8 @@ const FIXED_STEP_MS = 1000 / 60;
 const SETTLE_SPEED_LIMIT = 0.2;
 const SETTLE_ANGULAR_LIMIT = 0.02;
 const SETTLE_FRAMES_REQUIRED = 16;
+const SHARE_CTA_BOOST_MS = 2600;
+const SHARE_CTA_NOTE_TEXT = '今回の結果をシェアして、みんなで楽しもう！';
 const COLLIDER_QA_RULES_DEFAULT = {
   minEdgeWorld: 1.0,
   maxReflexRatio: 0.55,
@@ -46,6 +48,8 @@ const refs = {
   playerName: document.getElementById('player-name'),
   submitScore: document.getElementById('submit-score'),
   submitMessage: document.getElementById('submit-message'),
+  shareCtaNote: document.getElementById('share-cta-note'),
+  shareThumbCanvas: document.getElementById('share-thumb-canvas'),
   captureButton: document.getElementById('capture-button'),
   captureMessage: document.getElementById('capture-message'),
   shareXButton: document.getElementById('share-x-button'),
@@ -59,6 +63,7 @@ const refs = {
 
 const ctx = refs.canvas.getContext('2d');
 const currentShapeCtx = refs.currentShapeCanvas ? refs.currentShapeCanvas.getContext('2d') : null;
+const shareThumbCtx = refs.shareThumbCanvas ? refs.shareThumbCanvas.getContext('2d') : null;
 
 const state = {
   config: null,
@@ -105,7 +110,8 @@ const state = {
   shapesByMode: {},
   currentModeId: DEFAULT_MODE_ID,
   currentRunModeId: DEFAULT_MODE_ID,
-  rankingViewModeId: DEFAULT_MODE_ID
+  rankingViewModeId: DEFAULT_MODE_ID,
+  shareCtaBoostTimer: 0
 };
 
 const audioState = {
@@ -360,6 +366,64 @@ function setShareMessage(text, tone = '') {
   refs.shareMessage.textContent = text;
   refs.shareMessage.classList.remove('error', 'success');
   if (tone) refs.shareMessage.classList.add(tone);
+}
+
+function clearShareCtaBoost() {
+  if (state.shareCtaBoostTimer) {
+    window.clearTimeout(state.shareCtaBoostTimer);
+    state.shareCtaBoostTimer = 0;
+  }
+  if (refs.shareXButton) {
+    refs.shareXButton.classList.remove('share-cta-boost');
+  }
+}
+
+function triggerShareCtaBoost() {
+  if (!refs.shareXButton) return;
+  clearShareCtaBoost();
+  refs.shareXButton.classList.add('share-cta-boost');
+  state.shareCtaBoostTimer = window.setTimeout(() => {
+    if (refs.shareXButton) refs.shareXButton.classList.remove('share-cta-boost');
+    state.shareCtaBoostTimer = 0;
+  }, SHARE_CTA_BOOST_MS);
+}
+
+function updateShareCtaNote(score = state.totalScore) {
+  if (!refs.shareCtaNote) return;
+  refs.shareCtaNote.textContent = SHARE_CTA_NOTE_TEXT;
+}
+
+function clearShareThumbnail() {
+  if (!shareThumbCtx || !refs.shareThumbCanvas) return;
+  shareThumbCtx.setTransform(1, 0, 0, 1, 0, 0);
+  shareThumbCtx.clearRect(0, 0, refs.shareThumbCanvas.width, refs.shareThumbCanvas.height);
+  shareThumbCtx.fillStyle = '#1a1230';
+  shareThumbCtx.fillRect(0, 0, refs.shareThumbCanvas.width, refs.shareThumbCanvas.height);
+}
+
+function renderShareThumbnail() {
+  if (!shareThumbCtx || !refs.shareThumbCanvas) return;
+  const captureCanvas = buildCaptureCanvas();
+  if (!captureCanvas) {
+    clearShareThumbnail();
+    return;
+  }
+  const targetW = refs.shareThumbCanvas.width;
+  const targetH = refs.shareThumbCanvas.height;
+  const srcW = captureCanvas.width;
+  const srcH = captureCanvas.height;
+
+  const scale = Math.max(targetW / srcW, targetH / srcH);
+  const drawW = srcW * scale;
+  const drawH = srcH * scale;
+  const offsetX = (targetW - drawW) * 0.5;
+  const offsetY = (targetH - drawH) * 0.5;
+
+  shareThumbCtx.setTransform(1, 0, 0, 1, 0, 0);
+  shareThumbCtx.clearRect(0, 0, targetW, targetH);
+  shareThumbCtx.imageSmoothingEnabled = true;
+  shareThumbCtx.imageSmoothingQuality = 'high';
+  shareThumbCtx.drawImage(captureCanvas, offsetX, offsetY, drawW, drawH);
 }
 
 function buildModeShapeMaps() {
@@ -1321,6 +1385,9 @@ function resetRunState() {
   resetSubmitMessage();
   resetCaptureMessage();
   resetShareMessage();
+  updateShareCtaNote(0);
+  clearShareThumbnail();
+  clearShareCtaBoost();
   refs.scoreForm.reset();
   refs.submitScore.disabled = false;
   refs.submitScore.hidden = false;
@@ -1369,7 +1436,10 @@ function finishGame() {
 
   refs.finalScore.textContent = `スコア: ${state.totalScore}`;
   if (refs.resultStats) refs.resultStats.textContent = '';
+  updateShareCtaNote(state.totalScore);
+  renderShareThumbnail();
   refs.resultModal.hidden = false;
+  triggerShareCtaBoost();
   if (state.rankingViewModeId !== state.currentRunModeId) {
     state.rankingViewModeId = state.currentRunModeId;
     renderModeTabs();
@@ -1614,7 +1684,7 @@ function getGameShareUrl() {
 function buildShareText() {
   const score = toSafeInt(state.totalScore, 0);
   const link = getGameShareUrl();
-  return `スコア${score}点達成！\n次はあなたの番。どこまで積めるか挑戦してみて👇\n${link}\n\n#PICKUPLIVER #LSINGERTOWERBATTLE #ColorSing`;
+  return `スコア${score}点達成！\n次はあなたの番。どこまで積めるか挑戦してみて👇\nみんなで楽しもう！\n${link}\n\n#PICKUPLIVER #LSINGERTOWERBATTLE #ColorSing`;
 }
 
 function downloadBlob(blob, fileName) {
@@ -1799,13 +1869,17 @@ async function shareOnX() {
       anchor.remove();
     }
     if (shared) {
-      setShareMessage('共有メニューを開きました。投稿先を選んでシェアしてください。', 'success');
+      setShareMessage('共有メニューを開きました。投稿先を選んで、みんなで楽しもう！', 'success');
     } else {
       setShareMessage('画像を保存しました。共有先アプリから投稿してください。', 'success');
     }
   } catch (error) {
     console.error(error);
-    setShareMessage('シェアに失敗しました。時間をおいて再試行してください。', 'error');
+    if (error?.name === 'AbortError') {
+      setShareMessage('投稿はいつでもOK。タイミングを見てシェアしてみよう！');
+    } else {
+      setShareMessage('シェアに失敗しました。時間をおいて再試行してください。', 'error');
+    }
   } finally {
     refs.shareXButton.disabled = false;
   }

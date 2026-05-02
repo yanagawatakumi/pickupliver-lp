@@ -78,7 +78,17 @@
                 <button id="submit-score" type="submit" class="action-button">ランキングに登録</button>
               </form>
               <p id="submit-message" class="submit-message" role="status" aria-live="polite"></p>
-              <button id="share-x-button" class="sub-button" type="button">結果を画像付きでシェア</button>
+              <p id="share-cta-note" class="share-cta-note">今回の結果をシェアして、みんなで楽しもう！</p>
+              <div class="share-cta-row">
+                <button id="share-x-button" class="sub-button share-main-button" type="button" aria-label="画像付きで結果をシェア">
+                  <span class="share-main-line">画像付きで</span>
+                  <span class="share-main-line">結果をシェア</span>
+                </button>
+                <div class="share-preview" aria-hidden="true">
+                  <span class="share-preview-label">シェア画像</span>
+                  <canvas id="share-thumb-canvas" width="92" height="108"></canvas>
+                </div>
+              </div>
               <p id="share-message" class="submit-message" role="status" aria-live="polite"></p>
               <button id="retry-button" class="sub-button" type="button">もう一度遊ぶ</button>
               <p class="stream-note">
