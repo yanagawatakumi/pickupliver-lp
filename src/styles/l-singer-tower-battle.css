@@ -314,6 +314,49 @@ h1 {
   flex-direction: column;
 }
 
+.mode-select {
+  width: min(340px, 100%);
+  margin: 0 0 10px;
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 8px 8px 0 #00000022;
+  padding: 8px 10px 10px;
+}
+
+.mode-select-label {
+  margin: 0 0 6px;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.mode-tab {
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  padding: 7px 8px;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 3px 3px 0 #55717a;
+  cursor: pointer;
+}
+
+.mode-tab.active {
+  background: linear-gradient(135deg, #ff4f96 0%, #ff6f48 100%);
+  color: #fff;
+  box-shadow: 3px 3px 0 #7b2b57;
+}
+
 .action-button,
 .sub-button {
   border: 2px solid var(--line);
@@ -433,6 +476,10 @@ h1 {
   margin: 8px 0 0;
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+.ranking-mode-tabs {
+  margin-top: 8px;
 }
 
 .ranking-list {

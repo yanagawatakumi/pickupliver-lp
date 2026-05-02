@@ -59,6 +59,10 @@
           </div>
 
           <div id="overlay-screen" class="overlay-screen">
+            <div class="mode-select" id="mode-select">
+              <p class="mode-select-label">モード選択</p>
+              <div id="mode-select-tabs" class="mode-tabs" role="tablist" aria-label="ゲームモード"></div>
+            </div>
             <p id="overlay-message" class="overlay-message">Lシンガーを積み重ねてタワーを作ろう！<br />「回転」ボタンの使い方がハイスコアのポイント！</p>
             <button id="start-button" class="action-button" type="button">スタート</button>
           </div>
@@ -88,6 +92,7 @@
 
       <section class="ranking card">
         <h2>ランキング TOP 50</h2>
+        <div id="ranking-mode-tabs" class="mode-tabs ranking-mode-tabs" role="tablist" aria-label="ランキングモード"></div>
         <p id="ranking-status" class="ranking-status">読み込み中...</p>
         <ol id="ranking-list" class="ranking-list"></ol>
       </section>

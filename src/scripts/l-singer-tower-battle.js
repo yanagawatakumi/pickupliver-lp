@@ -1,16 +1,21 @@
 const CONFIG_PATH_DEFAULT = '/content/games/l-singer-tower-battle/config.json';
 const SCORE_API_PATH = '/api/l-singer-tower-scores';
 const PLAY_API_PATH = '/api/l-singer-tower-plays';
-const STAGE_BACKGROUND_PATH = '/public/assets/games/l-singer-tower-battle/tower-battle-bg.JPG';
+const STAGE_BACKGROUND_PATHS = {
+  vol3: '/public/assets/games/l-singer-tower-battle/tower-battle-bg.JPG',
+  allstar: '/public/assets/games/l-singer-tower-battle/bg-allstar-haikei.png'
+};
 const DROP_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/drop.mp3';
 const BGM_PATH = '/public/assets/games/l-singer-tower-battle/sfx/BGM.mp3';
 const GAMEOVER_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/gameover.mp3';
 const LOST_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/lost.mp3';
-const STAGE_FLOATING_IMAGE_PATHS = [
-  '/public/assets/games/l-singer-tower-battle/bg-がーくん.png',
-  '/public/assets/games/l-singer-tower-battle/bg-とーま.png'
-];
+const STAGE_FLOATING_IMAGE_PATHS_BY_MODE = {
+  vol3: ['/public/assets/games/l-singer-tower-battle/bg-がーくん.png', '/public/assets/games/l-singer-tower-battle/bg-とーま.png'],
+  allstar: ['/public/assets/games/l-singer-tower-battle/bg-allstar1.png', '/public/assets/games/l-singer-tower-battle/bg-allstar2.png']
+};
 const LEADERBOARD_LIMIT = 50;
+const DEFAULT_MODE_ID = 'vol3';
+const DEFAULT_MODE_LABEL = '5/9 出演者';
 const CANVAS_WIDTH = 420;
 const CANVAS_HEIGHT = 720;
 const FIXED_STEP_MS = 1000 / 60;
@@ -27,6 +32,7 @@ const COLLIDER_QA_RULES_DEFAULT = {
 const refs = {
   canvas: document.getElementById('game-canvas'),
   overlayScreen: document.getElementById('overlay-screen'),
+  modeSelectTabs: document.getElementById('mode-select-tabs'),
   overlayMessage: document.getElementById('overlay-message'),
   startButton: document.getElementById('start-button'),
   scoreValue: document.getElementById('score-value'),
@@ -47,7 +53,8 @@ const refs = {
   retryButton: document.getElementById('retry-button'),
   rotateButton: document.getElementById('rotate-button'),
   rankingStatus: document.getElementById('ranking-status'),
-  rankingList: document.getElementById('ranking-list')
+  rankingList: document.getElementById('ranking-list'),
+  rankingModeTabs: document.getElementById('ranking-mode-tabs')
 };
 
 const ctx = refs.canvas.getContext('2d');
@@ -60,9 +67,9 @@ const state = {
   groundBody: null,
   dynamicBodies: [],
   characterAssets: {},
-  stageBackgroundImage: null,
-  stageFloatingImages: [],
-  floatingBgImageIndex: 0,
+  stageBackgroundImages: {},
+  stageFloatingImagesByMode: {},
+  floatingBgImageIndicesByMode: {},
   floatingBgObject: null,
   floatingBgNextSpawnAtMs: 0,
   running: false,
@@ -92,8 +99,13 @@ const state = {
   lastFrameMs: 0,
   accumulatorMs: 0,
   pendingRankingFetch: false,
-  rankingTop: [],
-  qaRejectedShapeIds: []
+  rankingTopByMode: {},
+  qaRejectedShapeIds: [],
+  modes: [],
+  shapesByMode: {},
+  currentModeId: DEFAULT_MODE_ID,
+  currentRunModeId: DEFAULT_MODE_ID,
+  rankingViewModeId: DEFAULT_MODE_ID
 };
 
 const audioState = {
@@ -167,6 +179,63 @@ function createRunId() {
   return `run_${Date.now()}_${Math.floor(Math.random() * 1e8)}`;
 }
 
+function normalizeModeId(raw) {
+  const value = String(raw || '').trim();
+  const list = Array.isArray(state.modes) ? state.modes : [];
+  if (!list.length) return DEFAULT_MODE_ID;
+  if (!value) return list.some((mode) => mode.id === DEFAULT_MODE_ID) ? DEFAULT_MODE_ID : list[0].id;
+  const exists = list.some((mode) => mode.id === value);
+  if (exists) return value;
+  return list.some((mode) => mode.id === DEFAULT_MODE_ID) ? DEFAULT_MODE_ID : list[0].id;
+}
+
+function getModeById(modeId) {
+  const id = normalizeModeId(modeId);
+  return (Array.isArray(state.modes) ? state.modes : []).find((mode) => mode.id === id) || null;
+}
+
+function getModeLabel(modeId) {
+  const mode = getModeById(modeId);
+  return String(mode?.label || mode?.id || DEFAULT_MODE_ID);
+}
+
+function getModeShapes(modeId) {
+  const id = normalizeModeId(modeId);
+  const list = state.shapesByMode?.[id];
+  if (Array.isArray(list) && list.length) return list;
+  return Array.isArray(state.config?.shapes) ? state.config.shapes : [];
+}
+
+function getCurrentModeShapes() {
+  return getModeShapes(state.currentModeId);
+}
+
+function getTopListForMode(modeId) {
+  const id = normalizeModeId(modeId);
+  const list = state.rankingTopByMode?.[id];
+  return Array.isArray(list) ? list : [];
+}
+
+function getVisualModeId() {
+  if (isGameOverHudMode()) return normalizeModeId(state.currentRunModeId);
+  if (state.running) return normalizeModeId(state.currentRunModeId);
+  return normalizeModeId(state.currentModeId);
+}
+
+function getStageBackgroundImage() {
+  const modeId = getVisualModeId();
+  const modeImage = state.stageBackgroundImages?.[modeId];
+  if (modeImage) return modeImage;
+  return state.stageBackgroundImages?.[DEFAULT_MODE_ID] || null;
+}
+
+function getStageFloatingImages(modeId = getVisualModeId()) {
+  const id = normalizeModeId(modeId);
+  const list = state.stageFloatingImagesByMode?.[id];
+  if (Array.isArray(list)) return list;
+  return [];
+}
+
 function resetSubmitMessage() {
   refs.submitMessage.textContent = '';
   refs.submitMessage.classList.remove('error', 'success');
@@ -179,8 +248,8 @@ function setSubmitMessage(text, tone = '') {
   if (tone) refs.submitMessage.classList.add(tone);
 }
 
-function canRegisterRanking(score) {
-  const top = Array.isArray(state.rankingTop) ? state.rankingTop : [];
+function canRegisterRanking(score, modeId = state.currentRunModeId) {
+  const top = getTopListForMode(modeId);
   if (top.length < LEADERBOARD_LIMIT) return true;
   const border = Number(top[top.length - 1]?.score || 0);
   return Number(score || 0) >= border;
@@ -188,18 +257,18 @@ function canRegisterRanking(score) {
 
 function updateRankingRegisterUI() {
   if (!refs.submitScore) return;
-  const canRegister = canRegisterRanking(state.totalScore);
+  const canRegister = canRegisterRanking(state.totalScore, state.currentRunModeId);
   refs.submitScore.hidden = !canRegister;
   refs.submitScore.disabled = !canRegister || state.submitted;
 }
 
-function getTopBorderScore() {
-  const top = Array.isArray(state.rankingTop) ? state.rankingTop : [];
+function getTopBorderScore(modeId = state.currentRunModeId) {
+  const top = getTopListForMode(modeId);
   if (top.length < LEADERBOARD_LIMIT) return null;
   return toSafeInt(top[LEADERBOARD_LIMIT - 1]?.score, 0);
 }
 
-function renderResultGoalMessage(stats) {
+function renderResultGoalMessage(stats, modeId = state.currentRunModeId) {
   if (!refs.resultStats) return;
   const score = toSafeInt(state.totalScore, 0);
   const rank = Number.isFinite(Number(stats?.rank)) ? toSafeInt(stats.rank, LEADERBOARD_LIMIT + 1) : null;
@@ -214,7 +283,7 @@ function renderResultGoalMessage(stats) {
     return;
   }
 
-  const border = getTopBorderScore();
+  const border = getTopBorderScore(modeId);
   if (border === null) {
     refs.resultStats.textContent = `TOP${LEADERBOARD_LIMIT}を目指そう！`;
     return;
@@ -224,29 +293,35 @@ function renderResultGoalMessage(stats) {
   refs.resultStats.textContent = `あと${needed}点でTOP${LEADERBOARD_LIMIT}入り！`;
 }
 
-async function fetchAndRenderResultStats(score) {
+async function fetchAndRenderResultStats(score, modeId = state.currentRunModeId) {
   if (!refs.resultStats) return;
   refs.resultStats.textContent = '結果を計算中...';
   try {
     const queryScore = Math.max(0, toSafeInt(score, 0));
-    const response = await fetch(`${PLAY_API_PATH}?score=${encodeURIComponent(String(queryScore))}`, { cache: 'no-store' });
+    const id = normalizeModeId(modeId);
+    const response = await fetch(
+      `${PLAY_API_PATH}?score=${encodeURIComponent(String(queryScore))}&mode=${encodeURIComponent(id)}`,
+      { cache: 'no-store' }
+    );
     if (!response.ok) throw new Error(`stats fetch failed: ${response.status}`);
     const payload = await response.json();
-    renderResultGoalMessage(payload?.stats);
+    renderResultGoalMessage(payload?.stats, id);
   } catch (error) {
     console.error(error);
-    renderResultGoalMessage(null);
+    renderResultGoalMessage(null, modeId);
   }
 }
 
 async function reportPlayResult() {
   if (state.playReported || !state.runId) return null;
   state.playReported = true;
+  const modeId = normalizeModeId(state.currentRunModeId);
   const payload = {
     runId: state.runId,
     score: state.totalScore,
     placedCount: state.droppedCount,
-    fallenCount: state.fallenCount
+    fallenCount: state.fallenCount,
+    mode: modeId
   };
   const response = await fetch(PLAY_API_PATH, {
     method: 'POST',
@@ -285,6 +360,72 @@ function setShareMessage(text, tone = '') {
   refs.shareMessage.textContent = text;
   refs.shareMessage.classList.remove('error', 'success');
   if (tone) refs.shareMessage.classList.add(tone);
+}
+
+function buildModeShapeMaps() {
+  const shapeMap = new Map();
+  (Array.isArray(state.config?.shapes) ? state.config.shapes : []).forEach((shape) => {
+    if (!shape?.id) return;
+    shapeMap.set(String(shape.id), shape);
+  });
+
+  state.shapesByMode = {};
+  (Array.isArray(state.modes) ? state.modes : []).forEach((mode) => {
+    const ids = Array.isArray(mode?.shapeIds) ? mode.shapeIds : [];
+    const list = ids.map((id) => shapeMap.get(String(id))).filter(Boolean);
+    state.shapesByMode[mode.id] = list;
+  });
+}
+
+function renderModeTabs() {
+  const modes = Array.isArray(state.modes) ? state.modes : [];
+  if (refs.modeSelectTabs) {
+    refs.modeSelectTabs.innerHTML = '';
+    modes.forEach((mode) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `mode-tab${mode.id === state.currentModeId ? ' active' : ''}`;
+      button.dataset.modeId = mode.id;
+      button.setAttribute('role', 'tab');
+      button.setAttribute('aria-selected', mode.id === state.currentModeId ? 'true' : 'false');
+      button.textContent = mode.label;
+      refs.modeSelectTabs.appendChild(button);
+    });
+  }
+
+  if (refs.rankingModeTabs) {
+    refs.rankingModeTabs.innerHTML = '';
+    modes.forEach((mode) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `mode-tab${mode.id === state.rankingViewModeId ? ' active' : ''}`;
+      button.dataset.modeId = mode.id;
+      button.setAttribute('role', 'tab');
+      button.setAttribute('aria-selected', mode.id === state.rankingViewModeId ? 'true' : 'false');
+      button.textContent = mode.label;
+      refs.rankingModeTabs.appendChild(button);
+    });
+  }
+}
+
+function setCurrentMode(modeId, { syncRanking = true } = {}) {
+  const nextId = normalizeModeId(modeId);
+  if (state.currentModeId === nextId && (!syncRanking || state.rankingViewModeId === nextId)) return;
+  state.currentModeId = nextId;
+  state.floatingBgObject = null;
+  if (syncRanking) state.rankingViewModeId = nextId;
+  renderModeTabs();
+  if (syncRanking) {
+    loadRanking(nextId);
+  }
+}
+
+function setRankingViewMode(modeId) {
+  const nextId = normalizeModeId(modeId);
+  if (state.rankingViewModeId === nextId) return;
+  state.rankingViewModeId = nextId;
+  renderModeTabs();
+  loadRanking(nextId);
 }
 
 function normalizeRotationStep(step) {
@@ -969,7 +1110,7 @@ function drawStageBackground() {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  const bg = state.stageBackgroundImage;
+  const bg = getStageBackgroundImage();
   if (!bg) return;
 
   const srcW = Math.max(1, Number(bg.naturalWidth || bg.width || 1));
@@ -984,8 +1125,9 @@ function drawStageBackground() {
   const floater = state.floatingBgObject;
   const floatImage = floater?.image || null;
   if (!floater || !floatImage) return;
+  if (normalizeModeId(floater.modeId) !== getVisualModeId()) return;
   ctx.save();
-  ctx.globalAlpha = 0.6;
+  ctx.globalAlpha = 0.8;
   ctx.drawImage(floatImage, floater.x, floater.y, floater.w, floater.h);
   ctx.restore();
 }
@@ -1006,32 +1148,56 @@ function drawWorld() {
 }
 
 function spawnFloatingBackgroundObject(nowMs) {
-  if (!Array.isArray(state.stageFloatingImages) || state.stageFloatingImages.length === 0) return;
+  const modeId = getVisualModeId();
+  const images = getStageFloatingImages(modeId);
+  if (!Array.isArray(images) || images.length === 0) return;
   if (state.floatingBgObject) return;
   if (nowMs < state.floatingBgNextSpawnAtMs) return;
 
-  const images = state.stageFloatingImages;
-  const idx = ((state.floatingBgImageIndex % images.length) + images.length) % images.length;
+  const currentIdx = Number(state.floatingBgImageIndicesByMode?.[modeId] || 0);
+  const idx = ((currentIdx % images.length) + images.length) % images.length;
   const img = images[idx];
-  state.floatingBgImageIndex = (idx + 1) % images.length;
+  state.floatingBgImageIndicesByMode[modeId] = (idx + 1) % images.length;
   const srcW = Math.max(1, Number(img.naturalWidth || img.width || 1));
   const srcH = Math.max(1, Number(img.naturalHeight || img.height || 1));
   const baseW = 150;
   const aspect = srcH / srcW;
   const baseH = baseW * aspect;
-  const y = randomIn(CANVAS_HEIGHT * 0.14, CANVAS_HEIGHT * 0.68 - baseH);
-  const xStart = CANVAS_WIDTH + baseW * 0.4;
-  const xEnd = -baseW * 1.4;
   const durationSec = randomIn(14, 20);
-  const speed = (xStart - xEnd) / durationSec;
+
+  let xStart;
+  let yStart;
+  let velX;
+  let velY;
+  let offscreenThreshold;
+
+  if (modeId === 'allstar') {
+    xStart = CANVAS_WIDTH + baseW * randomIn(0.2, 0.8);
+    yStart = randomIn(CANVAS_HEIGHT * 0.06, CANVAS_HEIGHT * 0.2);
+    const xEnd = -baseW * 1.4;
+    velX = (xEnd - xStart) / durationSec;
+    const angleDeg = randomIn(8, 14);
+    velY = Math.abs(velX) * Math.tan((angleDeg * Math.PI) / 180);
+    offscreenThreshold = CANVAS_HEIGHT + baseH * 2.2;
+  } else {
+    yStart = randomIn(CANVAS_HEIGHT * 0.14, CANVAS_HEIGHT * 0.68 - baseH);
+    xStart = CANVAS_WIDTH + baseW * 0.4;
+    const xEnd = -baseW * 1.4;
+    velX = (xEnd - xStart) / durationSec;
+    velY = 0;
+    offscreenThreshold = Infinity;
+  }
 
   state.floatingBgObject = {
+    modeId,
     image: img,
     x: xStart,
-    y,
+    y: yStart,
     w: baseW,
     h: baseH,
-    speed
+    velX,
+    velY,
+    offscreenThreshold
   };
   state.floatingBgNextSpawnAtMs = nowMs + 60000;
 }
@@ -1039,15 +1205,21 @@ function spawnFloatingBackgroundObject(nowMs) {
 function updateFloatingBackgroundObject(deltaMs) {
   const floater = state.floatingBgObject;
   if (!floater) return;
+  if (normalizeModeId(floater.modeId) !== getVisualModeId()) {
+    state.floatingBgObject = null;
+    return;
+  }
   const dtSec = Math.max(0, deltaMs) / 1000;
-  floater.x -= floater.speed * dtSec;
-  if (floater.x + floater.w < 0) {
+  floater.x += Number(floater.velX || 0) * dtSec;
+  floater.y += Number(floater.velY || 0) * dtSec;
+  const yOut = floater.y > Number(floater.offscreenThreshold || Infinity);
+  if (floater.x + floater.w < 0 || yOut) {
     state.floatingBgObject = null;
   }
 }
 
 function pickNextShape(excludedShapeIds = []) {
-  const shapes = Array.isArray(state.config?.shapes) ? state.config.shapes : [];
+  const shapes = getCurrentModeShapes();
   if (!shapes.length) return null;
 
   const excludedSet = new Set(
@@ -1144,6 +1316,7 @@ function resetRunState() {
   state.recentDroppedShapeIds = [];
   state.lastFrameMs = 0;
   state.accumulatorMs = 0;
+  state.currentRunModeId = normalizeModeId(state.currentModeId);
 
   resetSubmitMessage();
   resetCaptureMessage();
@@ -1171,6 +1344,7 @@ function clearDynamicBodies() {
 function startGame() {
   clearDynamicBodies();
   resetRunState();
+  state.currentRunModeId = normalizeModeId(state.currentModeId);
 
   state.running = true;
   reportPlayResult().catch((error) => {
@@ -1196,8 +1370,13 @@ function finishGame() {
   refs.finalScore.textContent = `スコア: ${state.totalScore}`;
   if (refs.resultStats) refs.resultStats.textContent = '';
   refs.resultModal.hidden = false;
+  if (state.rankingViewModeId !== state.currentRunModeId) {
+    state.rankingViewModeId = state.currentRunModeId;
+    renderModeTabs();
+  }
+  loadRanking(state.currentRunModeId);
   updateRankingRegisterUI();
-  fetchAndRenderResultStats(state.totalScore);
+  fetchAndRenderResultStats(state.totalScore, state.currentRunModeId);
   updateHud();
   refs.playerName.focus();
 }
@@ -1683,17 +1862,18 @@ function frame(timestamp) {
   state.frameReq = window.requestAnimationFrame(frame);
 }
 
-function renderRanking(topList) {
+function renderRanking(topList, modeId = state.rankingViewModeId) {
+  const id = normalizeModeId(modeId);
   refs.rankingList.innerHTML = '';
-  state.rankingTop = Array.isArray(topList) ? topList : [];
+  state.rankingTopByMode[id] = Array.isArray(topList) ? topList : [];
 
   if (!Array.isArray(topList) || !topList.length) {
-    refs.rankingStatus.textContent = 'まだスコアがありません。';
+    refs.rankingStatus.textContent = `${getModeLabel(id)}：まだスコアがありません。`;
     if (isGameOverHudMode()) updateRankingRegisterUI();
     return;
   }
 
-  refs.rankingStatus.textContent = '全期間トップ 50';
+  refs.rankingStatus.textContent = `全期間トップ 50（${getModeLabel(id)}）`;
 
   topList.forEach((row, index) => {
     const li = document.createElement('li');
@@ -1706,16 +1886,17 @@ function renderRanking(topList) {
   if (isGameOverHudMode()) updateRankingRegisterUI();
 }
 
-async function loadRanking() {
+async function loadRanking(modeId = state.rankingViewModeId) {
   if (state.pendingRankingFetch) return;
   state.pendingRankingFetch = true;
+  const id = normalizeModeId(modeId);
 
   try {
     refs.rankingStatus.textContent = '読み込み中...';
-    const response = await fetch(SCORE_API_PATH, { cache: 'no-store' });
+    const response = await fetch(`${SCORE_API_PATH}?mode=${encodeURIComponent(id)}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`ranking fetch failed: ${response.status}`);
     const payload = await response.json();
-    renderRanking(payload?.top || []);
+    renderRanking(payload?.top || [], id);
   } catch (error) {
     console.error(error);
     refs.rankingStatus.textContent = 'ランキング読み込みに失敗しました。';
@@ -1744,12 +1925,14 @@ async function submitScore(event) {
   setSubmitMessage('送信中...');
 
   try {
+    const modeId = normalizeModeId(state.currentRunModeId);
     const payload = {
       name,
       score: state.totalScore,
       survivalSec: 0,
       placedCount: state.droppedCount,
-      runId: state.runId
+      runId: state.runId,
+      mode: modeId
     };
 
     const response = await fetch(SCORE_API_PATH, {
@@ -1772,9 +1955,9 @@ async function submitScore(event) {
     }
 
     state.submitted = true;
-    renderResultGoalMessage(body?.stats);
+    renderResultGoalMessage(body?.stats, modeId);
     setSubmitMessage('ランキングに登録しました。', 'success');
-    await loadRanking();
+    await loadRanking(modeId);
   } catch (error) {
     console.error(error);
     setSubmitMessage('送信に失敗しました。時間をおいて再試行してください。', 'error');
@@ -1788,6 +1971,7 @@ function retryGame() {
   refs.resultModal.hidden = true;
   refs.overlayMessage.textContent = '準備OK。STARTを押して次のチャレンジ！';
   refs.overlayScreen.hidden = false;
+  renderModeTabs();
   resetCaptureMessage();
   resetShareMessage();
 }
@@ -1835,6 +2019,29 @@ function bindInput() {
     retryGame();
   });
 
+  if (refs.modeSelectTabs) {
+    refs.modeSelectTabs.addEventListener('click', (event) => {
+      const button = event.target?.closest?.('button[data-mode-id]');
+      if (!button) return;
+      if (state.running) return;
+      const nextMode = String(button.dataset.modeId || '');
+      setCurrentMode(nextMode, { syncRanking: true });
+      setPendingRotationStep(0);
+      prepareQueue();
+      updateHud();
+      drawWorld();
+    });
+  }
+
+  if (refs.rankingModeTabs) {
+    refs.rankingModeTabs.addEventListener('click', (event) => {
+      const button = event.target?.closest?.('button[data-mode-id]');
+      if (!button) return;
+      const nextMode = String(button.dataset.modeId || '');
+      setRankingViewMode(nextMode);
+    });
+  }
+
   if (refs.rotateButton) {
     refs.rotateButton.addEventListener('pointerdown', (event) => {
       event.preventDefault();
@@ -1877,6 +2084,7 @@ async function loadConfig() {
 
   const shapes = Array.isArray(payload?.shapes) ? payload.shapes.filter((shape) => shape && shape.kind) : [];
   if (!shapes.length) throw new Error('shape config is empty');
+  const shapeIds = new Set();
   for (const shape of shapes) {
     if (shape.kind !== 'character') continue;
     const required = ['id', 'label', 'kind', 'imagePath', 'colliderPath', 'sourceWidth', 'sourceHeight', 'scale', 'weight'];
@@ -1884,6 +2092,35 @@ async function loadConfig() {
     if (missing.length) {
       throw new Error(`character config missing [${missing.join(', ')}]: ${shape.id || '(unknown)'}`);
     }
+    const sid = String(shape.id || '').trim();
+    if (!sid) throw new Error('character id is empty');
+    if (shapeIds.has(sid)) throw new Error(`duplicated character id: ${sid}`);
+    shapeIds.add(sid);
+  }
+
+  const rawModes = Array.isArray(payload?.modes) ? payload.modes : [];
+  const modes = rawModes
+    .filter((mode) => mode && mode.id && mode.label && Array.isArray(mode.shapeIds))
+    .map((mode) => ({
+      id: String(mode.id).trim(),
+      label: String(mode.label).trim(),
+      shapeIds: mode.shapeIds.map((id) => String(id || '').trim()).filter(Boolean)
+    }))
+    .filter((mode) => mode.id && mode.label && mode.shapeIds.length);
+
+  const validModes = modes
+    .map((mode) => ({
+      ...mode,
+      shapeIds: mode.shapeIds.filter((id) => shapeIds.has(id))
+    }))
+    .filter((mode) => mode.shapeIds.length > 0);
+
+  if (!validModes.length) {
+    validModes.push({
+      id: DEFAULT_MODE_ID,
+      label: DEFAULT_MODE_LABEL,
+      shapeIds: shapes.map((shape) => String(shape.id || '').trim()).filter(Boolean)
+    });
   }
 
   return {
@@ -1892,7 +2129,8 @@ async function loadConfig() {
     rules: payload.rules || { fallenLimit: 3 },
     colliderQa: payload.colliderQa || {},
     camera: payload.camera || {},
-    shapes
+    shapes,
+    modes: validModes
   };
 }
 
@@ -1923,14 +2161,25 @@ async function init() {
     audioState.gameover.preload = 'auto';
     audioState.gameover.volume = 0.9;
     state.config = await loadConfig();
-    const [_, stageBackground, floatingImages] = await Promise.all([
+    const stageBackgroundLoadTasks = Object.entries(STAGE_BACKGROUND_PATHS).map(async ([modeId, path]) => {
+      const image = await loadImage(path).catch(() => null);
+      return [modeId, image];
+    });
+    const stageFloatingLoadTasks = Object.entries(STAGE_FLOATING_IMAGE_PATHS_BY_MODE).map(async ([modeId, paths]) => {
+      const images = await Promise.all((Array.isArray(paths) ? paths : []).map((path) => loadImage(path).catch(() => null)));
+      return [modeId, images.filter(Boolean)];
+    });
+    const [_, stageBackgroundEntries, stageFloatingEntries] = await Promise.all([
       loadCharacterAssets(state.config.shapes),
-      loadImage(STAGE_BACKGROUND_PATH).catch(() => null),
-      Promise.all(STAGE_FLOATING_IMAGE_PATHS.map((path) => loadImage(path).catch(() => null)))
+      Promise.all(stageBackgroundLoadTasks),
+      Promise.all(stageFloatingLoadTasks)
     ]);
-    state.stageBackgroundImage = stageBackground;
-    state.stageFloatingImages = floatingImages.filter(Boolean);
-    state.floatingBgImageIndex = 0;
+    state.stageBackgroundImages = Object.fromEntries(stageBackgroundEntries.filter((entry) => entry[1]));
+    state.stageFloatingImagesByMode = Object.fromEntries(stageFloatingEntries);
+    state.floatingBgImageIndicesByMode = {};
+    Object.keys(state.stageFloatingImagesByMode).forEach((modeId) => {
+      state.floatingBgImageIndicesByMode[modeId] = 0;
+    });
     state.floatingBgObject = null;
     state.floatingBgNextSpawnAtMs = performance.now() + 12000;
     if (state.qaRejectedShapeIds.length) {
@@ -1943,6 +2192,28 @@ async function init() {
     if (!state.config.shapes.length) {
       throw new Error('no valid shapes available after collider QA');
     }
+    state.modes = (Array.isArray(state.config?.modes) ? state.config.modes : [])
+      .map((mode) => ({
+        ...mode,
+        shapeIds: (Array.isArray(mode.shapeIds) ? mode.shapeIds : []).filter((id) =>
+          state.config.shapes.some((shape) => String(shape.id) === String(id))
+        )
+      }))
+      .filter((mode) => mode.shapeIds.length > 0);
+    if (!state.modes.length) {
+      state.modes = [
+        {
+          id: DEFAULT_MODE_ID,
+          label: DEFAULT_MODE_LABEL,
+          shapeIds: state.config.shapes.map((shape) => String(shape.id))
+        }
+      ];
+    }
+    state.currentModeId = normalizeModeId(DEFAULT_MODE_ID);
+    state.currentRunModeId = state.currentModeId;
+    state.rankingViewModeId = state.currentModeId;
+    buildModeShapeMaps();
+    renderModeTabs();
     buildWorld();
     resetRunState();
     prepareQueue();

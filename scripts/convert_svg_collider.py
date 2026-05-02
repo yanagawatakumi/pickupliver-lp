@@ -299,21 +299,48 @@ def expand_vertices_to_min(points: Sequence[Point], min_vertices: int) -> List[P
     return expanded
 
 
-def extract_single_path(svg_path: Path) -> Tuple[float, float, str]:
+def parse_polygon_points(points_attr: str) -> List[Point]:
+    raw = [token for token in re.split(r"[\s,]+", points_attr.strip()) if token]
+    if len(raw) < 6 or len(raw) % 2 != 0:
+        raise ValueError("Polygon points are invalid")
+    points: List[Point] = []
+    for i in range(0, len(raw), 2):
+        points.append((float(raw[i]), float(raw[i + 1])))
+    if len(points) >= 2 and points[0] == points[-1]:
+        points = points[:-1]
+    return points
+
+
+def extract_single_outline(svg_path: Path, curve_steps: int) -> Tuple[float, float, List[Point]]:
     tree = ET.parse(svg_path)
     root = tree.getroot()
     source_w, source_h = parse_size(root)
 
     paths = []
+    polygons = []
     for el in root.iter():
         tag = el.tag.split("}")[-1]
         if tag == "path" and el.attrib.get("d"):
             paths.append(el.attrib["d"])
+        elif tag == "polygon" and el.attrib.get("points"):
+            polygons.append(el.attrib["points"])
 
-    if len(paths) != 1:
-        raise ValueError(f"Expected exactly 1 <path>, found {len(paths)} in {svg_path}")
+    shape_kinds = (1 if paths else 0) + (1 if polygons else 0)
+    if shape_kinds == 0:
+        raise ValueError(f"Expected one <path> or <polygon>, found none in {svg_path}")
+    if shape_kinds > 1:
+        raise ValueError(f"Expected one shape type, found both <path> and <polygon> in {svg_path}")
 
-    return source_w, source_h, paths[0]
+    if paths:
+        if len(paths) != 1:
+            raise ValueError(f"Expected exactly 1 <path>, found {len(paths)} in {svg_path}")
+        points = parse_path_points(paths[0], curve_steps=max(4, curve_steps))
+        return source_w, source_h, points
+
+    if len(polygons) != 1:
+        raise ValueError(f"Expected exactly 1 <polygon>, found {len(polygons)} in {svg_path}")
+    points = parse_polygon_points(polygons[0])
+    return source_w, source_h, points
 
 
 def normalize_point_precision(points: Iterable[Point], digits: int) -> List[Point]:
@@ -481,8 +508,7 @@ def main() -> None:
     parser.add_argument("--qa-max-consecutive-sharp", type=int, default=6)
     args = parser.parse_args()
 
-    source_w, source_h, path_d = extract_single_path(args.svg)
-    raw_points = parse_path_points(path_d, curve_steps=max(4, args.curve_steps))
+    source_w, source_h, raw_points = extract_single_outline(args.svg, curve_steps=args.curve_steps)
     raw_points = densify_closed_polyline(raw_points, max_step=max(2.0, args.max_line_step))
     if len(raw_points) < 3:
         raise ValueError("Parsed polygon has fewer than 3 points")

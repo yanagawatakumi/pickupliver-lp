@@ -8,6 +8,9 @@ function json(data, status = 200) {
   });
 }
 
+const DEFAULT_MODE = 'vol3';
+const ALLOWED_MODES = new Set(['vol3', 'allstar']);
+
 function requireDb(env) {
   if (env?.DB) return env.DB;
   throw new Error('D1 binding `DB` is not configured. Add DB to Cloudflare Pages Functions bindings.');
@@ -23,12 +26,25 @@ async function ensureSchema(db) {
         survival_sec REAL NOT NULL,
         placed_count INTEGER NOT NULL,
         run_id TEXT NOT NULL UNIQUE,
+        mode TEXT NOT NULL DEFAULT 'vol3',
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );`
     )
     .run();
 
   await db.prepare('CREATE INDEX IF NOT EXISTS idx_animal_tower_scores_score_latest ON animal_tower_scores(score DESC, created_at DESC);').run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_animal_tower_scores_mode_score_latest ON animal_tower_scores(mode, score DESC, created_at DESC);').run();
+  await ensureModeColumn(db);
+}
+
+async function ensureModeColumn(db) {
+  const rows = await db.prepare("PRAGMA table_info('animal_tower_scores')").all();
+  const columns = Array.isArray(rows?.results) ? rows.results : [];
+  const hasMode = columns.some((row) => String(row?.name || '') === 'mode');
+  if (!hasMode) {
+    await db.prepare("ALTER TABLE animal_tower_scores ADD COLUMN mode TEXT NOT NULL DEFAULT 'vol3';").run();
+  }
+  await db.prepare("UPDATE animal_tower_scores SET mode = 'vol3' WHERE mode IS NULL OR mode = '';").run();
 }
 
 function readJsonBody(request) {
@@ -60,14 +76,23 @@ function normalizeRunId(raw) {
   return value;
 }
 
+function normalizeMode(raw) {
+  const value = String(raw || '').trim().toLowerCase();
+  if (!value) return DEFAULT_MODE;
+  if (!ALLOWED_MODES.has(value)) {
+    throw new Error('mode must be vol3 or allstar');
+  }
+  return value;
+}
+
 async function insertScore(db, data) {
   const result = await db
     .prepare(
       `INSERT INTO animal_tower_scores
-        (name, score, survival_sec, placed_count, run_id)
-       VALUES (?, ?, ?, ?, ?)`
+        (name, score, survival_sec, placed_count, run_id, mode)
+       VALUES (?, ?, ?, ?, ?, ?)`
     )
-    .bind(data.name, data.score, data.survivalSec, data.placedCount, data.runId)
+    .bind(data.name, data.score, data.survivalSec, data.placedCount, data.runId, data.mode)
     .run();
 
   if (!result.success) {
@@ -75,14 +100,16 @@ async function insertScore(db, data) {
   }
 }
 
-async function listTop(db) {
+async function listTop(db, mode) {
   const rows = await db
     .prepare(
       `SELECT name, score, survival_sec, placed_count, created_at
        FROM animal_tower_scores
+       WHERE mode = ?
        ORDER BY score DESC, created_at DESC
        LIMIT 50`
     )
+    .bind(mode)
     .all();
 
   const list = Array.isArray(rows?.results) ? rows.results : [];
@@ -97,11 +124,11 @@ async function listTop(db) {
   }));
 }
 
-async function getScoreStats(db, score) {
-  const totalRow = await db.prepare('SELECT COUNT(*) AS total_count FROM animal_tower_scores').first();
+async function getScoreStats(db, score, mode) {
+  const totalRow = await db.prepare('SELECT COUNT(*) AS total_count FROM animal_tower_scores WHERE mode = ?').bind(mode).first();
   const higherRow = await db
-    .prepare('SELECT COUNT(*) AS higher_count FROM animal_tower_scores WHERE score > ?')
-    .bind(score)
+    .prepare('SELECT COUNT(*) AS higher_count FROM animal_tower_scores WHERE mode = ? AND score > ?')
+    .bind(mode, score)
     .first();
 
   const totalCount = Math.max(0, Number(totalRow?.total_count || 0));
@@ -126,6 +153,10 @@ function parseScoreFromUrl(url) {
   return Math.round(parsed);
 }
 
+function parseModeFromUrl(url) {
+  return normalizeMode(url.searchParams.get('mode'));
+}
+
 function isUniqueViolation(error) {
   const message = String(error?.message || '');
   return message.toLowerCase().includes('unique') || message.includes('SQLITE_CONSTRAINT');
@@ -136,17 +167,18 @@ export async function onRequestGet(context) {
     const db = requireDb(context.env);
     await ensureSchema(db);
     const requestUrl = new URL(context.request.url);
+    const mode = parseModeFromUrl(requestUrl);
     const score = parseScoreFromUrl(requestUrl);
-    const top = await listTop(db);
-    const payload = { ok: true, top };
+    const top = await listTop(db, mode);
+    const payload = { ok: true, mode, top };
     if (score !== null) {
-      payload.stats = await getScoreStats(db, score);
+      payload.stats = await getScoreStats(db, score, mode);
     }
     return json(payload);
   } catch (error) {
     console.error('l-singer-tower-scores GET failed', error);
     const message = String(error?.message || 'failed to list scores');
-    if (message.includes('non-negative')) {
+    if (message.includes('non-negative') || message.includes('mode must')) {
       return json({ ok: false, error: message }, 400);
     }
     return json({ ok: false, error: message }, 500);
@@ -164,13 +196,14 @@ export async function onRequestPost(context) {
       score: Math.round(normalizePositiveNumber(body?.score, 'score')),
       survivalSec: Number(normalizePositiveNumber(body?.survivalSec, 'survivalSec').toFixed(3)),
       placedCount: Math.round(normalizePositiveNumber(body?.placedCount, 'placedCount')),
-      runId: normalizeRunId(body?.runId)
+      runId: normalizeRunId(body?.runId),
+      mode: normalizeMode(body?.mode)
     };
 
     await insertScore(db, input);
-    const [top, stats] = await Promise.all([listTop(db), getScoreStats(db, input.score)]);
+    const [top, stats] = await Promise.all([listTop(db, input.mode), getScoreStats(db, input.score, input.mode)]);
 
-    return json({ ok: true, top, stats }, 201);
+    return json({ ok: true, mode: input.mode, top, stats }, 201);
   } catch (error) {
     if (isUniqueViolation(error)) {
       return json({ ok: false, error: 'runId already submitted' }, 409);
@@ -181,7 +214,8 @@ export async function onRequestPost(context) {
       message.includes('2-10') ||
       message.includes('required') ||
       message.includes('non-negative') ||
-      message.includes('invalid json');
+      message.includes('invalid json') ||
+      message.includes('mode must');
 
     if (isValidationError) {
       return json({ ok: false, error: message }, 400);
