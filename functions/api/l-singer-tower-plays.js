@@ -32,18 +32,36 @@ async function ensureSchema(db) {
     .run();
 
   await db.prepare('CREATE INDEX IF NOT EXISTS idx_l_singer_tower_plays_score ON l_singer_tower_plays(score DESC, created_at ASC);').run();
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_l_singer_tower_plays_mode_score ON l_singer_tower_plays(mode, score DESC, created_at ASC);').run();
-  await ensureModeColumn(db);
+  const modeReady = await ensureModeColumn(db);
+  if (modeReady) {
+    await db.prepare('CREATE INDEX IF NOT EXISTS idx_l_singer_tower_plays_mode_score ON l_singer_tower_plays(mode, score DESC, created_at ASC);').run();
+  }
+  return modeReady;
 }
 
 async function ensureModeColumn(db) {
-  const rows = await db.prepare("PRAGMA table_info('l_singer_tower_plays')").all();
-  const columns = Array.isArray(rows?.results) ? rows.results : [];
-  const hasMode = columns.some((row) => String(row?.name || '') === 'mode');
-  if (!hasMode) {
-    await db.prepare("ALTER TABLE l_singer_tower_plays ADD COLUMN mode TEXT NOT NULL DEFAULT 'vol3';").run();
+  const getColumns = async () => {
+    const rows = await db.prepare('PRAGMA table_info(l_singer_tower_plays)').all();
+    return Array.isArray(rows?.results) ? rows.results : [];
+  };
+
+  const columns = await getColumns();
+  if (columns.some((row) => String(row?.name || '') === 'mode')) {
+    await db.prepare("UPDATE l_singer_tower_plays SET mode = 'vol3' WHERE mode IS NULL OR mode = '';").run();
+    return true;
   }
-  await db.prepare("UPDATE l_singer_tower_plays SET mode = 'vol3' WHERE mode IS NULL OR mode = '';").run();
+
+  try {
+    await db.prepare("ALTER TABLE l_singer_tower_plays ADD COLUMN mode TEXT NOT NULL DEFAULT 'vol3';").run();
+  } catch (_) {
+    // ignore and fallback to legacy mode-less behavior
+  }
+  const updatedColumns = await getColumns();
+  const modeReady = updatedColumns.some((row) => String(row?.name || '') === 'mode');
+  if (modeReady) {
+    await db.prepare("UPDATE l_singer_tower_plays SET mode = 'vol3' WHERE mode IS NULL OR mode = '';").run();
+  }
+  return modeReady;
 }
 
 function readJsonBody(request) {
@@ -88,27 +106,40 @@ function parseModeFromUrl(url) {
   return normalizeMode(url.searchParams.get('mode'));
 }
 
-async function insertPlay(db, data) {
-  const result = await db
-    .prepare(
-      `INSERT INTO l_singer_tower_plays
-        (run_id, score, placed_count, fallen_count, mode)
-       VALUES (?, ?, ?, ?, ?)`
-    )
-    .bind(data.runId, data.score, data.placedCount, data.fallenCount, data.mode)
-    .run();
+async function insertPlay(db, data, modeReady) {
+  const result = modeReady
+    ? await db
+        .prepare(
+          `INSERT INTO l_singer_tower_plays
+            (run_id, score, placed_count, fallen_count, mode)
+           VALUES (?, ?, ?, ?, ?)`
+        )
+        .bind(data.runId, data.score, data.placedCount, data.fallenCount, data.mode)
+        .run()
+    : await db
+        .prepare(
+          `INSERT INTO l_singer_tower_plays
+            (run_id, score, placed_count, fallen_count)
+           VALUES (?, ?, ?, ?)`
+        )
+        .bind(data.runId, data.score, data.placedCount, data.fallenCount)
+        .run();
 
   if (!result.success) {
     throw new Error('failed to save play');
   }
 }
 
-async function getScoreStats(db, score, mode) {
-  const totalRow = await db.prepare('SELECT COUNT(*) AS total_count FROM l_singer_tower_plays WHERE mode = ?').bind(mode).first();
-  const higherRow = await db
-    .prepare('SELECT COUNT(*) AS higher_count FROM l_singer_tower_plays WHERE mode = ? AND score > ?')
-    .bind(mode, score)
-    .first();
+async function getScoreStats(db, score, mode, modeReady) {
+  const totalRow = modeReady
+    ? await db.prepare('SELECT COUNT(*) AS total_count FROM l_singer_tower_plays WHERE mode = ?').bind(mode).first()
+    : await db.prepare('SELECT COUNT(*) AS total_count FROM l_singer_tower_plays').first();
+  const higherRow = modeReady
+    ? await db
+        .prepare('SELECT COUNT(*) AS higher_count FROM l_singer_tower_plays WHERE mode = ? AND score > ?')
+        .bind(mode, score)
+        .first()
+    : await db.prepare('SELECT COUNT(*) AS higher_count FROM l_singer_tower_plays WHERE score > ?').bind(score).first();
 
   const totalCount = Math.max(0, Number(totalRow?.total_count || 0));
   const higherCount = Math.max(0, Number(higherRow?.higher_count || 0));
@@ -130,14 +161,14 @@ function isUniqueViolation(error) {
 export async function onRequestGet(context) {
   try {
     const db = requireDb(context.env);
-    await ensureSchema(db);
+    const modeReady = await ensureSchema(db);
     const requestUrl = new URL(context.request.url);
     const mode = parseModeFromUrl(requestUrl);
     const score = parseScoreFromUrl(requestUrl);
     if (score === null) {
       return json({ ok: true, mode, stats: null });
     }
-    const stats = await getScoreStats(db, score, mode);
+    const stats = await getScoreStats(db, score, mode, modeReady);
     return json({ ok: true, mode, stats });
   } catch (error) {
     const message = String(error?.message || 'failed to fetch play stats');
@@ -150,7 +181,7 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   try {
     const db = requireDb(context.env);
-    await ensureSchema(db);
+    const modeReady = await ensureSchema(db);
 
     const body = await readJsonBody(context.request);
     const input = {
@@ -161,8 +192,8 @@ export async function onRequestPost(context) {
       mode: normalizeMode(body?.mode)
     };
 
-    await insertPlay(db, input);
-    const stats = await getScoreStats(db, input.score, input.mode);
+    await insertPlay(db, input, modeReady);
+    const stats = await getScoreStats(db, input.score, input.mode, modeReady);
     return json({ ok: true, mode: input.mode, stats }, 201);
   } catch (error) {
     if (isUniqueViolation(error)) return json({ ok: false, error: 'runId already submitted' }, 409);

@@ -33,18 +33,37 @@ async function ensureSchema(db) {
     .run();
 
   await db.prepare('CREATE INDEX IF NOT EXISTS idx_animal_tower_scores_score_latest ON animal_tower_scores(score DESC, created_at DESC);').run();
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_animal_tower_scores_mode_score_latest ON animal_tower_scores(mode, score DESC, created_at DESC);').run();
-  await ensureModeColumn(db);
+  const modeReady = await ensureModeColumn(db);
+  if (modeReady) {
+    await db.prepare('CREATE INDEX IF NOT EXISTS idx_animal_tower_scores_mode_score_latest ON animal_tower_scores(mode, score DESC, created_at DESC);').run();
+  }
+  return modeReady;
 }
 
 async function ensureModeColumn(db) {
-  const rows = await db.prepare("PRAGMA table_info('animal_tower_scores')").all();
-  const columns = Array.isArray(rows?.results) ? rows.results : [];
-  const hasMode = columns.some((row) => String(row?.name || '') === 'mode');
-  if (!hasMode) {
-    await db.prepare("ALTER TABLE animal_tower_scores ADD COLUMN mode TEXT NOT NULL DEFAULT 'vol3';").run();
+  const getColumns = async () => {
+    const rows = await db.prepare('PRAGMA table_info(animal_tower_scores)').all();
+    return Array.isArray(rows?.results) ? rows.results : [];
+  };
+
+  const columns = await getColumns();
+  if (columns.some((row) => String(row?.name || '') === 'mode')) {
+    await db.prepare("UPDATE animal_tower_scores SET mode = 'vol3' WHERE mode IS NULL OR mode = '';").run();
+    return true;
   }
-  await db.prepare("UPDATE animal_tower_scores SET mode = 'vol3' WHERE mode IS NULL OR mode = '';").run();
+
+  try {
+    await db.prepare("ALTER TABLE animal_tower_scores ADD COLUMN mode TEXT NOT NULL DEFAULT 'vol3';").run();
+  } catch (_) {
+    // ignore and fallback to legacy mode-less behavior
+  }
+
+  const updatedColumns = await getColumns();
+  const modeReady = updatedColumns.some((row) => String(row?.name || '') === 'mode');
+  if (modeReady) {
+    await db.prepare("UPDATE animal_tower_scores SET mode = 'vol3' WHERE mode IS NULL OR mode = '';").run();
+  }
+  return modeReady;
 }
 
 function readJsonBody(request) {
@@ -85,32 +104,50 @@ function normalizeMode(raw) {
   return value;
 }
 
-async function insertScore(db, data) {
-  const result = await db
-    .prepare(
-      `INSERT INTO animal_tower_scores
-        (name, score, survival_sec, placed_count, run_id, mode)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    )
-    .bind(data.name, data.score, data.survivalSec, data.placedCount, data.runId, data.mode)
-    .run();
+async function insertScore(db, data, modeReady) {
+  const result = modeReady
+    ? await db
+        .prepare(
+          `INSERT INTO animal_tower_scores
+            (name, score, survival_sec, placed_count, run_id, mode)
+           VALUES (?, ?, ?, ?, ?, ?)`
+        )
+        .bind(data.name, data.score, data.survivalSec, data.placedCount, data.runId, data.mode)
+        .run()
+    : await db
+        .prepare(
+          `INSERT INTO animal_tower_scores
+            (name, score, survival_sec, placed_count, run_id)
+           VALUES (?, ?, ?, ?, ?)`
+        )
+        .bind(data.name, data.score, data.survivalSec, data.placedCount, data.runId)
+        .run();
 
   if (!result.success) {
     throw new Error('failed to save score');
   }
 }
 
-async function listTop(db, mode) {
-  const rows = await db
-    .prepare(
-      `SELECT name, score, survival_sec, placed_count, created_at
-       FROM animal_tower_scores
-       WHERE mode = ?
-       ORDER BY score DESC, created_at DESC
-       LIMIT 50`
-    )
-    .bind(mode)
-    .all();
+async function listTop(db, mode, modeReady) {
+  const rows = modeReady
+    ? await db
+        .prepare(
+          `SELECT name, score, survival_sec, placed_count, created_at
+           FROM animal_tower_scores
+           WHERE mode = ?
+           ORDER BY score DESC, created_at DESC
+           LIMIT 50`
+        )
+        .bind(mode)
+        .all()
+    : await db
+        .prepare(
+          `SELECT name, score, survival_sec, placed_count, created_at
+           FROM animal_tower_scores
+           ORDER BY score DESC, created_at DESC
+           LIMIT 50`
+        )
+        .all();
 
   const list = Array.isArray(rows?.results) ? rows.results : [];
 
@@ -124,12 +161,16 @@ async function listTop(db, mode) {
   }));
 }
 
-async function getScoreStats(db, score, mode) {
-  const totalRow = await db.prepare('SELECT COUNT(*) AS total_count FROM animal_tower_scores WHERE mode = ?').bind(mode).first();
-  const higherRow = await db
-    .prepare('SELECT COUNT(*) AS higher_count FROM animal_tower_scores WHERE mode = ? AND score > ?')
-    .bind(mode, score)
-    .first();
+async function getScoreStats(db, score, mode, modeReady) {
+  const totalRow = modeReady
+    ? await db.prepare('SELECT COUNT(*) AS total_count FROM animal_tower_scores WHERE mode = ?').bind(mode).first()
+    : await db.prepare('SELECT COUNT(*) AS total_count FROM animal_tower_scores').first();
+  const higherRow = modeReady
+    ? await db
+        .prepare('SELECT COUNT(*) AS higher_count FROM animal_tower_scores WHERE mode = ? AND score > ?')
+        .bind(mode, score)
+        .first()
+    : await db.prepare('SELECT COUNT(*) AS higher_count FROM animal_tower_scores WHERE score > ?').bind(score).first();
 
   const totalCount = Math.max(0, Number(totalRow?.total_count || 0));
   const higherCount = Math.max(0, Number(higherRow?.higher_count || 0));
@@ -165,14 +206,14 @@ function isUniqueViolation(error) {
 export async function onRequestGet(context) {
   try {
     const db = requireDb(context.env);
-    await ensureSchema(db);
+    const modeReady = await ensureSchema(db);
     const requestUrl = new URL(context.request.url);
     const mode = parseModeFromUrl(requestUrl);
     const score = parseScoreFromUrl(requestUrl);
-    const top = await listTop(db, mode);
+    const top = await listTop(db, mode, modeReady);
     const payload = { ok: true, mode, top };
     if (score !== null) {
-      payload.stats = await getScoreStats(db, score, mode);
+      payload.stats = await getScoreStats(db, score, mode, modeReady);
     }
     return json(payload);
   } catch (error) {
@@ -188,7 +229,7 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   try {
     const db = requireDb(context.env);
-    await ensureSchema(db);
+    const modeReady = await ensureSchema(db);
 
     const body = await readJsonBody(context.request);
     const input = {
@@ -200,8 +241,11 @@ export async function onRequestPost(context) {
       mode: normalizeMode(body?.mode)
     };
 
-    await insertScore(db, input);
-    const [top, stats] = await Promise.all([listTop(db, input.mode), getScoreStats(db, input.score, input.mode)]);
+    await insertScore(db, input, modeReady);
+    const [top, stats] = await Promise.all([
+      listTop(db, input.mode, modeReady),
+      getScoreStats(db, input.score, input.mode, modeReady)
+    ]);
 
     return json({ ok: true, mode: input.mode, top, stats }, 201);
   } catch (error) {
