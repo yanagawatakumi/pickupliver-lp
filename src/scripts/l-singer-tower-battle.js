@@ -1435,7 +1435,7 @@ function getGameShareUrl() {
 function buildShareText() {
   const score = toSafeInt(state.totalScore, 0);
   const link = getGameShareUrl();
-  return `スコア${score}点達成！\n次はあなたの番。どこまで積めるか挑戦してみて👇\n${link}\n\n#PICKUPLIVER #LSINGERTOWERBATTLE`;
+  return `スコア${score}点達成！\n次はあなたの番。どこまで積めるか挑戦してみて👇\n${link}\n\n#PICKUPLIVER #LSINGERTOWERBATTLE #ColorSing`;
 }
 
 function downloadBlob(blob, fileName) {
