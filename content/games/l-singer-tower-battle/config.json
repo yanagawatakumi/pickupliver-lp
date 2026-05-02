@@ -253,11 +253,11 @@
       "weight": 1.0
     },
     {
-      "id": "ダダッチ",
-      "label": "ダダッチ",
+      "id": "ダダッチ",
+      "label": "ダダッチ",
       "kind": "character",
-      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol1/ダダッチ.png",
-      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol1/ダダッチ.collider.json",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol1/ダダッチ.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol1/ダダッチ.collider.json",
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
@@ -326,7 +326,7 @@
         "団長",
         "Aya湖",
         "Re-N",
-        "ダダッチ",
+        "ダダッチ",
         "七海ふら",
         "中山祐真"
       ]
