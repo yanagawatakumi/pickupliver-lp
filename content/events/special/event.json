@@ -1,0 +1,98 @@
+{
+  "eventId": "2026-06-20-pick-up-liver-special",
+  "title": "PICK UP LIVER 「Tune LIVE 特番」",
+  "volumeLabel": "特番",
+  "date": "2026-06-20",
+  "startTime": "15:00",
+  "timezone": "Asia/Tokyo",
+  "venue": "ColorSing とーま🐼枠",
+  "highlights": [
+    "Tune LIVEで歌った曲の歌唱",
+    "今だから言える裏話トーク",
+    "Tune LIVE出演メンバーが全員出演"
+  ],
+  "hosts": [
+    {
+      "name": "とーま",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/thoma.jpg"
+    },
+    {
+      "name": "がーくん88",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=91910bec-747b-4b6d-9882-8cf363242c7e",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/ga-kun88.jpg"
+    }
+  ],
+  "guestLivers": [
+    {
+      "name": "あっこ",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=4901273e-494c-4b47-ad5e-088ef3dd6d96",
+      "avatarUrl": "/public/assets/events/special/avatars/akko.jpg",
+      "avatarPosition": "50% 18%"
+    },
+    {
+      "name": "四ノ宮",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=d42f2e26-12b8-4f87-80b7-bf2b71e2ed20",
+      "avatarUrl": "/public/assets/events/special/avatars/shinomiya.jpg"
+    },
+    {
+      "name": "ほしか",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=9be6934a-2393-46f4-8e17-3c03d1233bfb",
+      "avatarUrl": "/public/assets/events/special/avatars/hoshika.png"
+    },
+    {
+      "name": "つじちゃん",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=5295e1f4-a70d-48d4-9968-3c6441968ecf",
+      "avatarUrl": "/public/assets/events/special/avatars/tsujichan.jpg",
+      "avatarPosition": "50% 18%"
+    },
+    {
+      "name": "ゆた",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=e8329787-8fb8-4fc4-be75-4eab95d483bb",
+      "avatarUrl": "/public/assets/events/special/avatars/yuta.jpg"
+    },
+    {
+      "name": "空華健悟",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=aa10bb82-41f1-44f8-a737-738184751a8c",
+      "avatarUrl": "/public/assets/events/special/avatars/sorahana-kengo.jpg"
+    },
+    {
+      "name": "猫音こねこ",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=4604656e-4819-4827-a264-b0f3ba0a086e",
+      "avatarUrl": "/public/assets/events/special/avatars/neon-koneko.jpg"
+    }
+  ],
+  "description": "豊洲PITで開催された3000人規模のTune LIVEに出演した、ColorSingを代表するメンバーが全員出演。Tune LIVEで歌った曲の歌唱と、今だから言える裏話トークをお届けします。",
+  "cta": {
+    "primaryLabel": "配信を視聴する",
+    "primaryUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+    "recommendFormLabel": "推薦Lシンガーを応募する",
+    "recommendFormUrl": "https://forms.gle/VTS9Vd5CpTUa1dNAA",
+    "recommendFormLead": "今後のPICK UP LIVERのゲストとして推薦したい、素敵なLシンガーさんを教えてください。",
+    "secondaryLabel": "出演者情報を見る",
+    "secondaryUrl": "#guests",
+    "preCtaMessage": "今すぐ予定追加して、見逃しを防ごう。"
+  },
+  "share": {
+    "messageTemplate": "PICK UP LIVER 特番「Tune LIVE 特番」開催！\n2026.06.20(土) 15:00 START\nColorSing とーま🐼枠で配信します。"
+  },
+  "reminder": {
+    "startAtIso": "2026-06-20T15:00:00+09:00",
+    "endAtIso": "2026-06-20T18:00:00+09:00",
+    "title": "PICK UP LIVER 「Tune LIVE 特番」",
+    "description": "Tune LIVEで歌った曲の歌唱と、今だから言える裏話トーク。",
+    "location": "ColorSing とーま🐼枠",
+    "detailsUrl": "https://pickupliver-lp.pages.dev/events/special/"
+  },
+  "eventNotice": {
+    "noArchiveText": "",
+    "nextPickupTeaser": "Tune LIVE出演メンバーが集まる特別版です。"
+  },
+  "assets": {
+    "mainFlyer": "/public/assets/events/special/flyer-main.jpg",
+    "storyImages": [],
+    "storyCaption": ""
+  }
+}

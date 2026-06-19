@@ -204,6 +204,8 @@ function resolveShareUrl() {
 }
 
 function extractVolumeLabel(event) {
+  const configured = typeof event?.volumeLabel === 'string' ? event.volumeLabel.trim() : '';
+  if (configured) return configured;
   const title = String(event?.title || '');
   const matched = title.match(/VOL\.\d+/i);
   if (matched) return matched[0].toUpperCase();
@@ -422,6 +424,18 @@ function formatDateJP(isoDate) {
   return `${year}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}(${weekdays[date.getDay()]})`;
 }
 
+function getDisplayDateText(event) {
+  const override = typeof event?.displayDate === 'string' ? event.displayDate.trim() : '';
+  if (override) return override;
+  return formatDateJP(event.date);
+}
+
+function getDisplayStartText(event) {
+  const override = typeof event?.displayStartTime === 'string' ? event.displayStartTime.trim() : '';
+  if (override) return override;
+  return `${event.startTime} START`;
+}
+
 function toIsoDateTime(dateText, timeText, timezone) {
   if (!dateText) return null;
   const hasTime = typeof timeText === 'string' && /^\d{1,2}:\d{2}$/.test(timeText);
@@ -444,7 +458,7 @@ function getEventContext(event) {
   const endFallback = startAt ? new Date(startAt.getTime() + 2 * 60 * 60 * 1000) : null;
   const endAt = parseDateSafe(event.reminder?.endAtIso) || endFallback;
   const detailsUrl = event.reminder?.detailsUrl || event.cta?.primaryUrl || window.location.href;
-  const shareText = event.share?.messageTemplate || `${event.title}\n${formatDateJP(event.date)} ${event.startTime} START\n${event.venue}`;
+  const shareText = event.share?.messageTemplate || `${event.title}\n${getDisplayDateText(event)} ${getDisplayStartText(event)}\n${event.venue}`;
   return {
     startAt,
     endAt,
@@ -466,8 +480,14 @@ function formatCountdown(ms) {
 }
 
 function initCountdown(startAt, endAt) {
+  const countdown = document.getElementById('countdown');
   const countdownText = document.getElementById('countdown-text');
-  if (!countdownText || !startAt) return;
+  if (!countdownText || !startAt) {
+    if (countdown) countdown.hidden = true;
+    return;
+  }
+
+  if (countdown) countdown.hidden = false;
 
   if (countdownTimer) {
     window.clearInterval(countdownTimer);
@@ -628,6 +648,12 @@ function initShareActions(ctx) {
 function initReminderActions(event, ctx) {
   const remindGoogle = document.getElementById('remind-google');
   const remindIcs = document.getElementById('remind-ics');
+  const reminderActions = document.querySelector('.reminder-actions');
+  if (!ctx.startAt) {
+    if (reminderActions) reminderActions.hidden = true;
+    return;
+  }
+  if (reminderActions) reminderActions.hidden = false;
   if (remindGoogle) remindGoogle.href = createGoogleCalendarUrl(ctx);
   if (remindIcs) {
     remindIcs.onclick = () => {
@@ -660,6 +686,9 @@ function createTalentCard(person, roleLabel) {
 
   if (person.avatarUrl) {
     avatarImg.src = person.avatarUrl;
+    if (typeof person.avatarPosition === 'string' && person.avatarPosition.trim()) {
+      avatarImg.style.objectPosition = person.avatarPosition.trim();
+    }
     avatarImg.addEventListener('load', () => {
       avatarWrap.classList.add('loaded');
     });
@@ -949,8 +978,8 @@ function applyEvent(event) {
     }
   }
 
-  if (date) date.textContent = formatDateJP(event.date);
-  if (time) time.textContent = `${event.startTime} START`;
+  if (date) date.textContent = getDisplayDateText(event);
+  if (time) time.textContent = getDisplayStartText(event);
   if (venue) venue.textContent = event.venue;
 
   if (ctaPrimary) {
@@ -1057,7 +1086,7 @@ function applyEvent(event) {
   if (volumeSticker) volumeSticker.textContent = volumeLabel;
 
   if (marqueeTrackA) {
-    const labels = ['PICK UP LIVER', volumeLabel, `${event.startTime} START`, 'COLOR SING', 'JOIN NOW'];
+    const labels = ['PICK UP LIVER', volumeLabel, getDisplayStartText(event), 'COLOR SING', 'JOIN NOW'];
     marqueeTrackA.textContent = '';
     labels.forEach((label) => {
       const span = document.createElement('span');
@@ -1095,7 +1124,11 @@ function applyEvent(event) {
   }
 
   if (noArchiveNote) {
-    noArchiveNote.textContent = event.eventNotice?.noArchiveText || 'アーカイブ無し。お見逃しなく！';
+    const noArchiveText = typeof event.eventNotice?.noArchiveText === 'string'
+      ? event.eventNotice.noArchiveText.trim()
+      : 'アーカイブ無し。お見逃しなく！';
+    noArchiveNote.textContent = noArchiveText;
+    noArchiveNote.hidden = noArchiveText.length === 0;
   }
 
   if (nextPickupTeaser) {
