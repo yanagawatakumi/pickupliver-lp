@@ -261,7 +261,11 @@ function writeMiniGameGimmickCount(sessionKey, count) {
 
 function buildMiniGameGimmickConfig(event) {
   const slug = getMetaContent('vt:episode-slug').toLowerCase();
-  if (slug === 'vol-3') {
+  const configuredMiniGameUrl = typeof event?.cta?.miniGameUrl === 'string'
+    ? event.cta.miniGameUrl.trim()
+    : '';
+  const usesTowerBattle = configuredMiniGameUrl === '/games/l-singer-tower-battle/' || slug === 'vol-3';
+  if (usesTowerBattle) {
     return {
       targetUrl: '/games/l-singer-tower-battle/',
       avatarUrls: [
@@ -917,7 +921,8 @@ function applyEvent(event) {
   const volumeSticker = document.getElementById('event-volume-sticker');
   const ctx = getEventContext(event);
 
-  if (episodeSlug !== 'vol-2' && episodeSlug !== 'vol-3' && miniGamePromo) {
+  const hasConfiguredMiniGame = typeof event.cta?.miniGameUrl === 'string' && event.cta.miniGameUrl.trim().length > 0;
+  if (!hasConfiguredMiniGame && episodeSlug !== 'vol-2' && episodeSlug !== 'vol-3' && miniGamePromo) {
     miniGamePromo.remove();
   }
 
@@ -991,8 +996,9 @@ function applyEvent(event) {
     const configuredMiniGameUrl = typeof event.cta?.miniGameUrl === 'string' ? event.cta.miniGameUrl.trim() : '';
     const fallbackMiniGameUrl = episodeSlug === 'vol-3' ? '/games/l-singer-tower-battle/' : '';
     const miniGameUrl = configuredMiniGameUrl || fallbackMiniGameUrl;
-    const allowMiniGame = episodeSlug === 'vol-2' || episodeSlug === 'vol-3';
-    const defaultMiniGameLabel = episodeSlug === 'vol-3'
+    const allowMiniGame = Boolean(miniGameUrl);
+    const isTowerBattle = miniGameUrl === '/games/l-singer-tower-battle/';
+    const defaultMiniGameLabel = isTowerBattle
       ? 'Lシンガータワーバトルを遊ぶ'
       : 'がーくん満腹シューティングで遊ぶ';
 
@@ -1010,7 +1016,7 @@ function applyEvent(event) {
         : '';
       const avatarUrl = gaKunHost?.avatarUrl || fallbackAvatar;
 
-      if (miniGameAvatar && episodeSlug === 'vol-3') {
+      if (miniGameAvatar && isTowerBattle) {
         miniGameAvatar.removeAttribute('src');
         miniGameAvatar.hidden = true;
       } else if (miniGameAvatar && avatarUrl) {

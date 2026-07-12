@@ -8,7 +8,7 @@
       "velocity": 14,
       "constraint": 4
     },
-    "restitution": 0.0,
+    "restitution": 0,
     "friction": 0.88,
     "frictionStatic": 1.9,
     "frictionAir": 0.05,
@@ -28,7 +28,7 @@
     }
   },
   "colliderQa": {
-    "minEdgeWorld": 1.0,
+    "minEdgeWorld": 1,
     "maxReflexRatio": 0.55,
     "maxVertices": 96,
     "maxConsecutiveSharp": 6
@@ -63,7 +63,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "T-BEAR",
@@ -74,7 +74,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "yU-Ka",
@@ -85,7 +85,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "まらかす",
@@ -96,7 +96,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "らいむ",
@@ -107,7 +107,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "四ノ宮",
@@ -118,7 +118,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "がーくん",
@@ -129,7 +129,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "がーくん2",
@@ -140,7 +140,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "とーま",
@@ -151,7 +151,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "とーま2",
@@ -162,7 +162,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "とーま3",
@@ -173,7 +173,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "junOK",
@@ -184,7 +184,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "momoko&なち",
@@ -195,7 +195,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "えり",
@@ -206,7 +206,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "しぇるな",
@@ -217,7 +217,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "団長",
@@ -228,7 +228,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "Aya湖",
@@ -239,7 +239,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "Re-N",
@@ -250,7 +250,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "ダダッチ",
@@ -261,7 +261,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "七海ふら",
@@ -272,7 +272,7 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
     },
     {
       "id": "中山祐真",
@@ -283,10 +283,130 @@
       "sourceWidth": 512,
       "sourceHeight": 512,
       "scale": 0.36,
-      "weight": 1.0
+      "weight": 1
+    },
+    {
+      "id": "Marume",
+      "label": "Marume",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol4/Marume.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol4/Marume.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
+    },
+    {
+      "id": "えれち",
+      "label": "えれち",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol4/えれち.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol4/えれち.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
+    },
+    {
+      "id": "しぶ",
+      "label": "しぶ",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol4/しぶ.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol4/しぶ.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
+    },
+    {
+      "id": "ぱんどら",
+      "label": "ぱんどら",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol4/ぱんどら.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol4/ぱんどら.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
+    },
+    {
+      "id": "まにょ",
+      "label": "まにょ",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol4/まにょ.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol4/まにょ.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
+    },
+    {
+      "id": "瑠樺",
+      "label": "瑠樺",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol4/瑠樺.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol4/瑠樺.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
     }
   ],
   "modes": [
+    {
+      "id": "vol4",
+      "label": "7/18 出演者",
+      "shapeIds": [
+        "Marume",
+        "えれち",
+        "しぶ",
+        "ぱんどら",
+        "まにょ",
+        "瑠樺",
+        "がーくん",
+        "がーくん2",
+        "とーま",
+        "とーま2",
+        "とーま3"
+      ],
+      "playable": true,
+      "archived": false
+    },
+    {
+      "id": "allstar-vol4",
+      "label": "オールスター",
+      "playable": true,
+      "archived": false,
+      "shapeIds": [
+        "KATE",
+        "T-BEAR",
+        "yU-Ka",
+        "まらかす",
+        "らいむ",
+        "四ノ宮",
+        "がーくん",
+        "がーくん2",
+        "とーま",
+        "とーま2",
+        "とーま3",
+        "junOK",
+        "momoko&なち",
+        "えり",
+        "しぇるな",
+        "団長",
+        "Aya湖",
+        "Re-N",
+        "ダダッチ",
+        "七海ふら",
+        "中山祐真",
+        "Marume",
+        "えれち",
+        "しぶ",
+        "ぱんどら",
+        "まにょ",
+        "瑠樺"
+      ]
+    },
     {
       "id": "vol3",
       "label": "5/9 出演者",
@@ -302,11 +422,15 @@
         "とーま",
         "とーま2",
         "とーま3"
-      ]
+      ],
+      "playable": false,
+      "archived": true
     },
     {
       "id": "allstar",
-      "label": "オールスター",
+      "label": "旧オールスター",
+      "playable": false,
+      "archived": true,
       "shapeIds": [
         "KATE",
         "T-BEAR",

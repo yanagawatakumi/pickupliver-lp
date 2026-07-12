@@ -9,7 +9,7 @@ function json(data, status = 200) {
 }
 
 const DEFAULT_MODE = 'vol3';
-const ALLOWED_MODES = new Set(['vol3', 'allstar']);
+const ALLOWED_MODES = new Set(['vol3', 'vol4', 'allstar', 'allstar-vol4']);
 
 function requireDb(env) {
   if (env?.DB) return env.DB;
@@ -88,7 +88,7 @@ function normalizeRunId(raw) {
 function normalizeMode(raw) {
   const value = String(raw || '').trim().toLowerCase();
   if (!value) return DEFAULT_MODE;
-  if (!ALLOWED_MODES.has(value)) throw new Error('mode must be vol3 or allstar');
+  if (!ALLOWED_MODES.has(value)) throw new Error('mode must be vol3, vol4, allstar, or allstar-vol4');
   return value;
 }
 

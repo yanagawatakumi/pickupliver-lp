@@ -3,7 +3,9 @@ const SCORE_API_PATH = '/api/l-singer-tower-scores';
 const PLAY_API_PATH = '/api/l-singer-tower-plays';
 const STAGE_BACKGROUND_PATHS = {
   vol3: '/public/assets/games/l-singer-tower-battle/tower-battle-bg.JPG',
-  allstar: '/public/assets/games/l-singer-tower-battle/bg-allstar-haikei.png'
+  vol4: '/public/assets/games/l-singer-tower-battle/tower-battle-bg.JPG',
+  allstar: '/public/assets/games/l-singer-tower-battle/bg-allstar-haikei.png',
+  'allstar-vol4': '/public/assets/games/l-singer-tower-battle/bg-allstar-haikei.png'
 };
 const DROP_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/drop.mp3';
 const BGM_PATH = '/public/assets/games/l-singer-tower-battle/sfx/BGM.mp3';
@@ -11,11 +13,13 @@ const GAMEOVER_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/gameov
 const LOST_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/lost.mp3';
 const STAGE_FLOATING_IMAGE_PATHS_BY_MODE = {
   vol3: ['/public/assets/games/l-singer-tower-battle/bg-がーくん.png', '/public/assets/games/l-singer-tower-battle/bg-とーま.png'],
-  allstar: ['/public/assets/games/l-singer-tower-battle/bg-allstar1.png', '/public/assets/games/l-singer-tower-battle/bg-allstar2.png']
+  vol4: ['/public/assets/games/l-singer-tower-battle/bg-がーくん.png', '/public/assets/games/l-singer-tower-battle/bg-とーま.png'],
+  allstar: ['/public/assets/games/l-singer-tower-battle/bg-allstar1.png', '/public/assets/games/l-singer-tower-battle/bg-allstar2.png'],
+  'allstar-vol4': ['/public/assets/games/l-singer-tower-battle/bg-allstar1.png', '/public/assets/games/l-singer-tower-battle/bg-allstar2.png']
 };
 const LEADERBOARD_LIMIT = 50;
-const DEFAULT_MODE_ID = 'vol3';
-const DEFAULT_MODE_LABEL = '5/9 出演者';
+const DEFAULT_MODE_ID = 'vol4';
+const DEFAULT_MODE_LABEL = '7/18 出演者';
 const CANVAS_WIDTH = 420;
 const CANVAS_HEIGHT = 720;
 const FIXED_STEP_MS = 1000 / 60;
@@ -58,7 +62,8 @@ const refs = {
   rotateButton: document.getElementById('rotate-button'),
   rankingStatus: document.getElementById('ranking-status'),
   rankingList: document.getElementById('ranking-list'),
-  rankingModeTabs: document.getElementById('ranking-mode-tabs')
+  rankingModeTabs: document.getElementById('ranking-mode-tabs'),
+  rankingArchiveTabs: document.getElementById('ranking-archive-tabs')
 };
 
 const ctx = refs.canvas.getContext('2d');
@@ -445,7 +450,7 @@ function renderModeTabs() {
   const modes = Array.isArray(state.modes) ? state.modes : [];
   if (refs.modeSelectTabs) {
     refs.modeSelectTabs.innerHTML = '';
-    modes.forEach((mode) => {
+    modes.filter((mode) => mode.playable).forEach((mode) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = `mode-tab${mode.id === state.currentModeId ? ' active' : ''}`;
@@ -459,7 +464,7 @@ function renderModeTabs() {
 
   if (refs.rankingModeTabs) {
     refs.rankingModeTabs.innerHTML = '';
-    modes.forEach((mode) => {
+    modes.filter((mode) => !mode.archived).forEach((mode) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = `mode-tab${mode.id === state.rankingViewModeId ? ' active' : ''}`;
@@ -468,6 +473,20 @@ function renderModeTabs() {
       button.setAttribute('aria-selected', mode.id === state.rankingViewModeId ? 'true' : 'false');
       button.textContent = mode.label;
       refs.rankingModeTabs.appendChild(button);
+    });
+  }
+
+  if (refs.rankingArchiveTabs) {
+    refs.rankingArchiveTabs.innerHTML = '';
+    modes.filter((mode) => mode.archived).forEach((mode) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `mode-tab${mode.id === state.rankingViewModeId ? ' active' : ''}`;
+      button.dataset.modeId = mode.id;
+      button.setAttribute('role', 'tab');
+      button.setAttribute('aria-selected', mode.id === state.rankingViewModeId ? 'true' : 'false');
+      button.textContent = mode.label;
+      refs.rankingArchiveTabs.appendChild(button);
     });
   }
 }
@@ -2116,6 +2135,15 @@ function bindInput() {
     });
   }
 
+  if (refs.rankingArchiveTabs) {
+    refs.rankingArchiveTabs.addEventListener('click', (event) => {
+      const button = event.target?.closest?.('button[data-mode-id]');
+      if (!button) return;
+      const nextMode = String(button.dataset.modeId || '');
+      setRankingViewMode(nextMode);
+    });
+  }
+
   if (refs.rotateButton) {
     refs.rotateButton.addEventListener('pointerdown', (event) => {
       event.preventDefault();
@@ -2178,6 +2206,8 @@ async function loadConfig() {
     .map((mode) => ({
       id: String(mode.id).trim(),
       label: String(mode.label).trim(),
+      playable: mode.playable !== false,
+      archived: mode.archived === true,
       shapeIds: mode.shapeIds.map((id) => String(id || '').trim()).filter(Boolean)
     }))
     .filter((mode) => mode.id && mode.label && mode.shapeIds.length);
@@ -2193,6 +2223,8 @@ async function loadConfig() {
     validModes.push({
       id: DEFAULT_MODE_ID,
       label: DEFAULT_MODE_LABEL,
+      playable: true,
+      archived: false,
       shapeIds: shapes.map((shape) => String(shape.id || '').trim()).filter(Boolean)
     });
   }
@@ -2279,6 +2311,8 @@ async function init() {
         {
           id: DEFAULT_MODE_ID,
           label: DEFAULT_MODE_LABEL,
+          playable: true,
+          archived: false,
           shapeIds: state.config.shapes.map((shape) => String(shape.id))
         }
       ];

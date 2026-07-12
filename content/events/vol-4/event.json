@@ -66,6 +66,8 @@
   "cta": {
     "primaryLabel": "配信を視聴する",
     "primaryUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+    "miniGameLabel": "Lシンガータワーバトルを遊ぶ",
+    "miniGameUrl": "/games/l-singer-tower-battle/",
     "recommendFormLabel": "推薦Lシンガーを応募する",
     "recommendFormUrl": "https://forms.gle/VTS9Vd5CpTUa1dNAA",
     "recommendFormLead": "今後のPICK UP LIVERのゲストとして推薦したい、素敵なLシンガーさんを教えてください。",

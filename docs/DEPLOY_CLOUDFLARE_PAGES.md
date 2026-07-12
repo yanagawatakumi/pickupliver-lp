@@ -37,8 +37,10 @@
 `/api/oni-clear` と同じ D1 でも別 D1 でも動作します（同じ `DB` に複数テーブルを作成可能）。
 
 - エンドポイント:
-  - `GET /api/l-singer-tower-scores` : 全期間 TOP10 を返す
-  - `POST /api/l-singer-tower-scores` : `name, score, survivalSec, placedCount, runId` を保存
+  - `GET /api/l-singer-tower-scores?mode=<mode>` : 指定モードの全期間 TOP50 を返す
+  - `POST /api/l-singer-tower-scores` : `name, score, survivalSec, placedCount, runId, mode` を保存
+  - `GET /api/l-singer-tower-plays?score=<score>&mode=<mode>` : 指定モードのプレイ統計を返す
+  - `POST /api/l-singer-tower-plays` : `runId, score, placedCount, fallenCount, mode` を保存
 - `runId` は一意制約があり、同一プレイの二重投稿は `409` になる
 
 ## ローカル開発（静的確認）
