@@ -91,19 +91,19 @@
   "assets": {
     "mainFlyer": "/public/assets/events/vol-3/flyer-main.jpg",
     "storyImages": [
-      "/public/assets/events/vol-3/2-1.png",
-      "/public/assets/events/vol-3/2-2.png",
-      "/public/assets/events/vol-3/2-3.png",
-      "/public/assets/events/vol-3/2-4.png",
-      "/public/assets/events/vol-3/2-5.png",
-      "/public/assets/events/vol-3/2-6.png",
-      "/public/assets/events/vol-3/2-7.png",
-      "/public/assets/events/vol-3/2-8.png",
-      "/public/assets/events/vol-3/2-9.png",
-      "/public/assets/events/vol-3/2-10.png",
-      "/public/assets/events/vol-3/2-11.png",
-      "/public/assets/events/vol-3/2-12.png"
+      "/public/assets/events/vol-3/3-1.jpg",
+      "/public/assets/events/vol-3/3-2.jpg",
+      "/public/assets/events/vol-3/3-3.jpg",
+      "/public/assets/events/vol-3/3-4.jpg",
+      "/public/assets/events/vol-3/3-5.jpg",
+      "/public/assets/events/vol-3/3-6.jpg",
+      "/public/assets/events/vol-3/3-7.jpg",
+      "/public/assets/events/vol-3/3-8.jpg",
+      "/public/assets/events/vol-3/3-9.jpg",
+      "/public/assets/events/vol-3/3-10.jpg",
+      "/public/assets/events/vol-3/3-11.jpg",
+      "/public/assets/events/vol-3/3-12.jpg"
     ],
-    "storyCaption": "vol.2 の様子"
+    "storyCaption": "vol.3 の様子"
   }
 }

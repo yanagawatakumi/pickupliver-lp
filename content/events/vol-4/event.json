@@ -1,0 +1,109 @@
+{
+  "eventId": "2026-07-18-pick-up-liver-vol4",
+  "title": "PICK UP LIVER VOL.4",
+  "date": "2026-07-18",
+  "startTime": "15:00",
+  "timezone": "Asia/Tokyo",
+  "venue": "ColorSing とーま枠",
+  "highlights": [
+    "歌やトークが盛りだくさん",
+    "リアルタイム参加型企画あり",
+    "ライバーを深掘りする生配信"
+  ],
+  "hosts": [
+    {
+      "name": "とーま",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/thoma.jpg"
+    },
+    {
+      "name": "がーくん88",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=91910bec-747b-4b6d-9882-8cf363242c7e",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/ga-kun88.jpg"
+    }
+  ],
+  "guestLivers": [
+    {
+      "name": "まにょ",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=4842f834-53d1-4eb7-8a38-cd717d4195e9",
+      "avatarUrl": "/public/assets/events/vol-4/avatars/manyo.jpg",
+      "introducedBy": "四ノ宮",
+      "introducerAvatarUrl": "/public/assets/events/vol-3/avatars/四宮.jpg"
+    },
+    {
+      "name": "Marume",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=9affefba-dcfa-4afc-ba1f-4a34829d8306",
+      "avatarUrl": "/public/assets/events/vol-4/avatars/marume.jpg",
+      "introducedBy": "まらかす",
+      "introducerAvatarUrl": "/public/assets/events/vol-3/avatars/まらかす.jpg"
+    },
+    {
+      "name": "瑠樺",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=43a69ada-3ec8-46fe-97b6-26708d2f4fa9",
+      "avatarUrl": "/public/assets/events/vol-4/avatars/ruka.jpg"
+    },
+    {
+      "name": "ぱんどら",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=0d65fdf7-d0bd-4f88-ac2f-008d3bd1b792",
+      "avatarUrl": "/public/assets/events/vol-4/avatars/pandora.jpg"
+    },
+    {
+      "name": "えれち",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=31375d77-3136-426c-948a-a4dc4e415791",
+      "avatarUrl": "/public/assets/events/vol-4/avatars/erechi.jpg"
+    },
+    {
+      "name": "しぶ",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=36a8d1f5-d3b4-4676-ba5e-2c760e93f6e0",
+      "avatarUrl": "/public/assets/events/vol-4/avatars/shibu.jpg",
+      "introducedBy": "らいむ",
+      "introducerAvatarUrl": "/public/assets/events/vol-3/avatars/らいむ.jpg"
+    }
+  ],
+  "description": "歌やトーク、盛りだくさんの企画でライバーを深掘り。ColorSingの本格的生配信番組、第4弾です。リアルタイム参加型企画もあるので、ぜひ配信中に参加してください。",
+  "cta": {
+    "primaryLabel": "配信を視聴する",
+    "primaryUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+    "recommendFormLabel": "推薦Lシンガーを応募する",
+    "recommendFormUrl": "https://forms.gle/VTS9Vd5CpTUa1dNAA",
+    "recommendFormLead": "今後のPICK UP LIVERのゲストとして推薦したい、素敵なLシンガーさんを教えてください。",
+    "secondaryLabel": "出演者情報を見る",
+    "secondaryUrl": "#guests",
+    "preCtaMessage": "今すぐ予定追加して、見逃しを防ごう。"
+  },
+  "share": {
+    "messageTemplate": "PICK UP LIVER VOL.4 開催！\n2026.07.18(土) 15:00 START\nColorSing とーま枠で配信します。"
+  },
+  "reminder": {
+    "startAtIso": "2026-07-18T15:00:00+09:00",
+    "endAtIso": "2026-07-18T18:00:00+09:00",
+    "title": "PICK UP LIVER VOL.4",
+    "description": "歌やトーク、盛りだくさんの企画でライバーを深掘り。リアルタイム参加型企画あり。",
+    "location": "ColorSing とーま枠",
+    "detailsUrl": "https://pickupliver-lp.pages.dev/events/vol-4/"
+  },
+  "eventNotice": {
+    "noArchiveText": "アーカイブ無し。お見逃しなく！",
+    "nextPickupTeaser": "次のゲストは、あなたかも…？"
+  },
+  "assets": {
+    "mainFlyer": "/public/assets/events/vol-4/flyer-main.jpg",
+    "storyImages": [
+      "/public/assets/events/vol-3/3-1.jpg",
+      "/public/assets/events/vol-3/3-2.jpg",
+      "/public/assets/events/vol-3/3-3.jpg",
+      "/public/assets/events/vol-3/3-4.jpg",
+      "/public/assets/events/vol-3/3-5.jpg",
+      "/public/assets/events/vol-3/3-6.jpg",
+      "/public/assets/events/vol-3/3-7.jpg",
+      "/public/assets/events/vol-3/3-8.jpg",
+      "/public/assets/events/vol-3/3-9.jpg",
+      "/public/assets/events/vol-3/3-10.jpg",
+      "/public/assets/events/vol-3/3-11.jpg",
+      "/public/assets/events/vol-3/3-12.jpg"
+    ],
+    "storyCaption": "vol.3 の様子"
+  }
+}

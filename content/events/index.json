@@ -1,6 +1,13 @@
 {
-  "latest": "vol-3",
+  "latest": "vol-4",
   "episodes": [
+    {
+      "slug": "vol-4",
+      "title": "PICK UP LIVER VOL.4",
+      "date": "2026-07-18",
+      "path": "/events/vol-4/",
+      "status": "upcoming"
+    },
     {
       "slug": "vol-3",
       "title": "PICK UP LIVER VOL.3",
