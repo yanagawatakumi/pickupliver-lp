@@ -1171,6 +1171,10 @@ function applyEvent(event) {
 function initRevealAnimation() {
   const targets = document.querySelectorAll('.reveal');
 
+  // The hero can become taller than the viewport when it contains a recap gallery.
+  // Reveal it immediately so an intersection threshold can never hide the whole page.
+  document.querySelectorAll('.hero.reveal').forEach((target) => target.classList.add('in'));
+
   if (prefersReducedMotion()) {
     targets.forEach((target) => target.classList.add('in'));
     return;
@@ -1198,6 +1202,7 @@ function initRevealAnimation() {
   );
 
   targets.forEach((target, index) => {
+    if (target.classList.contains('in')) return;
     target.style.transitionDelay = `${Math.min(index * 70, 280)}ms`;
     observer.observe(target);
   });

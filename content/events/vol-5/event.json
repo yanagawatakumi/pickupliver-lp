@@ -1,0 +1,110 @@
+{
+  "eventId": "2026-09-12-pick-up-liver-vol5",
+  "title": "PICK UP LIVER VOL.5",
+  "date": "2026-09-12",
+  "startTime": "13:30",
+  "timezone": "Asia/Tokyo",
+  "venue": "ColorSing とーま枠",
+  "highlights": [
+    "歌やトークが盛りだくさん",
+    "リアルタイム参加型企画あり",
+    "ライバーを深掘りする生配信"
+  ],
+  "hosts": [
+    {
+      "name": "とーま",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/thoma.jpg"
+    },
+    {
+      "name": "がーくん88",
+      "role": "MC",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=91910bec-747b-4b6d-9882-8cf363242c7e",
+      "avatarUrl": "/public/assets/events/vol-3/avatars/ga-kun88.jpg"
+    }
+  ],
+  "guestLivers": [
+    {
+      "name": "🐥アキラルド🫶",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=02ac8a5f-2055-47cf-a546-e08ff96d43f6",
+      "avatarUrl": "/public/assets/events/vol-5/avatars/akirald.jpg",
+      "avatarPosition": "50% 30%"
+    },
+    {
+      "name": "あお𓏸𓈒🐟",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=93f0820e-1c58-4e1e-9406-d8747a2b593e",
+      "avatarUrl": "/public/assets/events/vol-5/avatars/ao.jpg",
+      "avatarPosition": "50% 30%"
+    },
+    {
+      "name": "けーと🧶🥃",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=686118b9-eab2-4269-925f-e0184ea13372",
+      "avatarUrl": "/public/assets/events/vol-5/avatars/kate.jpg",
+      "avatarPosition": "50% 35%"
+    },
+    {
+      "name": "Belle.✨️🐾",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=af44a3d0-0722-4220-8dd0-e08f533515d0",
+      "avatarUrl": "/public/assets/events/vol-5/avatars/belle.jpg"
+    },
+    {
+      "name": "DiVA KANNA♾🪽",
+      "profileUrl": "https://web.colorsing.com/share/live?live_id=e80918d1-471b-47fa-abe7-b6ca0965896e",
+      "avatarUrl": "/public/assets/events/vol-5/avatars/diva-kanna.jpg",
+      "avatarPosition": "50% 25%"
+    },
+    {
+      "name": "#超わさびつーん🧝🏻‍♀️💚の絶唱だぁあああッ!!",
+      "profileUrl": "https://web.colorsing.com/share/user?user_id=82691958-9894-4e4f-8e54-abe1f12766fc",
+      "avatarUrl": "/public/assets/events/vol-5/avatars/wasabi-tune.jpg",
+      "avatarPosition": "50% 35%"
+    }
+  ],
+  "description": "",
+  "cta": {
+    "primaryLabel": "配信を視聴する",
+    "primaryUrl": "https://web.colorsing.com/share/user?user_id=6df8aef6-db3d-4609-898e-d1a610954a8b",
+    "miniGameLabel": "Lシンガータワーバトルを遊ぶ",
+    "miniGameUrl": "/games/l-singer-tower-battle/",
+    "recommendFormLabel": "推薦Lシンガーを応募する",
+    "recommendFormUrl": "https://forms.gle/VTS9Vd5CpTUa1dNAA",
+    "recommendFormLead": "今後のPICK UP LIVERのゲストとして推薦したい、素敵なLシンガーさんを教えてください。",
+    "secondaryLabel": "出演者情報を見る",
+    "secondaryUrl": "#guests",
+    "preCtaMessage": "今すぐ予定追加して、見逃しを防ごう。"
+  },
+  "share": {
+    "messageTemplate": "PICK UP LIVER VOL.5 開催！\n2026.09.12(土) 13:30 START\nColorSing とーま枠で配信します。"
+  },
+  "reminder": {
+    "startAtIso": "2026-09-12T13:30:00+09:00",
+    "endAtIso": "2026-09-12T16:30:00+09:00",
+    "title": "PICK UP LIVER VOL.5",
+    "description": "歌やトーク、盛りだくさんの企画でライバーを深掘り。リアルタイム参加型企画あり。",
+    "location": "ColorSing とーま枠",
+    "detailsUrl": "https://pickupliver-lp.pages.dev/events/vol-5/"
+  },
+  "eventNotice": {
+    "noArchiveText": "アーカイブ無し。お見逃しなく！",
+    "nextPickupTeaser": "次のゲストは、あなたかも…？"
+  },
+  "assets": {
+    "mainFlyer": "/public/assets/events/vol-5/flyer-main.jpg",
+    "storyImages": [
+      "/public/assets/events/vol-5/recap/3-1.jpg",
+      "/public/assets/events/vol-5/recap/3-2.jpg",
+      "/public/assets/events/vol-5/recap/3-3.jpg",
+      "/public/assets/events/vol-5/recap/3-4.jpg",
+      "/public/assets/events/vol-5/recap/3-5.jpg",
+      "/public/assets/events/vol-5/recap/3-6.jpg",
+      "/public/assets/events/vol-5/recap/3-7.jpg",
+      "/public/assets/events/vol-5/recap/3-8.jpg",
+      "/public/assets/events/vol-5/recap/3-9.jpg",
+      "/public/assets/events/vol-5/recap/3-10.jpg",
+      "/public/assets/events/vol-5/recap/3-11.jpg",
+      "/public/assets/events/vol-5/recap/3-12.jpg"
+    ],
+    "storyCaption": "vol.3 の様子"
+  }
+}

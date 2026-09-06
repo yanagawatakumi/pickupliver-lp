@@ -5,7 +5,7 @@
 - SVG source: `/content/games/l-singer-tower-battle/colliders-src/<group>/<id>.svg`
 - Collider JSON output: `/content/games/l-singer-tower-battle/colliders/<group>/<id>.collider.json`
 
-`<group>` は `vol1`, `vol2`, `vol3`, `vol4`, `mc` などの出演回・所属単位とする。今後の回も同じ規則で追加する。
+`<group>` は `vol1`, `vol2`, `vol3`, `vol4`, `vol5`, `mc` などの出演回・所属単位とする。今後の回も同じ規則で追加する。
 
 PNG と SVG は必ず同一キャンバスサイズ・同一原点で作成する。
 
@@ -61,6 +61,11 @@ python3 scripts/check_character_colliders.py
 - `modes[].archived` が `true` のモードは過去ランキング内だけに表示する。
 - キャラ構成が変わる場合は既存モードIDを使い回さず、新しいモードIDを作成してランキングを分離する。
 - 新しいモードIDを追加した場合は、ランキングAPIとプレイ記録APIの許可モードにも同じIDを追加する。
+
+### Current season (2026-09-12)
+- 現行出演者モード: `vol5`（9/12出演者6名 + MC）
+- 現行オールスターモード: `allstar-vol5`（登録済み全33キャラ）
+- `vol4`, `allstar-vol4`, `vol3`, `allstar` はゲーム開始対象から外し、過去ランキングとして保持する。
 
 ## Runtime stability tuning (detail-friendly)
 - `content/games/l-singer-tower-battle/config.json` の `physics.substeps` を `3` 以上に設定する。

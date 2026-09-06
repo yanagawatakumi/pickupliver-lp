@@ -350,9 +350,135 @@
       "sourceHeight": 512,
       "scale": 0.36,
       "weight": 1
+    },
+    {
+      "id": "vol5-ao",
+      "label": "あお",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol5/ao.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol5/ao.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
+    },
+    {
+      "id": "vol5-belle",
+      "label": "Belle.",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol5/belle.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol5/belle.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
+    },
+    {
+      "id": "vol5-akirald",
+      "label": "アキラルド",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol5/akirald.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol5/akirald.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
+    },
+    {
+      "id": "vol5-wasabi-tune",
+      "label": "超わさびつーん",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol5/wasabi-tune.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol5/wasabi-tune.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
+    },
+    {
+      "id": "vol5-diva-kanna",
+      "label": "DiVA KANNA",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol5/diva-kanna.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol5/diva-kanna.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
+    },
+    {
+      "id": "vol5-kate",
+      "label": "けーと",
+      "kind": "character",
+      "imagePath": "/public/assets/games/l-singer-tower-battle/characters/vol5/kate.png",
+      "colliderPath": "/content/games/l-singer-tower-battle/colliders/vol5/kate.collider.json",
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "scale": 0.36,
+      "weight": 1
     }
   ],
   "modes": [
+    {
+      "id": "vol5",
+      "label": "9/12 出演者",
+      "shapeIds": [
+        "vol5-ao",
+        "vol5-belle",
+        "vol5-akirald",
+        "vol5-wasabi-tune",
+        "vol5-diva-kanna",
+        "vol5-kate",
+        "がーくん",
+        "がーくん2",
+        "とーま",
+        "とーま2",
+        "とーま3"
+      ],
+      "playable": true,
+      "archived": false
+    },
+    {
+      "id": "allstar-vol5",
+      "label": "オールスター",
+      "playable": true,
+      "archived": false,
+      "shapeIds": [
+        "KATE",
+        "T-BEAR",
+        "yU-Ka",
+        "まらかす",
+        "らいむ",
+        "四ノ宮",
+        "がーくん",
+        "がーくん2",
+        "とーま",
+        "とーま2",
+        "とーま3",
+        "junOK",
+        "momoko&なち",
+        "えり",
+        "しぇるな",
+        "団長",
+        "Aya湖",
+        "Re-N",
+        "ダダッチ",
+        "七海ふら",
+        "中山祐真",
+        "Marume",
+        "えれち",
+        "しぶ",
+        "ぱんどら",
+        "まにょ",
+        "瑠樺",
+        "vol5-ao",
+        "vol5-belle",
+        "vol5-akirald",
+        "vol5-wasabi-tune",
+        "vol5-diva-kanna",
+        "vol5-kate"
+      ]
+    },
     {
       "id": "vol4",
       "label": "7/18 出演者",
@@ -369,14 +495,14 @@
         "とーま2",
         "とーま3"
       ],
-      "playable": true,
-      "archived": false
+      "playable": false,
+      "archived": true
     },
     {
       "id": "allstar-vol4",
-      "label": "オールスター",
-      "playable": true,
-      "archived": false,
+      "label": "7/18 オールスター",
+      "playable": false,
+      "archived": true,
       "shapeIds": [
         "KATE",
         "T-BEAR",

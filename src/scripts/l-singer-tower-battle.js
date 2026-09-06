@@ -4,8 +4,10 @@ const PLAY_API_PATH = '/api/l-singer-tower-plays';
 const STAGE_BACKGROUND_PATHS = {
   vol3: '/public/assets/games/l-singer-tower-battle/tower-battle-bg.JPG',
   vol4: '/public/assets/games/l-singer-tower-battle/tower-battle-bg.JPG',
+  vol5: '/public/assets/games/l-singer-tower-battle/tower-battle-bg.JPG',
   allstar: '/public/assets/games/l-singer-tower-battle/bg-allstar-haikei.png',
-  'allstar-vol4': '/public/assets/games/l-singer-tower-battle/bg-allstar-haikei.png'
+  'allstar-vol4': '/public/assets/games/l-singer-tower-battle/bg-allstar-haikei.png',
+  'allstar-vol5': '/public/assets/games/l-singer-tower-battle/bg-allstar-haikei.png'
 };
 const DROP_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/drop.mp3';
 const BGM_PATH = '/public/assets/games/l-singer-tower-battle/sfx/BGM.mp3';
@@ -14,12 +16,14 @@ const LOST_SFX_PATH = '/public/assets/games/l-singer-tower-battle/sfx/lost.mp3';
 const STAGE_FLOATING_IMAGE_PATHS_BY_MODE = {
   vol3: ['/public/assets/games/l-singer-tower-battle/bg-がーくん.png', '/public/assets/games/l-singer-tower-battle/bg-とーま.png'],
   vol4: ['/public/assets/games/l-singer-tower-battle/bg-がーくん.png', '/public/assets/games/l-singer-tower-battle/bg-とーま.png'],
+  vol5: ['/public/assets/games/l-singer-tower-battle/bg-がーくん.png', '/public/assets/games/l-singer-tower-battle/bg-とーま.png'],
   allstar: ['/public/assets/games/l-singer-tower-battle/bg-allstar1.png', '/public/assets/games/l-singer-tower-battle/bg-allstar2.png'],
-  'allstar-vol4': ['/public/assets/games/l-singer-tower-battle/bg-allstar1.png', '/public/assets/games/l-singer-tower-battle/bg-allstar2.png']
+  'allstar-vol4': ['/public/assets/games/l-singer-tower-battle/bg-allstar1.png', '/public/assets/games/l-singer-tower-battle/bg-allstar2.png'],
+  'allstar-vol5': ['/public/assets/games/l-singer-tower-battle/bg-allstar1.png', '/public/assets/games/l-singer-tower-battle/bg-allstar2.png']
 };
 const LEADERBOARD_LIMIT = 50;
-const DEFAULT_MODE_ID = 'vol4';
-const DEFAULT_MODE_LABEL = '7/18 出演者';
+const DEFAULT_MODE_ID = 'vol5';
+const DEFAULT_MODE_LABEL = '9/12 出演者';
 const CANVAS_WIDTH = 420;
 const CANVAS_HEIGHT = 720;
 const FIXED_STEP_MS = 1000 / 60;
